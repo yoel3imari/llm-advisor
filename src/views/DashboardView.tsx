@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Cpu,
   HardDrive,
@@ -27,6 +27,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '../components/ui/DropdownMenu';
+
+function isDeepEqual<T>(a: T, b: T): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 interface Props {
   profile: HardwareProfile | null;
@@ -72,7 +76,9 @@ export function DashboardView({
       setLoadingResults(true);
       try {
         const data = await recommendModels(config);
-        if (active) setResults(data);
+        if (active) {
+          setResults((prev) => (isDeepEqual(prev, data) ? prev : data));
+        }
       } catch (err) {
         console.error('Failed to get recommendations', err);
       } finally {
@@ -86,7 +92,7 @@ export function DashboardView({
     };
   }, [config]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
       const updated = await refreshHardwareProfile();
@@ -98,9 +104,9 @@ export function DashboardView({
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [config, onProfileUpdated]);
 
-  const handleDownload = async (entryId: string) => {
+  const handleDownload = useCallback(async (entryId: string) => {
     try {
       setDownloadingId(entryId);
       await startDownload(entryId);
@@ -110,16 +116,22 @@ export function DashboardView({
     } finally {
       setDownloadingId(null);
     }
-  };
+  }, [onModelDownloaded]);
 
-  const handleDeleteFromLibrary = async (entryId: string) => {
+  const handleDeleteFromLibrary = useCallback(async (entryId: string) => {
     try {
       await deleteLibraryModel(entryId);
       onModelDownloaded();
     } catch (err) {
       console.error('Failed to delete model', err);
     }
-  };
+  }, [onModelDownloaded]);
+
+  // Available families in current results for dropdown
+  const uniqueFamilies = useMemo(
+    () => Array.from(new Set(results.map((r) => r.entry.family))).sort(),
+    [results]
+  );
 
   if (error || (profile && (profile.arch === 'aarch64' || profile.arch === 'arm64'))) {
     return (
@@ -152,9 +164,6 @@ export function DashboardView({
   const gpuVramGb = profile.gpu_vram_bytes ? parseFloat(gb(profile.gpu_vram_bytes)) : 0;
   const diskFreeGb = parseFloat(gb(profile.disk_free_bytes));
   const hostBudget = Math.min(profile.metal_working_set_bytes, profile.total_ram_bytes);
-
-  // Available families in current results for dropdown
-  const uniqueFamilies = Array.from(new Set(results.map((r) => r.entry.family))).sort();
 
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">

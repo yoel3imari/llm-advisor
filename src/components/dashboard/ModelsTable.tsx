@@ -34,7 +34,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '../ui/DropdownMenu';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
 
 interface Props {
   results: FitResult[];
@@ -70,13 +70,16 @@ export function ModelsTable({
   const gb = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(2);
   const mb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(0);
 
-  const isDownloaded = (id: string) => libraryRecords.some((r) => r.entry_id === id);
+  const downloadedIds = useMemo(
+    () => new Set(libraryRecords.map((r) => r.entry_id)),
+    [libraryRecords]
+  );
 
   // Filtered dataset
   const filteredData = useMemo(() => {
     return results.filter((res) => {
       const entry = res.entry;
-      const downloaded = isDownloaded(entry.id);
+      const downloaded = downloadedIds.has(entry.id);
 
       // Search match
       if (searchQuery.trim()) {
@@ -106,7 +109,7 @@ export function ModelsTable({
 
       return true;
     });
-  }, [results, searchQuery, familyFilter, verdictFilter, statusFilter, libraryRecords, hostBudget]);
+  }, [results, searchQuery, familyFilter, verdictFilter, statusFilter, downloadedIds, hostBudget]);
 
   const columns = useMemo<ColumnDef<FitResult>[]>(
     () => [
@@ -130,21 +133,19 @@ export function ModelsTable({
         ),
         cell: ({ row }) => {
           const entry = row.original.entry;
-          const inLibrary = isDownloaded(entry.id);
+          const inLibrary = downloadedIds.has(entry.id);
 
           return (
             <div className="flex flex-col py-0.5 min-w-[170px]">
               <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <span className="font-semibold text-zinc-100">{entry.id}</span>
                 {entry.gated && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="w-3.5 h-3.5 text-amber-400 cursor-help shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent>HuggingFace Token required</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="w-3.5 h-3.5 text-amber-400 cursor-help shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent>HuggingFace Token required</TooltipContent>
+                  </Tooltip>
                 )}
                 {inLibrary && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 shrink-0">
@@ -297,30 +298,28 @@ export function ModelsTable({
           );
 
           return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="font-mono text-xs font-semibold text-zinc-100 cursor-help underline decoration-dotted decoration-zinc-600 underline-offset-2">
-                    {totalGb}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5">
-                  <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
-                    RAM Breakdown ({totalGb} GB Total)
-                  </div>
-                  <div className="flex justify-between gap-4 text-zinc-300">
-                    <span>Model Weights:</span> <span>{gb(res.est_weights_bytes)} GB</span>
-                  </div>
-                  <div className="flex justify-between gap-4 text-zinc-300">
-                    <span>KV Cache ({mb(res.est_kv_bytes)} MB):</span>{' '}
-                    <span>{gb(res.est_kv_bytes)} GB</span>
-                  </div>
-                  <div className="flex justify-between gap-4 text-zinc-300">
-                    <span>Overhead + Activations:</span> <span>{mb(overheadBytes)} MB</span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-mono text-xs font-semibold text-zinc-100 cursor-help underline decoration-dotted decoration-zinc-600 underline-offset-2">
+                  {totalGb}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5">
+                <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
+                  RAM Breakdown ({totalGb} GB Total)
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Model Weights:</span> <span>{gb(res.est_weights_bytes)} GB</span>
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>KV Cache ({mb(res.est_kv_bytes)} MB):</span>{' '}
+                  <span>{gb(res.est_kv_bytes)} GB</span>
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Overhead + Activations:</span> <span>{mb(overheadBytes)} MB</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           );
         },
       },
@@ -443,7 +442,7 @@ export function ModelsTable({
         header: () => <span className="font-semibold text-zinc-300">Actions</span>,
         cell: ({ row }) => {
           const entry = row.original.entry;
-          const inLibrary = isDownloaded(entry.id);
+          const inLibrary = downloadedIds.has(entry.id);
           const isCurrentDownloading = downloadingId === entry.id;
 
           if (isCurrentDownloading) {

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sidebar, type NavTab } from './components/layout/Sidebar';
 import { DashboardView } from './views/DashboardView';
 import { LibraryView } from './views/LibraryView';
 import { ServerView } from './views/ServerView';
 import { SettingsView } from './views/SettingsView';
+import { TooltipProvider } from './components/ui/Tooltip';
 import {
   getHardwareProfile,
   listLibraryModels,
@@ -11,6 +12,10 @@ import {
   getServerState,
 } from './ipc/commands';
 import type { HardwareProfile, ModelRecord, DownloadTask, ServerState } from './types/domain';
+
+function isDeepEqual<T>(a: T, b: T): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
@@ -21,32 +26,34 @@ export default function App() {
   const [targetServerModel, setTargetServerModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshAllState = async () => {
+  // Initial mount: load hardware profile and initial state
+  useEffect(() => {
+    getHardwareProfile()
+      .then((p) => setProfile(p))
+      .catch((e) => setError(e.toString()));
+  }, []);
+
+  const refreshDynamicState = useCallback(async () => {
     try {
-      const [p, lib, dl, srv] = await Promise.all([
-        getHardwareProfile().catch((e) => {
-          setError(e.toString());
-          return null;
-        }),
+      const [lib, dl, srv] = await Promise.all([
         listLibraryModels().catch(() => []),
         getActiveDownloads().catch(() => []),
         getServerState().catch(() => ({ state: 'stopped' as const })),
       ]);
 
-      if (p) setProfile(p);
-      setLibraryRecords(lib);
-      setActiveDownloads(dl);
-      setServerState(srv);
+      setLibraryRecords((prev) => (isDeepEqual(prev, lib) ? prev : lib));
+      setActiveDownloads((prev) => (isDeepEqual(prev, dl) ? prev : dl));
+      setServerState((prev) => (isDeepEqual(prev, srv) ? prev : srv));
     } catch (err: unknown) {
       setError(String(err));
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshAllState();
-    const interval = setInterval(refreshAllState, 3000);
+    refreshDynamicState();
+    const interval = setInterval(refreshDynamicState, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshDynamicState]);
 
   const handleNavigateToServer = (modelId: string) => {
     setTargetServerModel(modelId);
@@ -54,7 +61,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 antialiased overflow-hidden font-sans">
+    <TooltipProvider delayDuration={150}>
+      <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 antialiased overflow-hidden font-sans">
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -67,7 +75,7 @@ export default function App() {
             profile={profile}
             libraryRecords={libraryRecords}
             onProfileUpdated={setProfile}
-            onModelDownloaded={refreshAllState}
+            onModelDownloaded={refreshDynamicState}
             onNavigateToServer={handleNavigateToServer}
             error={error}
           />
@@ -76,7 +84,7 @@ export default function App() {
           <LibraryView
             records={libraryRecords}
             activeDownloads={activeDownloads}
-            onRefreshLibrary={refreshAllState}
+            onRefreshLibrary={refreshDynamicState}
             onNavigateToServer={handleNavigateToServer}
           />
         )}
@@ -85,11 +93,12 @@ export default function App() {
             serverState={serverState}
             libraryRecords={libraryRecords}
             initialSelectedModelId={targetServerModel}
-            onRefreshState={refreshAllState}
+            onRefreshState={refreshDynamicState}
           />
         )}
         {activeTab === 'settings' && <SettingsView />}
       </main>
     </div>
+    </TooltipProvider>
   );
 }
