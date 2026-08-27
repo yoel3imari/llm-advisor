@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   ExternalLink,
   ChevronDown,
+  MoreVerticalIcon,
 } from 'lucide-react';
 import type { FitResult, ModelRecord } from '../../types/domain';
 import { VerdictBadge } from '../common/VerdictBadge';
@@ -439,7 +440,9 @@ export function ModelsTable({
       },
       {
         id: 'actions',
-        header: () => <span className="font-semibold text-zinc-300">Actions</span>,
+        header: () => <span className="font-semibold text-zinc-300">
+          <MoreVerticalIcon className="w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
+        </span>,
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = downloadedIds.has(entry.id);
@@ -458,20 +461,10 @@ export function ModelsTable({
             <div className="flex items-center justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 shadow-sm transition-colors whitespace-nowrap">
-                    {inLibrary ? (
-                      <>
-                        <Play className="w-3 h-3 text-emerald-400 fill-emerald-400 shrink-0" />
-                        <span>Actions</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-3 h-3 text-indigo-400 shrink-0" />
-                        <span>Actions</span>
-                      </>
-                    )}
-                    <ChevronDown className="w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
-                  </button>
+                  {/* <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 shadow-sm transition-colors whitespace-nowrap">
+                    
+                  </button> */}
+                    <MoreVerticalIcon className="cursor-pointer w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>Model Actions</DropdownMenuLabel>
