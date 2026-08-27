@@ -2,8 +2,7 @@
 
 use catalog::load_bundled_catalog;
 use domain::{
-    AppError, CatalogEntry, DownloadState, DownloadTask, FitResult, HardwareProfile, ModelRecord,
-    ServeConfig,
+    CatalogEntry, DownloadState, DownloadTask, FitResult, HardwareProfile, ModelRecord, ServeConfig,
 };
 use downloader::{download_model, DownloadOptions};
 use fit_engine::rank_recommendations;
@@ -17,7 +16,6 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Manager, State};
 use tokio_util::sync::CancellationToken;
-use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
