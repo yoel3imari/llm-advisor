@@ -72,13 +72,15 @@ pub enum KvType {
     #[default]
     F16,
     Q8_0,
+    Q4_0,
 }
 
 impl KvType {
-    pub fn bytes_per_element(&self) -> u64 {
+    pub fn bytes_per_element(&self) -> f64 {
         match self {
-            KvType::F16 => 2,
-            KvType::Q8_0 => 1,
+            KvType::F16 => 2.0,
+            KvType::Q8_0 => 1.0,
+            KvType::Q4_0 => 0.5,
         }
     }
 }

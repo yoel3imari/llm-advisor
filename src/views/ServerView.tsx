@@ -9,7 +9,7 @@ import {
   Terminal,
   ChevronDown,
 } from 'lucide-react';
-import type { ModelRecord, ServerState, ServeConfig } from '../types/domain';
+import type { ModelRecord, ServerState, ServeConfig, KvType } from '../types/domain';
 import { startServer, stopServer, getServerLogs } from '../ipc/commands';
 import { LogViewer } from '../components/common/LogViewer';
 import {
@@ -39,7 +39,7 @@ export function ServerView({
     initialSelectedModelId || (libraryRecords[0]?.entry_id ?? '')
   );
   const [contextSize, setContextSize] = useState<number>(4096);
-  const [kvType, setKvType] = useState<'f16' | 'q8_0'>('f16');
+  const [kvType, setKvType] = useState<KvType>('f16');
   const [logs, setLogs] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -212,6 +212,15 @@ export function ServerView({
                   }`}
                 >
                   Q8_0
+                </button>
+                <button
+                  disabled={isServing || isStarting}
+                  onClick={() => setKvType('q4_0')}
+                  className={`px-3 py-1 text-xs rounded font-mono font-medium ${
+                    kvType === 'q4_0' ? 'bg-indigo-600 text-white' : 'text-zinc-400'
+                  }`}
+                >
+                  Q4_0
                 </button>
               </div>
             </div>

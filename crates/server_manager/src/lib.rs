@@ -133,6 +133,9 @@ impl ServerManager {
             .arg(slots.to_string());
 
         match cfg.kv_type {
+            KvType::Q4_0 => {
+                cmd.arg("-ctk").arg("q4_0").arg("-ctv").arg("q4_0");
+            }
             KvType::Q8_0 => {
                 cmd.arg("-ctk").arg("q8_0").arg("-ctv").arg("q8_0");
             }

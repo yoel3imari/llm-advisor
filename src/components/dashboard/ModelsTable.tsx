@@ -15,7 +15,6 @@ import {
   ArrowDown,
   Download,
   Play,
-  MoreHorizontal,
   Copy,
   Trash2,
   Lock,
@@ -23,6 +22,7 @@ import {
   Zap,
   CheckCircle2,
   ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 import type { FitResult, ModelRecord } from '../../types/domain';
 import { VerdictBadge } from '../common/VerdictBadge';
@@ -116,7 +116,7 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
             Model & Family
             {column.getIsSorted() === 'asc' ? (
@@ -133,46 +133,44 @@ export function ModelsTable({
           const inLibrary = isDownloaded(entry.id);
 
           return (
-            <div className="flex flex-col py-1">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col py-0.5 min-w-[170px]">
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <span className="font-semibold text-zinc-100">{entry.id}</span>
                 {entry.gated && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Lock className="w-3.5 h-3.5 text-amber-400 cursor-help" />
+                        <Lock className="w-3.5 h-3.5 text-amber-400 cursor-help shrink-0" />
                       </TooltipTrigger>
                       <TooltipContent>HuggingFace Token required</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}
                 {inLibrary && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 shrink-0">
                     <CheckCircle2 className="w-2.5 h-2.5" />
                     Ready
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-zinc-400">
+              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400">
                 <span className="capitalize px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/50">
                   {entry.family}
                 </span>
-                <span>{entry.params_billions}B params</span>
-                {entry.active_params_b && <span>({entry.active_params_b}B active)</span>}
               </div>
             </div>
           );
         },
       },
       {
-        id: 'quant_size',
-        accessorFn: (row) => row.entry.file_size_bytes,
+        id: 'params',
+        accessorFn: (row) => row.entry.params_billions,
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Quant / Size
+            Params (B)
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -185,14 +183,62 @@ export function ModelsTable({
         cell: ({ row }) => {
           const entry = row.original.entry;
           return (
-            <div className="text-xs">
-              <span className="font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-200 border border-zinc-700/40">
-                {entry.quant}
-              </span>
-              <div className="text-[11px] text-zinc-400 mt-1 font-mono">{gb(entry.file_size_bytes)} GB</div>
-            </div>
+            <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+              {entry.params_billions}B
+              {entry.active_params_b && (
+                <span className="text-zinc-500 text-[10px] ml-1">({entry.active_params_b}B act)</span>
+              )}
+            </span>
           );
         },
+      },
+      {
+        id: 'quant',
+        accessorFn: (row) => row.entry.quant,
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+          >
+            Quant
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+            ) : (
+              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-200 border border-zinc-700/40 whitespace-nowrap">
+            {row.original.entry.quant}
+          </span>
+        ),
+      },
+      {
+        id: 'file_size',
+        accessorFn: (row) => row.entry.file_size_bytes,
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+          >
+            Disk (GB)
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+            ) : (
+              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-zinc-300">
+            {gb(row.original.entry.file_size_bytes)}
+          </span>
+        ),
       },
       {
         id: 'verdict',
@@ -200,7 +246,7 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
             Verdict
             {column.getIsSorted() === 'asc' ? (
@@ -215,7 +261,7 @@ export function ModelsTable({
         cell: ({ row }) => {
           const res = row.original;
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <VerdictBadge
                 fits={res.fits}
                 scoreFit={res.score_fit}
@@ -230,9 +276,9 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            RAM Needed
+            RAM Needed (GB)
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -245,7 +291,6 @@ export function ModelsTable({
         cell: ({ row }) => {
           const res = row.original;
           const totalGb = gb(res.est_total_bytes);
-          const ratio = Math.min((res.est_total_bytes / hostBudget) * 100, 100);
           const overheadBytes = Math.max(
             res.est_total_bytes - res.est_weights_bytes - res.est_kv_bytes,
             0
@@ -255,28 +300,13 @@ export function ModelsTable({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="w-36 space-y-1.5 cursor-help">
-                    <div className="flex justify-between text-xs font-mono">
-                      <span className="font-semibold text-zinc-200">{totalGb} GB</span>
-                      <span className="text-[10px] text-zinc-400">{Math.round(ratio)}% budget</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
-                      <div
-                        style={{ width: `${ratio}%` }}
-                        className={`h-full rounded-full transition-all ${
-                          res.fits
-                            ? ratio > 85
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
-                            : 'bg-rose-500'
-                        }`}
-                      />
-                    </div>
-                  </div>
+                  <span className="font-mono text-xs font-semibold text-zinc-100 cursor-help underline decoration-dotted decoration-zinc-600 underline-offset-2">
+                    {totalGb}
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5">
                   <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
-                    Memory Breakdown ({totalGb} GB Total)
+                    RAM Breakdown ({totalGb} GB Total)
                   </div>
                   <div className="flex justify-between gap-4 text-zinc-300">
                     <span>Model Weights:</span> <span>{gb(res.est_weights_bytes)} GB</span>
@@ -300,9 +330,9 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Max Context
+            Max Ctx (Tokens)
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -313,7 +343,7 @@ export function ModelsTable({
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-zinc-300">
+          <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
             {row.original.max_context_that_fits.toLocaleString()}
           </span>
         ),
@@ -324,9 +354,10 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            GPU Offload
+            <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            GPU Layers
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -342,11 +373,10 @@ export function ModelsTable({
           const total = res.entry.n_layers;
 
           if (layers === 0) {
-            return <span className="text-[11px] text-zinc-400">0 / {total} (CPU)</span>;
+            return <span className="text-[11px] text-zinc-400 font-mono whitespace-nowrap">0 / {total} (CPU)</span>;
           }
           return (
-            <span className="inline-flex items-center gap-1 font-mono text-xs text-purple-300 font-semibold">
-              <Layers className="w-3 h-3 text-purple-400" />
+            <span className="font-mono text-xs text-purple-300 font-semibold whitespace-nowrap">
               {layers} / {total}
             </span>
           );
@@ -358,9 +388,10 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Est. Speed
+            <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            Speed (TPS)
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -370,15 +401,11 @@ export function ModelsTable({
             )}
           </button>
         ),
-        cell: ({ row }) => {
-          const tps = row.original.speed_tps_estimate;
-          return (
-            <div className="flex items-center gap-1 font-mono text-xs font-semibold text-cyan-300">
-              <Zap className="w-3 h-3 text-cyan-400" />
-              {tps.toFixed(1)} tps
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-semibold text-cyan-300 whitespace-nowrap">
+            {row.original.speed_tps_estimate.toFixed(1)}
+          </span>
+        ),
       },
       {
         id: 'fit_score',
@@ -386,9 +413,9 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Score
+            Score (/10)
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -402,116 +429,97 @@ export function ModelsTable({
           const score = row.original.score_fit;
           return (
             <span
-              className={`font-mono font-bold text-xs ${
+              className={`font-mono font-bold text-xs whitespace-nowrap ${
                 score >= 8 ? 'text-emerald-400' : score >= 5 ? 'text-amber-400' : 'text-zinc-400'
               }`}
             >
-              {score.toFixed(1)}/10
+              {score.toFixed(1)}
             </span>
           );
         },
       },
       {
         id: 'actions',
-        header: () => <span className="font-semibold text-zinc-300">Action</span>,
+        header: () => <span className="font-semibold text-zinc-300">Actions</span>,
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = isDownloaded(entry.id);
           const isCurrentDownloading = downloadingId === entry.id;
 
-          if (inLibrary) {
+          if (isCurrentDownloading) {
             return (
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => onNavigateToServer(entry.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-colors"
-                >
-                  <Play className="w-3.5 h-3.5 fill-white" />
-                  Serve
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent hover:border-zinc-700 transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Model Options</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => onNavigateToServer(entry.id)}>
-                      <Play className="w-3.5 h-3.5 text-emerald-400" />
-                      Start Serving Process
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigator.clipboard.writeText(entry.repo_id)}
-                    >
-                      <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                      Copy Repo ID
-                    </DropdownMenuItem>
-                    {onDeleteFromLibrary && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="danger"
-                          onClick={() => onDeleteFromLibrary(entry.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                          Delete from Library
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="flex items-center justify-end gap-1.5 font-medium text-[11px] text-indigo-400 whitespace-nowrap">
+                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                <span>Downloading...</span>
               </div>
             );
           }
 
-          if (isCurrentDownloading) {
-            return (
-              <button
-                disabled
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs font-medium border border-zinc-700 animate-pulse"
-              >
-                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                Downloading...
-              </button>
-            );
-          }
-
           return (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => onDownload(entry.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download
-              </button>
+            <div className="flex items-center justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent hover:border-zinc-700 transition-colors">
-                    <MoreHorizontal className="w-4 h-4" />
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 shadow-sm transition-colors whitespace-nowrap">
+                    {inLibrary ? (
+                      <>
+                        <Play className="w-3 h-3 text-emerald-400 fill-emerald-400 shrink-0" />
+                        <span>Actions</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3 h-3 text-indigo-400 shrink-0" />
+                        <span>Actions</span>
+                      </>
+                    )}
+                    <ChevronDown className="w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>Model Actions</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => onDownload(entry.id)}>
-                    <Download className="w-3.5 h-3.5 text-indigo-400" />
-                    Download GGUF ({gb(entry.file_size_bytes)} GB)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      window.open(`https://huggingface.co/${entry.repo_id}`, '_blank')
-                    }
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
-                    View on HuggingFace
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigator.clipboard.writeText(entry.repo_id)}
-                  >
-                    <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                    Copy Repository ID
-                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {inLibrary ? (
+                    <>
+                      <DropdownMenuItem onClick={() => onNavigateToServer(entry.id)}>
+                        <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                        Start Serving Model
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
+                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                        Copy Repo ID
+                      </DropdownMenuItem>
+                      {onDeleteFromLibrary && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="danger"
+                            onClick={() => onDeleteFromLibrary(entry.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                            Delete from Library
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem onClick={() => onDownload(entry.id)}>
+                        <Download className="w-3.5 h-3.5 text-indigo-400" />
+                        Download GGUF ({gb(entry.file_size_bytes)} GB)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          window.open(`https://huggingface.co/${entry.repo_id}`, '_blank')
+                        }
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                        View on HuggingFace
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
+                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                        Copy Repo ID
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -544,17 +552,27 @@ export function ModelsTable({
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/90 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[960px]">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-zinc-800 bg-zinc-950/60 text-xs">
-                  {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 font-semibold text-zinc-300">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
+                <tr key={headerGroup.id} className="border-b border-zinc-800 bg-zinc-950/80 text-xs">
+                  {headerGroup.headers.map((header) => {
+                    const isActions = header.id === 'actions';
+                    return (
+                      <th
+                        key={header.id}
+                        className={`px-3.5 py-3 font-semibold text-zinc-300 ${
+                          isActions
+                            ? 'sticky right-0 z-20 bg-zinc-950 shadow-[-6px_0_12px_rgba(0,0,0,0.4)] border-l border-zinc-800 text-right'
+                            : ''
+                        }`}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    );
+                  })}
                 </tr>
               ))}
             </thead>
@@ -571,11 +589,21 @@ export function ModelsTable({
                     key={row.id}
                     className="hover:bg-zinc-800/40 transition-colors group"
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2.5">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
+                    {row.getVisibleCells().map((cell) => {
+                      const isActions = cell.column.id === 'actions';
+                      return (
+                        <td
+                          key={cell.id}
+                          className={`px-3.5 py-2.5 ${
+                            isActions
+                              ? 'sticky right-0 z-10 bg-zinc-900 group-hover:bg-zinc-850 shadow-[-6px_0_12px_rgba(0,0,0,0.4)] border-l border-zinc-800/60 text-right'
+                              : ''
+                          }`}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))
               )}

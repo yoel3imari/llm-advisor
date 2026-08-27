@@ -25,12 +25,14 @@ pub fn calculate_kv_cache_bytes(entry: &CatalogEntry, ctx: u32, cfg: &ServeConfi
     let kv_elem_bytes = cfg.kv_type.bytes_per_element();
     let slots = cfg.n_parallel.max(1) as u64;
 
-    2 * (entry.n_layers as u64)
+    let elements = 2
+        * (entry.n_layers as u64)
         * (entry.n_kv_heads as u64)
         * (entry.head_dim as u64)
         * effective_ctx
-        * kv_elem_bytes
-        * slots
+        * slots;
+
+    ((elements as f64) * kv_elem_bytes).ceil() as u64
 }
 
 /// Calculate the total estimated memory needed in bytes for a model and context size.

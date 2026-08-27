@@ -422,6 +422,16 @@ export function DashboardView({
               >
                 Q8_0
               </button>
+              <button
+                onClick={() => setConfig({ ...config, kv_type: 'q4_0' })}
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                  config.kv_type === 'q4_0'
+                    ? 'bg-indigo-600 text-white font-bold'
+                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Q4_0
+              </button>
             </div>
 
             <div className="flex items-center gap-1.5 border-l border-zinc-800 pl-4">
