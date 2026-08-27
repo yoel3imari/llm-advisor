@@ -2307,6 +2307,7 @@ name = "local-llm-advisor"
 version = "0.1.0"
 dependencies = [
  "catalog",
+ "chrono",
  "domain",
  "downloader",
  "fit_engine",
@@ -2321,6 +2322,7 @@ dependencies = [
  "tauri-plugin-opener",
  "thiserror 2.0.20",
  "tokio",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
 ]
