@@ -3,6 +3,7 @@ set -euo pipefail
 
 PINNED_TAG="b10645"
 MACOS_X64_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-macos-x64.tar.gz"
+MACOS_ARM64_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-macos-arm64.tar.gz"
 LINUX_X64_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-ubuntu-x64.tar.gz"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,8 +20,13 @@ ARCH="$(uname -m)"
 echo "==> Fetching pinned llama-server for OS=${OS}, ARCH=${ARCH} (Tag: ${PINNED_TAG})"
 
 if [ "${OS}" = "darwin" ]; then
-    TARGET_URL="${MACOS_X64_URL}"
-    TAURI_BIN_NAME="llama-server-x86_64-apple-darwin"
+    if [ "${ARCH}" = "arm64" ] || [ "${ARCH}" = "aarch64" ]; then
+        TARGET_URL="${MACOS_ARM64_URL}"
+        TAURI_BIN_NAME="llama-server-aarch64-apple-darwin"
+    else
+        TARGET_URL="${MACOS_X64_URL}"
+        TAURI_BIN_NAME="llama-server-x86_64-apple-darwin"
+    fi
 elif [ "${OS}" = "linux" ]; then
     TARGET_URL="${LINUX_X64_URL}"
     TAURI_BIN_NAME="llama-server-x86_64-unknown-linux-gnu"
@@ -31,9 +37,9 @@ fi
 
 ARCHIVE_FILE="${TMP_DIR}/llama-${PINNED_TAG}.tar.gz"
 
-# Check if binary already exists and works
-if [ -f "${BINARIES_DIR}/${TAURI_BIN_NAME}" ] && [ -f "${SIDECAR_DIR}/llama-server" ]; then
-    echo "==> Sidecar binary already present at ${BINARIES_DIR}/${TAURI_BIN_NAME}"
+# Check if real binary already exists and works
+if [ -f "${BINARIES_DIR}/${TAURI_BIN_NAME}" ] && [ -f "${SIDECAR_DIR}/llama-server" ] && [ ! -s "${BINARIES_DIR}/${TAURI_BIN_NAME}" -o "$(head -n 1 "${BINARIES_DIR}/${TAURI_BIN_NAME}" 2>/dev/null)" != "#!/bin/sh" ]; then
+    echo "==> Real sidecar binary already present at ${BINARIES_DIR}/${TAURI_BIN_NAME}"
     echo "==> Verifying binary execution..."
     LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version || true
     exit 0
