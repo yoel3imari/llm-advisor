@@ -32,7 +32,7 @@ export function DashboardView({ profile, onProfileUpdated, error }: Props) {
         </div>
         <h2 className="text-xl font-bold text-white">Platform Not Supported in v1</h2>
         <p className="text-sm text-zinc-400 max-w-md">
-          {error || 'This build of Local LLM Advisor is optimized specifically for macOS Apple Intel (x86_64) systems. Apple Silicon (ARM64) is scheduled for v2.'}
+          {error || 'This build of Local LLM Advisor supports x86_64 systems (Linux & macOS). ARM64 architecture is scheduled for v2.'}
         </p>
       </div>
     );

@@ -20,7 +20,118 @@ pub trait WorkingSetProvider: Send + Sync {
     fn get_metal_device_info(&self) -> Option<MetalDeviceInfo>;
 }
 
-/// Default runtime Metal provider.
+/// Probe Linux GPU devices (NVIDIA, AMD DRM, Intel/lspci).
+#[cfg(target_os = "linux")]
+pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
+    // 1. Try NVIDIA nvidia-smi
+    if let Ok(output) = std::process::Command::new("nvidia-smi")
+        .args(["--query-gpu=gpu_name,memory.total", "--format=csv,noheader,nounits"])
+        .output()
+    {
+        if output.status.success() {
+            let text = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = text.lines().next() {
+                let parts: Vec<&str> = first_line.split(',').map(|s| s.trim()).collect();
+                if parts.len() >= 2 {
+                    let name = parts[0].to_string();
+                    if let Ok(mb) = parts[1].parse::<u64>() {
+                        let vram_bytes = mb * 1024 * 1024;
+                        return Some(MetalDeviceInfo {
+                            device_name: name,
+                            working_set_bytes: vram_bytes,
+                            has_unified_memory: false,
+                            vram_bytes: Some(vram_bytes),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Try sysfs DRM AMD / Intel VRAM
+    let mut drm_vram: Option<u64> = None;
+    let drm_path = std::path::Path::new("/sys/class/drm");
+    if drm_path.exists() {
+        if let Ok(entries) = std::fs::read_dir(drm_path) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with("card") && !name.contains('-') {
+                    let vram_file = entry.path().join("device/mem_info_vram_total");
+                    if let Ok(content) = std::fs::read_to_string(vram_file) {
+                        if let Ok(bytes) = content.trim().parse::<u64>() {
+                            if bytes > 0 {
+                                drm_vram = Some(drm_vram.map_or(bytes, |b| b.max(bytes)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Try lspci for GPU names
+    if let Ok(output) = std::process::Command::new("lspci").output() {
+        if output.status.success() {
+            let text = String::from_utf8_lossy(&output.stdout);
+            let mut discrete_name = None;
+            let mut integrated_name = None;
+
+            for line in text.lines() {
+                let lower = line.to_lowercase();
+                if lower.contains("vga compatible controller")
+                    || lower.contains("3d controller")
+                    || lower.contains("display controller")
+                {
+                    let clean_name = if let Some(idx) = line.find(": ") {
+                        &line[idx + 2..]
+                    } else {
+                        line
+                    };
+
+                    if lower.contains("nvidia")
+                        || lower.contains("geforce")
+                        || lower.contains("amd")
+                        || lower.contains("radeon")
+                        || lower.contains("advanced micro devices")
+                    {
+                        discrete_name = Some(clean_name.to_string());
+                    } else {
+                        integrated_name = Some(clean_name.to_string());
+                    }
+                }
+            }
+
+            if let Some(d_name) = discrete_name {
+                return Some(MetalDeviceInfo {
+                    device_name: d_name,
+                    working_set_bytes: drm_vram.unwrap_or(0),
+                    has_unified_memory: false,
+                    vram_bytes: drm_vram,
+                });
+            } else if let Some(i_name) = integrated_name {
+                return Some(MetalDeviceInfo {
+                    device_name: i_name,
+                    working_set_bytes: 0,
+                    has_unified_memory: false,
+                    vram_bytes: drm_vram,
+                });
+            }
+        }
+    }
+
+    if let Some(vram) = drm_vram {
+        return Some(MetalDeviceInfo {
+            device_name: "AMD Radeon Graphics".to_string(),
+            working_set_bytes: vram,
+            has_unified_memory: false,
+            vram_bytes: Some(vram),
+        });
+    }
+
+    None
+}
+
+/// Default runtime Metal/GPU provider.
 pub struct RuntimeMetalProvider;
 
 impl WorkingSetProvider for RuntimeMetalProvider {
@@ -31,7 +142,11 @@ impl WorkingSetProvider for RuntimeMetalProvider {
             // If runtime metal call is unavailable, returns None (triggering 0.75 fallback)
             None
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "linux")]
+        {
+            query_linux_gpu()
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
         {
             None
         }
@@ -247,7 +362,13 @@ pub fn detect_profile(
     // Host budget = min(metal_working_set, total_ram) or 75% fallback
     let metal_working_set_bytes = metal_info
         .as_ref()
-        .map(|m| m.working_set_bytes)
+        .and_then(|m| {
+            if m.has_unified_memory && m.working_set_bytes > 0 {
+                Some(m.working_set_bytes.min(total_ram_bytes))
+            } else {
+                None
+            }
+        })
         .unwrap_or_else(|| (total_ram_bytes as f64 * 0.75) as u64);
 
     let (gpu_name, gpu_vram_bytes, has_unified_memory) = match metal_info {
@@ -435,6 +556,34 @@ mod tests {
         assert_eq!(profile.metal_working_set_bytes, 12 * 1024 * 1024 * 1024);
         assert_eq!(profile.total_ram_bytes, 16 * 1024 * 1024 * 1024);
         assert_eq!(profile.cpu_physical_cores, 8);
+    }
+
+    #[test]
+    fn test_linux_discrete_gpu_detection() {
+        let metal = MockWorkingSetProvider {
+            info: Some(MetalDeviceInfo {
+                device_name: "Advanced Micro Devices, Inc. [AMD/ATI] Mars [Radeon HD 8730M]".to_string(),
+                working_set_bytes: 1024 * 1024 * 1024,
+                has_unified_memory: false,
+                vram_bytes: Some(1024 * 1024 * 1024),
+            }),
+        };
+        let sys = MockSysProvider {
+            total_mem: 8 * 1024 * 1024 * 1024,
+            disk: 250 * 1024 * 1024 * 1024,
+            cpu: ("Intel(R) Core(TM) i5-4200M CPU @ 2.50GHz".to_string(), "x86_64".to_string(), 2, 4),
+            os: "Ubuntu 26.04 LTS".to_string(),
+        };
+
+        let profile = detect_profile(&metal, &sys).unwrap();
+        assert_eq!(profile.arch, "x86_64");
+        assert_eq!(profile.cpu_physical_cores, 2);
+        assert_eq!(profile.cpu_logical_cores, 4);
+        assert_eq!(profile.total_ram_bytes, 8 * 1024 * 1024 * 1024);
+        // Host budget = 75% of 8GB = 6GB
+        assert_eq!(profile.metal_working_set_bytes, 6 * 1024 * 1024 * 1024);
+        assert_eq!(profile.gpu_vram_bytes, Some(1024 * 1024 * 1024));
+        assert!(profile.gpu_name.as_ref().unwrap().contains("Radeon HD 8730M"));
     }
 
     #[test]

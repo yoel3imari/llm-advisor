@@ -237,6 +237,50 @@ async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Res
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
+    let sidecar_name = if cfg!(target_os = "macos") {
+        "llama-server-x86_64-apple-darwin"
+    } else {
+        "llama-server-x86_64-unknown-linux-gnu"
+    };
+
+    let mut candidate_paths = Vec::new();
+
+    // 1. Packaged Tauri resource directory
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidate_paths.push(resource_dir.join("binaries").join(sidecar_name));
+        candidate_paths.push(resource_dir.join(sidecar_name));
+    }
+
+    // 2. Next to executable
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            candidate_paths.push(exe_dir.join("binaries").join(sidecar_name));
+            candidate_paths.push(exe_dir.join(sidecar_name));
+        }
+    }
+
+    // 3. Project dev directories
+    if let Ok(cwd) = std::env::current_dir() {
+        candidate_paths.push(cwd.join("src-tauri").join("binaries").join(sidecar_name));
+        candidate_paths.push(cwd.join("sidecars").join("binaries").join("llama-server"));
+        candidate_paths.push(cwd.join("binaries").join(sidecar_name));
+    }
+
+    for path in candidate_paths {
+        if path.exists() {
+            return path;
+        }
+    }
+
+    // Default fallback
+    app.path()
+        .resource_dir()
+        .unwrap_or_else(|_| PathBuf::from("."))
+        .join("binaries")
+        .join(sidecar_name)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -252,18 +296,7 @@ pub fn run() {
             );
 
             // Locate sidecar binary
-            let sidecar_name = if cfg!(target_os = "macos") {
-                "llama-server-x86_64-apple-darwin"
-            } else {
-                "llama-server-x86_64-unknown-linux-gnu"
-            };
-
-            let sidecar_path = app
-                .path()
-                .resource_dir()
-                .unwrap_or_else(|_| PathBuf::from("."))
-                .join("binaries")
-                .join(sidecar_name);
+            let sidecar_path = resolve_sidecar_path(app);
 
             let server_manager = Arc::new(ServerManager::new(sidecar_path));
             let settings = Arc::new(RwLock::new(AppSettings {
