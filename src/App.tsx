@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sidebar, type NavTab } from './components/layout/Sidebar';
 import { DashboardView } from './views/DashboardView';
-import { RecommendationsView } from './views/RecommendationsView';
 import { LibraryView } from './views/LibraryView';
 import { ServerView } from './views/ServerView';
 import { SettingsView } from './views/SettingsView';
@@ -66,16 +65,11 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <DashboardView
             profile={profile}
-            onProfileUpdated={setProfile}
-            error={error}
-          />
-        )}
-        {activeTab === 'recommendations' && (
-          <RecommendationsView
-            profile={profile}
             libraryRecords={libraryRecords}
+            onProfileUpdated={setProfile}
             onModelDownloaded={refreshAllState}
             onNavigateToServer={handleNavigateToServer}
+            error={error}
           />
         )}
         {activeTab === 'library' && (
