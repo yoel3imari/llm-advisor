@@ -1,0 +1,21 @@
+[package]
+name = "downloader"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+reqwest.workspace = true
+futures-util.workspace = true
+sha2.workspace = true
+hex.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+wiremock.workspace = true
+tempfile.workspace = true

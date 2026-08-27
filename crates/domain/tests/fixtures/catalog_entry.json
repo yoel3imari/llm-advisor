@@ -1,0 +1,17 @@
+{
+  "id": "llama-3.1-8b-instruct-q4_k_m",
+  "repo_id": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+  "filename": "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+  "family": "llama-3.1",
+  "params_billions": 8.03,
+  "n_layers": 32,
+  "n_kv_heads": 8,
+  "head_dim": 128,
+  "context_train": 131072,
+  "quant": "Q4_K_M",
+  "file_size_bytes": 4920727040,
+  "sha256": "4b6e5b4b1df8f4a3be9e1c258f2780e8e7a0cbcfdc1f1a563ee9a9978732e4d0",
+  "gated": false,
+  "quality_tier": 4,
+  "tags": ["llama", "8b", "general", "instruction-following"]
+}

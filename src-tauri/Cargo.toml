@@ -1,0 +1,29 @@
+[package]
+name = "local-llm-advisor"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+domain.workspace = true
+hw_probe.workspace = true
+fit_engine.workspace = true
+catalog.workspace = true
+downloader.workspace = true
+library.workspace = true
+server_manager.workspace = true
+gateway.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tauri = { version = "2.2", features = [] }
+tauri-plugin-opener = "2.2"

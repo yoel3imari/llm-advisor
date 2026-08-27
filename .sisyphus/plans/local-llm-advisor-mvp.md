@@ -2,12 +2,12 @@
 
 ## TL;DR
 
-> **Quick Summary**: Build Phase 1–3 of the system designed in [`local-llm-advisor-design.md`](./local-llm-advisor-design.md): hardware profiling → VRAM-fit recommendations → GGUF download/library → bundled llama-server serving an OpenAI-compatible endpoint on `127.0.0.1:13370`.
+> **Quick Summary**: Build Phase 1–3 of the system designed in [`local-llm-advisor-design.md`](./local-llm-advisor-design.md): hardware profiling → RAM/VRAM-fit recommendations → GGUF download/library → bundled llama-server serving an OpenAI-compatible endpoint on `127.0.0.1:13370`.
 >
 > **Deliverables**:
-> - Working Tauri 2 desktop app (macOS Apple Silicon) with Specs Dashboard, Recommendations, Library, Server Control views
+> - Working Tauri 2 desktop app (macOS Apple Intel x86_64) with Specs Dashboard, Recommendations, Library, Server Control views
 > - Rust core crates: `hw_probe`, `fit_engine`, `catalog`, `downloader`, `library`, `server_manager`, `gateway`
-> - Pinned llama-server sidecar bundled into the app
+> - Pinned llama-server x86_64 sidecar bundled into the app
 > - Design docs materialized into repo (`docs/architecture.md`)
 >
 > **Estimated Effort**: Large
@@ -19,12 +19,12 @@
 ## Context
 
 ### Original Request
-Desktop app that retrieves local machine specs, suggests open LLM models that can run on it, and provides an Ollama-like inference endpoint. User explicitly requested design-first workflow (use cases + UML), which is complete in `local-llm-advisor-design.md`.
+Build a desktop app that retrieves local machine specs, suggests open LLM models that can run on it, and provides an Ollama-like inference endpoint. User explicitly requested design-first workflow (use cases + UML), which is complete in `local-llm-advisor-design.md`.
 
 ### Interview Summary (confirmed decisions)
 - **Stack**: Tauri 2.x · Rust · React+TS+Vite webview
-- **Platform v1**: macOS Apple Silicon ONLY
-- **Inference**: embedded llama.cpp sidecar (own GGUF downloader; NOT wrapping Ollama; llmfit is reference only)
+- **Platform v1**: macOS Apple Intel (x86_64) ONLY (Apple Silicon deferred to v2)
+- **Inference**: embedded llama.cpp x86_64 sidecar (own GGUF downloader; NOT wrapping Ollama; llmfit is reference only)
 - **Catalog**: static bundled JSON with author-time HuggingFace metadata; online refresh deferred to v2
 - **API**: OpenAI-compatible via thin axum gateway (ADR-3 rationale: stable port + CORS bypass + idle-state semantics)
 - **Tests**: TDD for pure logic modules; every task additionally gets agent-executed QA scenarios
@@ -34,10 +34,10 @@ Key operational facts the executor MUST honor:
 - KV cache uses `n_kv_heads` (GQA), never `n_head`
 - HF LFS ETag == sha256 of file → checksum verification is free
 - llama-server: single model per process, `-np` slots multiply KV memory, caps ctx at training length, `/health` endpoint for readiness
-- Sidecar naming convention: `llama-server-aarch64-apple-darwin`
+- Sidecar naming convention: `llama-server-x86_64-apple-darwin`
 
 ### Metis Review (gaps already folded into design + this plan)
-Distribution/signing excluded (local-build only); one-model-at-a-time locked; gated-model token flow included; serve-time available-RAM preflight added; fit engine parameterized by ServeConfig; `max_context_that_fits` output required.
+Distribution/signing excluded (local-build only); one-model-at-a-time locked; gated-model token flow included; serve-time available-RAM preflight added; fit engine parameterized by ServeConfig; `max_context_that_fits` and `recommended_gpu_layers` output required.
 
 ---
 
@@ -58,8 +58,8 @@ Ship a demonstrable self-contained local LLM advisor + server where every recomm
 - [ ] Evidence files present under `.sisyphus/evidence/`
 
 ### Must Have
-- Apple-Silicon-aware memory budget: `min(Metal working-set query, total RAM)` with runtime Metal call
-- Fit results include per-component memory breakdown + `max_context_that_fits` + speed estimate
+- Apple-Intel-aware memory budget: Host RAM budget + dGPU VRAM offload detection (`min(Metal working-set query, total RAM)` with runtime Metal call)
+- Fit results include per-component memory breakdown + `max_context_that_fits` + `recommended_gpu_layers` + speed estimate
 - Download integrity: sha256 == HF ETag before Ready; resume via Range
 - Gateway: SSE passthrough with zero buffering; structured 503 envelope when idle; binds localhost only
 - Guaranteed sidecar teardown on stop/switch/app-quit
@@ -67,7 +67,7 @@ Ship a demonstrable self-contained local LLM advisor + server where every recomm
 ### Must NOT Have (Guardrails)
 - NO bundling of GGUF weights in the repo/app
 - NO llmfit (or any third-party fit calculator) as a dependency
-- NO Windows/Linux code paths in v1 (graceful unsupported screen only)
+- NO Apple Silicon / Windows / Linux code paths in v1 (graceful unsupported screen only)
 - NO LAN binding anywhere (127.0.0.1 only)
 - NO auto-downloads without explicit user action
 - NO multi-model concurrent serving / router mode
@@ -201,7 +201,6 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
       2. npm run tauri dev in background; sleep 45
       3. screencapture -x .sisyphus/evidence/task-1-window.png ; kill dev process
     Expected Result: PNG exists and is non-trivial size (>50KB); tests green
-    Evidence: .sisyphus/evidence/task-1-window.png, task-1-cargo-test.txt
   Scenario: Negative — gitignore guards weights
     Tool: Bash
     Steps: echo dummy > test.gguf && git status --porcelain | grep gguf || echo IGNORED
@@ -215,7 +214,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 - [ ] T2. Domain Types + Error Taxonomy
 
   **What to do**:
-  - Implement `domain` module exactly matching design doc §4 class diagram: `HardwareProfile`, `CatalogEntry` (incl. `n_kv_heads`, `head_dim`, `file_size_bytes`, `sha256`, `gated`, `quality_tier`, `active_params_b`), `ServeConfig` (ctx=4096 default, n_parallel=1, KvType F16/Q8_0), `FitResult` (incl. `max_context_that_fits`), `DownloadTask`/`DownloadState` enum {Queued,Downloading{bytes_done,total},Verifying,Ready,Paused,Failed{reason}}, `ModelRecord`
+  - Implement `domain` module exactly matching design doc §4 class diagram: `HardwareProfile` (incl. `cpu_name`, `arch: "x86_64"`, `gpu_name`, `gpu_vram_bytes`, `has_unified_memory`, `total_ram_bytes`, `metal_working_set_bytes`), `CatalogEntry` (incl. `n_kv_heads`, `head_dim`, `file_size_bytes`, `sha256`, `gated`, `quality_tier`, `active_params_b`), `ServeConfig` (ctx=4096 default, n_parallel=1, KvType F16/Q8_0), `FitResult` (incl. `max_context_that_fits`, `recommended_gpu_layers`), `DownloadTask`/`DownloadState` enum {Queued,Downloading{bytes_done,total},Verifying,Ready,Paused,Failed{reason}}, `ModelRecord`
   - Serde derive on all; unit type for byte counts = `u64` newtype `Bytes`
   - Error taxonomy: `AppError` thiserror enum (HwProbe, CatalogParse, Download{Network,Checksum,DiskFull,GatedNoToken}, Server{Spawn,HealthTimeout,PortBind,Crash}, Gateway) with user-presentable messages
 
@@ -254,7 +253,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
   **What to do**:
   - Script `scripts/build-catalog.mjs` (or Rust bin): for each curated model+quant, fetch HuggingFace metadata via public API (`https://huggingface.co/api/models/{repo_id}?blobs=true`) and resolve URL HEAD to capture: exact `file_size_bytes`, LFS `etag`(sha256), gated flag
-  - Curate ~35 entries across families/sizes usable on Apple Silicon, MUST include small test models: `Qwen2.5-0.5B-Instruct-Q4_K_M` (~0.4GB), `TinyLlama-1.1B-Chat-Q4_K_M` (~0.7GB), plus Llama-3.x, Qwen2.5, Gemma-2, Mistral tiers from 1B→70B; MoE example (e.g., Mixtral-8x7B Q3/Q4) with `active_params_b`
+  - Curate ~35 entries across families/sizes optimized for Apple Intel Mac hardware tiers (focus on 0.5B–14B models for usable CPU/dGPU speeds): `Qwen2.5-0.5B-Instruct-Q4_K_M` (~0.4GB), `TinyLlama-1.1B-Chat-Q4_K_M` (~0.7GB), `Llama-3.2-1B/3B`, `Qwen2.5-1.5B/3B/7B`, `Llama-3.1-8B`, `Gemma-2-2B/9B`, `Mistral-7B`, `Phi-3.5-mini`, plus higher tiers up to 32B/70B for high-RAM Intel Mac Pros (64GB–128GB); MoE example (e.g., Mixtral-8x7B Q3/Q4) with `active_params_b`
   - Populate architecture params (n_layers, n_kv_heads, head_dim, context_train) from each model's config.json — **GQA kv heads, verified manually per family**
   - Output `src-tauri/catalog/catalog.json`; typed loader module validating against `CatalogEntry` schema at startup; quality_tier assigned by quant map {Q4_K_M:4, Q5_K_M:5, Q6_K:5, Q8_0:5, Q3_K_M:3, Q2_K:2}
   - Commit the generated JSON (it's metadata, allowed)
@@ -290,11 +289,11 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T4. Metal Working-Set Query Shim
+- [ ] T4. Metal Working-Set & VRAM Query Shim
 
   **What to do**:
-  - Rust fn `metal_working_set_bytes() -> Option<u64>`: query `MTLDevice.recommendedMaxWorkingSetSize` via `objc2`+`objc2-metal` crates (preferred) OR tiny compiled Swift helper invoked once and cached
-  - Fallback: if query fails → `None` (caller applies 0.75 × total_ram heuristic)
+  - Rust fn `metal_device_info() -> Option<MetalDeviceInfo>`: query `MTLDevice.recommendedMaxWorkingSetSize`, `hasUnifiedMemory`, and device name via `objc2`+`objc2-metal` crates (preferred) OR tiny compiled Swift helper invoked once and cached
+  - Fallback: if query fails → `None` (caller applies 0.75 × total_ram heuristic for host memory)
   - Cache result per process lifetime; unit-testable seam injected behind trait
 
   **Must NOT do**: hardcode chip-specific tables; block app startup if Metal query hangs (timeout 500ms)
@@ -303,12 +302,12 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **Parallelization**: Wave 1 · Blocks T5 · Blocked By: T1
 
   **References**:
-  - Apple docs: recommendedMaxWorkingSetSize (device-dependent; ~75% typical)
+  - Apple docs: recommendedMaxWorkingSetSize & MTLDevice properties on macOS x86_64
   - Research bg_7031740e: exelban/stats uses MTLCreateSystemDefaultDevice approach
   - objc2-metal crate examples on docs.rs
 
   **Acceptance Criteria**:
-  - [ ] On the dev Mac: returns Some(N) where N ≈ 60–80% of sysctl hw.memsize; log both numbers
+  - [ ] On the dev Mac: returns device info (discrete VRAM or working set); log numbers
   - [ ] Trait-mocked unit test covers fallback path
 
   **QA Scenarios**:
@@ -316,7 +315,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   Scenario: Real device query
     Tool: Bash
     Steps: cargo run --example metal_query → prints "working_set=X bytes, total=Y, ratio=R"
-    Expected Result: ratio within [0.55, 0.85]; evidence captured
+    Expected Result: ratio within expected bounds; evidence captured
     Evidence: .sisyphus/evidence/task-4-metal-query.txt
   Scenario: Negative — fallback path
     Tool: Bash (cargo test)
@@ -324,15 +323,17 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
     Expected Result: unit test asserts fallback value
     Evidence: .sisyphus/evidence/task-4-fallback-test.txt
   ```
-  **Commit**: YES — `feat(hw-probe): runtime Metal working-set query with fallback`
+  **Commit**: YES — `feat(hw-probe): runtime Metal working-set and VRAM query with fallback`
+
+---
 
 - [ ] T5. `hw_probe` Module (TDD)
 
   **What to do**:
-  - CPU/RAM/disk via `sysinfo` crate; chip_name+gpu via `system_profiler SPHardwareDataType -xml` / `SPDisplaysDataType -xml` plist parsing (write a small plist-subset parser OR use `plist` crate) — parse from **fixture files** in tests, not live system
-  - Compose: `detect_profile(metal: &dyn WorkingSetProvider, sys: &dyn SysProvider) -> Result<HardwareProfile>` with budget = min(working_set.unwrap_or(0.75×total), total)
-  - Cache profile + `detected_at`; expose `refresh()`; unsupported-platform detection (arch != aarch64 or vendor != Apple → typed Unsupported error)
-  - TDD: fixtures for M1/M2/M3/M4 profiler outputs incl. one malformed XML → typed error
+  - CPU/RAM/disk via `sysinfo` crate; Intel CPU model + GPU identity/VRAM via `system_profiler SPHardwareDataType -xml` / `SPDisplaysDataType -xml` plist parsing (write a small plist-subset parser OR use `plist` crate) — parse from **fixture files** in tests, not live system
+  - Compose: `detect_profile(metal: &dyn WorkingSetProvider, sys: &dyn SysProvider) -> Result<HardwareProfile>` with host budget = min(working_set.unwrap_or(0.75×total), total) and dGPU VRAM detection
+  - Cache profile + `detected_at`; expose `refresh()`; unsupported-platform detection (arch != "x86_64" or vendor != "GenuineIntel" / "Apple" → typed Unsupported error)
+  - TDD: fixtures for Intel Mac profiler outputs (MacBook Pro 16" 2019 Core i9 + AMD Radeon Pro 5500M 4GB/8GB, iMac 27" 2020 Core i7 + Radeon Pro 5500XT 8GB, Mac mini 2018 Core i7 + Intel UHD 630, Mac Pro 2019 Xeon W) incl. one malformed XML → typed error
 
   **Must NOT do**: shell out without timeouts; read live system in unit tests
 
@@ -340,12 +341,12 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **Parallelization**: Wave 2 · Blocks T13 · Blocked By: T2 (T4 recommended)
 
   **References**:
-  - Research bg_7031740e: system_profiler XML structure; unified-memory gotcha
+  - Research bg_7031740e: system_profiler XML structure for Intel Mac and discrete AMD GPUs
   - Design doc SD1 sequence — exact call choreography
   - `sysinfo` docs: System::new_all(), total_memory(), cpus()
 
   **Acceptance Criteria**:
-  - [ ] Fixture-driven tests green: 4 chips parsed correctly; malformed → AppError::HwProbe
+  - [ ] Fixture-driven tests green: 4 Intel Mac configs parsed correctly; malformed → AppError::HwProbe
   - [ ] Live integration test (ignored by default, run in QA): profile matches `sysctl -n hw.memsize` within 2%
 
   **QA Scenarios**:
@@ -353,15 +354,15 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   Scenario: Live profile vs ground truth
     Tool: Bash
     Steps: cargo run --example hw_probe_dump > evidence.txt; sysctl -n hw.memsize >> evidence.txt
-    Expected Result: total_ram_bytes == sysctl value ±2%; chip name matches machdep.cpu.brand_string
+    Expected Result: total_ram_bytes == sysctl value ±2%; cpu name matches machdep.cpu.brand_string
     Evidence: .sisyphus/evidence/task-5-live-profile.txt
-  Scenario: Negative — Intel Mac simulation
+  Scenario: Negative — Apple Silicon / ARM64 Mac simulation
     Tool: Bash (cargo test)
-    Steps: fixture with arch=x86_64 → Unsupported error surfaced
+    Steps: fixture with arch=aarch64 → Unsupported error surfaced
     Expected Result: typed error, no panic
     Evidence: .sisyphus/evidence/task-5-unsupported-test.txt
   ```
-  **Commit**: YES — `feat(hw-probe): apple silicon profiling with fixture-tested parsers`
+  **Commit**: YES — `feat(hw-probe): apple intel profiling with fixture-tested parsers`
 
 ---
 
@@ -372,14 +373,16 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
     weights = entry.file_size_bytes
     kv_bytes(ctx) = 2 × n_layers × n_kv_heads × head_dim × min(ctx, context_train) × kv_elem_bytes(F16=2, Q8_0=1) × cfg.n_parallel
     est_total = weights + kv + ceil(0.05×weights) + 700MB floor
-    fits = est_total ≤ budget(profile)
-    max_context_that_fits: binary search largest ctx∈[512..context_train] fitting budget (512 if even that fails)
-    speed_tps_estimate = const_bandwidth_GBps(chip_class) / active_params_b × efficiency_factor — document constants inline with citations comment
+    fits = est_total ≤ host_budget(profile)
+    max_context_that_fits: binary search largest ctx∈[512..context_train] fitting host budget (512 if even that fails)
+    recommended_gpu_layers: if profile.gpu_vram_bytes > 0, calculate floor((gpu_vram_budget - kv_fraction) / layer_weight_bytes) capped at entry.n_layers; else 0
+    speed_tps_estimate = const_bandwidth_GBps(hardware_tier) / active_params_b × efficiency_factor (Intel DDR4 ~35–50 GB/s for CPU; dGPU GDDR6 ~192–394 GB/s when offloaded) — document constants inline with citations comment
   - Scores 0..10: score_fit (headroom ratio), score_speed (tps percentile across catalog), score_quality (quality_tier)
   - GOLDEN TESTS (exact byte assertions):
-    Llama-3.1-8B Q4_K_M @16GB/ctx4096/F16/slots1 → kv=536,870,912B; total ≈ 4.51GB+0.5GB+0.23GB+0.7GB ≈ 5.94GB±0.05; fits=true
-    Same @8GB/ctx8192 → fits=false; max_context_that_fits computed and < 8192
-    MoE Mixtral fixture → VRAM uses total params size; speed uses active_params_b
+    Llama-3.1-8B Q4_K_M @16GB Host RAM/ctx4096/F16/slots1 → kv=536,870,912B; total ≈ 4.51GB+0.5GB+0.23GB+0.7GB ≈ 5.94GB±0.05; fits=true
+    Same with 4GB dGPU VRAM → recommended_gpu_layers computed for partial offload (~16-20 layers in VRAM)
+    Same @8GB RAM/ctx8192 without dGPU → fits=false; max_context_that_fits computed and < 8192
+    MoE Mixtral fixture → Host RAM uses total params size; speed uses active_params_b
   - Property test: increasing ctx never decreases est_total; increasing slots multiplies KV exactly ×n
 
   **Must NOT do**: IO; use of n_head anywhere; magic numbers without comments citing design doc §1
@@ -484,7 +487,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 - [ ] T9. llama-server Sidecar Acquisition + Bundling
 
   **What to do**:
-  - `scripts/fetch-sidecar.sh`: download pinned llama.cpp release build (Metal, universal2 or aarch64) from GitHub releases; verify sha256 against PINNED constant recorded in script + `sidecars/README.md`; place as `src-tauri/binaries/llama-server-aarch64-apple-darwin` (Tauri sidecar naming)
+  - `scripts/fetch-sidecar.sh`: download pinned llama.cpp release build (Metal/Accelerate x86_64 macOS) from GitHub releases; verify sha256 against PINNED constant recorded in script + `sidecars/README.md`; place as `src-tauri/binaries/llama-server-x86_64-apple-darwin` (Tauri sidecar naming)
   - `tauri.conf.json`: `bundle.externalBin` entry; capability file granting shell-execute sidecar:true
   - Smoke: run fetched binary `--version` and `/health` after starting with a tiny model
   - Document exact release URL/version/sha256 in sidecars/README.md
@@ -496,13 +499,13 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
   **References**:
   - Metis validation: externalBin + sidecar:true capability requirement; codesign note (local-build OK unsigned)
-  - llama.cpp releases page — pick a Metal-enabled tagged release
+  - llama.cpp releases page — pick a Metal/AVX2-enabled tagged x86_64 macOS release
 
-  **Acceptance Criteria**
+  **Acceptance Criteria**:
   - [ ] Script idempotent: re-run skips when sha matches
   - [ ] Binary runs on dev machine: prints version
 
-  **QA Scenarios**
+  **QA Scenarios**:
   ```
   Scenario: Pinned fetch + smoke
     Tool: Bash
@@ -514,14 +517,14 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
     Steps: corrupt a copy → run script in verify-mode against it → mismatch error exit≠0
     Evidence: .sisyphus/evidence/task-9-tamper.txt
   ```
-  **Commit**: YES — `chore(sidecar): pin llama.cpp metal build + tauri externalBin`
+  **Commit**: YES — `chore(sidecar): pin llama.cpp x86_64 macos build + tauri externalBin`
 
 ---
 
 - [ ] T10. `server_manager` — Sidecar Lifecycle (TDD where possible)
 
   **What to do**:
-  - Spawn via std::process::Command (or tauri sidecar API) with args derived from ServeConfig: `-m {path} --port {auto_free} -c {ctx×n_parallel? per llama-server semantics: -c is total when --parallel used — set -c ctx and -np slots}` `-ctk/-ctv {kv_type}` `-ngl 99` `--host 127.0.0.1`
+  - Spawn via std::process::Command (or tauri sidecar API) with args derived from ServeConfig and FitResult: `-m {path} --port {auto_free} -c {ctx} -np {slots}` `-ctk/-ctv {kv_type}` `-ngl {recommended_gpu_layers}` `--host 127.0.0.1`
   - Readiness: poll `GET /health` every 500ms up to 120s; parse load-progress lines from stdout for UI events
   - Singleton state machine exactly per design doc §6 Server Lifecycle; Mutex<ServerState>; stop() = SIGTERM → 5s grace → SIGKILL; auto-stop on app exit via Drop + tauri on_exit hook
   - Pre-flight hook: available-RAM check (sysinfo) vs FitResult.est_total; return Warning variant for UI confirm dialog
@@ -538,11 +541,11 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - Research bg_9b733c6a: -np slots/KV interplay; ctx capping warning
   - Design doc §10 E8/E13 behaviors
 
-  **Acceptance Criteria**
+  **Acceptance Criteria**:
   - [ ] Fake-child lifecycle tests green: start→serving→stop frees port (`lsof` empty), crash→Error, drop kills child
   - [ ] Live QA: real tiny model reaches Serving; logs captured
 
-  **QA Scenarios**
+  **QA Scenarios**:
   ```
   Scenario: Live serve tiny model
     Tool: Bash
@@ -578,12 +581,12 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - SD5 sequence; llama-server /v1 route list from research
   - axum examples: reverse proxy w/ hyper client body streams
 
-  **Acceptance Criteria**
+  **Acceptance Criteria**:
   - [ ] curl non-stream chat returns choices[0].message.content non-empty against live tiny model
   - [ ] `curl -N` stream shows incremental data: chunks (≥3 distinct timestamps)
   - [ ] Idle gateway returns exact 503 envelope JSON
 
-  **QA Scenarios**
+  **QA Scenarios**:
   ```
   Scenario: Streaming passthrough latency proof
     Tool: Bash
@@ -611,10 +614,10 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
   **References**: Design doc §3 component names = nav labels; SD1–SD5 define events UI consumes
 
-  **Acceptance Criteria**
+  **Acceptance Criteria**:
   - [ ] `npm run build` green; Playwright: shell renders 5 nav items; clicking each switches route (mock IPC)
 
-  **QA Scenarios**
+  **QA Scenarios**:
   ```
   Scenario: Navigation smoke (mocked)
     Tool: Playwright @ vite dev (VITE_MOCK_IPC=1)
@@ -632,22 +635,22 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 - [ ] T13. Specs Dashboard View
 
   **What to do**:
-  - Cards: chip+GPU identity, CPU cores, RAM total vs Metal budget bar (visualizing min() logic), disk free; "Refresh" button → UC2 flow; unsupported-platform full-screen branch (E1)
-  - Budget bar shows working_set & total & current-free segments when available
+  - Cards: Intel CPU model + core count, Host RAM total vs usable budget bar, GPU identity & dedicated VRAM bar (if dGPU present), disk free; "Refresh" button → UC2 flow; unsupported-platform full-screen branch (E1)
+  - Budget bar shows host memory headroom and dedicated GPU VRAM headroom when available
 
   **Recommended Agent Profile**: `visual-engineering`.
   **Parallelization**: Wave 4 · Blocks T14,T15,T16 views · Blocked By: T5,T12
 
   **References**: SD1 sequence; design doc §4 HardwareProfile fields displayed verbatim; E1 branch
 
-  **Acceptance Criteria**
+  **Acceptance Criteria**:
   - [ ] Playwright(mock): cards render fixture values exactly; refresh triggers detect_profile call count increment
 
-  **QA Scenarios**
+  **QA Scenarios**:
   ```
   Scenario: Dashboard renders profile
-    Tool: Playwright (mock M2-Pro fixture)
-    Steps: goto / → expect text "Apple M2 Pro", budget bar width proportional to fixture ratio
+    Tool: Playwright (mock Intel Core i9-9880H + AMD Radeon Pro fixture)
+    Steps: goto / → expect text "Intel Core i9", Host RAM and VRAM bars width proportional to fixture ratio
     Evidence: .sisyphus/evidence/task-13-dashboard.png
   Scenario: Negative — unsupported platform branch
     Tool: Playwright (mock returns Unsupported error)
@@ -814,3 +817,36 @@ Final Checklist
 - [ ] All Must-Have behaviors demonstrated with evidence
 - [ ] All Guardrails hold under audit greps
 - [ ] Design doc materialized as `docs/architecture.md` in repo
+
+---
+
+## Appendix: Multi-Platform & App Lifecycle Implementation Roadmap
+
+### A.1 Cross-Platform Architecture Foundation (Single Codebase)
+The MVP implementation in Phase 1–3 strictly isolates OS-specific logic behind Rust traits:
+1. **Hardware Probing**: `trait HardwareProfiler` implemented via `#[cfg(target_os = "...")]` in `hw_probe`.
+2. **Secrets**: `trait SecretVault` implemented via `keyring` (macOS Keychain, Windows Credential Manager, Linux Secret Service).
+3. **Inference Sidecar**: Mapped via Tauri 2 `externalBin` target triples:
+   - `llama-server-x86_64-apple-darwin` (macOS Intel — v1)
+   - `llama-server-aarch64-apple-darwin` (macOS Apple Silicon — v2)
+   - `llama-server-x86_64-pc-windows-msvc.exe` (Windows — v2)
+   - `llama-server-x86_64-unknown-linux-gnu` (Linux — v2)
+4. **Shared Core (~85%)**: All Axum gateway proxying, HuggingFace Range resume downloading, catalog JSON validation, pure memory math evaluation, and React UI are 100% platform-agnostic.
+
+### A.2 Decoupled Data Storage
+To ensure multi-GB models are preserved across app updates and can be moved to external storage:
+- **App Binaries**: Managed by OS installer / bundle (`.dmg`, `.msi`, `.AppImage`).
+- **Config & Metadata**: Small JSON files in standard OS config directory (`app_config_dir`).
+- **Model Store**: Heavy `.gguf` weights stored in `app_local_data_dir/models` (user-customizable in Settings to external drives).
+
+### A.3 Cryptographic Auto-Updates
+Configured via Tauri 2 `@tauri-apps/plugin-updater`:
+- Minisign ed25519 public key in `tauri.conf.json`.
+- Releases published with `latest.json` manifests via GitHub Actions.
+- Atomic binary replacement without altering downloaded models or user configurations.
+
+### A.4 Uninstallation & Disk Cleanup
+- In-App "Storage & Cleanup" settings panel with "Purge Downloaded Models" (reclaim disk space) and "Factory Reset" (wipe data + credentials).
+- Windows NSIS uninstallation prompt to optionally remove multi-GB models.
+- macOS/Linux guidance and clean-uninstallation script.
+

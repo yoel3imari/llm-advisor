@@ -1,0 +1,93 @@
+# ==========================================
+# Rust & Cargo Build Artifacts
+# ==========================================
+/target/
+**/target/
+/src-tauri/target/
+src-tauri/gen/
+**/*.rs.bk
+*.pdb
+
+# ==========================================
+# Node, Vite & Frontend
+# ==========================================
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+.npm/
+.eslintcache
+*.tsbuildinfo
+
+# ==========================================
+# Tauri Sidecars & Binaries (CRITICAL: No binaries in git)
+# ==========================================
+sidecars/binaries/
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.a
+*.lib
+*.node
+llama-server*
+
+# ==========================================
+# LLM Weights & Local Data Stores (CRITICAL: No multi-GB weights)
+# ==========================================
+*.gguf
+*.bin
+*.part
+*.tmp
+/data/
+/models/
+metrics_*.json
+*.metrics.json
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ==========================================
+# Agent & Automation Temporary Workspaces
+# ==========================================
+.agents/
+.sisyphus/evidence/
+skills-lock.json
+
+# ==========================================
+# Logs & Debugging Output
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Operating System & Editor Metadata
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project

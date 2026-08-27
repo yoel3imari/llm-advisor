@@ -516,7 +516,7 @@ Base URL: `http://127.0.0.1:13370` — localhost binding is a hard requirement.
 |---|----------|-----------|----------------------|
 | ADR-1 | **Tauri 2.x over Electron/Python/native** | Small binary, Rust shares language with fit engine & process control; user choice | Electron (~150MB runtime); Python packaging fragility |
 | ADR-2 | **Embed llama.cpp sidecar** vs wrap Ollama | Self-contained product; MIT both ways; Ollama adds 100–200MB + external dependency | Hybrid detect-Ollama-first (deferred; possible v2 enhancement) |
-| ADR-3 | **Thin axum gateway in front of llama-server** | Stable public port decoupled from auto-picked sidecar port; bypasses webview CORS for any future in-app fetch; structured 503 semantics when idle; lets us later add auth/multi-model without breaking clients | Exposing sidecar port directly (no CORS story, unstable port) |
+| ADR-3 | **Thin axum gateway strictly bound to port 13370** | Stable public port (13370) external clients can hardcode; fails fast with clear error dialog if occupied; bypasses webview CORS; structured 503 semantics when idle | Auto-incrementing port (breaks external clients); exposing sidecar port directly |
 | ADR-4 | **One model served at a time** | llama-server loads a single `-m`; router mode is out of scope; restart-to-switch keeps lifecycle simple | Multi-instance / router |
 | ADR-5 | **Static catalog with author-time HF metadata** | Exact `file_size_bytes` + `sha256` captured once at curation time beat param-count estimates and enable checksum verification offline | Live registry queries (v2 refresh feature) |
 | ADR-6 | **Own fit engine informed by llmfit** | Portfolio learning value + full control of formula; llmfit's 4-dim scoring (fit/speed/quality/context) adopted conceptually | Vendoring llmfit-core as dependency |
@@ -536,7 +536,7 @@ Base URL: `http://127.0.0.1:13370` — localhost binding is a hard requirement.
 | E3 | Insufficient disk before download | pre-flight vs Content-Length + 5% margin | Refuse *before* transfer with GB numbers |
 | E4 | Network drop mid-download | IO error / stale progress | Auto-retry with Range resume; exponential backoff ×3 then surface |
 | E5 | Corrupt download | sha256 ≠ ETag at verify | Delete file, mark Failed, offer re-download |
-| E6 | Gateway port 13370 occupied | bind failure at startup | Try next port, display actual endpoint prominently; setting to pin |
+| E6 | Gateway port 13370 occupied | bind failure at startup | Hard fail with clear dialog: "Port 13370 is in use. Free it or change port in Settings → Advanced." |
 | E7 | Sidecar internal-port collision | spawn args use OS-assigned free port | Retry with new port (max 3) |
 | E8 | Runtime OOM despite fit verdict | sidecar exit / health loss while Serving | Kill child, state=Error, suggest lower ctx or smaller quant; log captured |
 | E9 | Requested ctx > `context_train` | fit engine clamp + sidecar cap warning | Clamp UI input; show "capped at trained context" hint |
@@ -546,6 +546,7 @@ Base URL: `http://127.0.0.1:13370` — localhost binding is a hard requirement.
 | E13 | App quit while serving | window close handler | Guaranteed SIGTERM → SIGKILL child teardown |
 | E14 | HF rate limit / CDN flake | 429 / timeouts | Backoff retry; clear status in DownloadTask.error |
 | E15 | Multiple quants per model | catalog entries share base model | Grouped cards; default = Q4_K_M tier |
+| E16 | Catalog metadata mismatch with GGUF | GGUF header parser cross-check post-download | Detect `n_kv_heads`/`n_layers` mismatch; surface alert and use GGUF header as source of truth |
 
 ---
 
@@ -661,3 +662,20 @@ Because GGUF model weights take 10GB–100GB+ of space, standard OS app deletion
    - NSIS script prompts: *"Would you like to delete downloaded LLM models ({SIZE}) to reclaim disk space?"*
 3. **macOS & Linux Documentation**:
    - Explicit instructions and in-app clean-removal helper to ensure zero orphaned disk footprint.
+
+---
+
+## 14. Pre-Implementation Validation Spikes & Risk Mitigations
+
+### 14.1 Metal + AMD dGPU Validation on Intel Macs (Week 1 Spike)
+- **Goal**: Validate `llama-server` Metal offload reliability and speedup on AMD Radeon Pro discrete GPUs (e.g. 5500M 4GB/8GB, Vega 16/20) vs CPU AVX2 baseline.
+- **Validation Script**: `scripts/validate_metal_intel.sh` benchmarks monotonic speedup and stability across 100 prompts across `-ngl` layer settings.
+- **Decision Gates**:
+  - ✅ If stable + >2× CPU speedup → full v1 dGPU offloading supported.
+  - ⚠️ If stable but <1.5× speedup → `cpu_ram` mode recommended + UI badge.
+  - ❌ If crashes/instability → downgrade to CPU AVX2 fallback for Intel Macs.
+
+### 14.2 Gateway Port Strategy (ADR-3a)
+- **Strict Localhost Binding**: Gateway binds strictly to `127.0.0.1:13370`.
+- **Port Conflict Handling**: If `13370` is busy, the app fails to start with a helpful dialog indicating the port is in use and offering a settings link to change `gateway_port`. It does not silently shift to `13371`.
+- **GGUF Source of Truth**: Downloader reads GGUF binary headers post-download to verify `n_kv_heads`, `n_layers`, and `head_dim` against catalog records.

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>_SPCommandLineArguments</key>
+		<array>
+			<string>/usr/sbin/system_profiler</string>
+			<string>-nxml</string>
+			<string>SPHardwareDataType</string>
+		</array>
+		<key>_parentDataType</key>
+		<string>SPHardwareDataType</string>
+		<key>_items</key>
+		<array>
+			<dict>
+				<key>_name</key>
+				<string>hardware_overview</string>
+				<key>boot_rom_version</key>
+				<string>2020.0.1.0.0</string>
+				<key>cpu_type</key>
+				<string>8-Core Intel Core i9</string>
+				<key>current_processor_speed</key>
+				<string>2.3 GHz</string>
+				<key>machine_model</key>
+				<string>MacBookPro16,1</string>
+				<key>machine_name</key>
+				<string>MacBook Pro</string>
+				<key>number_processors</key>
+				<integer>8</integer>
+				<key>packages</key>
+				<integer>1</integer>
+				<key>physical_memory</key>
+				<string>16 GB</string>
+				<key>platform_cpu_htt</key>
+				<string>htt_enabled</string>
+			</dict>
+		</array>
+	</dict>
+</array>
+</plist>

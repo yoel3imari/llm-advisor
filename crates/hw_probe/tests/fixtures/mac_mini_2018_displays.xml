@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>_items</key>
+		<array>
+			<dict>
+				<key>_name</key>
+				<string>Intel UHD Graphics 630</string>
+				<key>spdisplays_vram</key>
+				<string>1536 MB</string>
+			</dict>
+		</array>
+	</dict>
+</array>
+</plist>

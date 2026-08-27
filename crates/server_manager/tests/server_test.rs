@@ -1,0 +1,90 @@
+use domain::ServeConfig;
+use server_manager::*;
+use std::fs::File;
+use std::io::Write;
+use tempfile::tempdir;
+
+#[tokio::test]
+async fn test_server_manager_lifecycle_with_fake_child() {
+    let dir = tempdir().unwrap();
+
+    // Create a fake-child python script acting as llama-server
+    let fake_server_path = dir.path().join("fake-llama-server.py");
+    let script_content = r#"#!/usr/bin/env python3
+import sys, http.server, socketserver, argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", type=str)
+parser.add_argument("--port", type=int, default=18080)
+parser.add_argument("--host", type=str, default="127.0.0.1")
+parser.add_argument("-c", type=int)
+parser.add_argument("-np", type=int)
+parser.add_argument("-ctk", type=str)
+parser.add_argument("-ctv", type=str)
+parser.add_argument("-ngl", type=int)
+
+args, _ = parser.parse_known_args()
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
+    httpd.serve_forever()
+"#;
+
+    {
+        let mut f = File::create(&fake_server_path).unwrap();
+        f.write_all(script_content.as_bytes()).unwrap();
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(&fake_server_path).unwrap().permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&fake_server_path, perms).unwrap();
+    }
+
+    let fake_model_path = dir.path().join("test.gguf");
+    {
+        let mut f = File::create(&fake_model_path).unwrap();
+        f.write_all(b"DUMMY_MODEL_WEIGHTS").unwrap();
+    }
+
+    let manager = ServerManager::new(fake_server_path);
+    assert_eq!(manager.get_state(), ServerState::Stopped);
+
+    // 1. Start server
+    let cfg = ServeConfig::default();
+    let port = manager
+        .start_server("test-model".to_string(), fake_model_path.clone(), cfg, None)
+        .await
+        .expect("start_server should succeed");
+
+    assert!(port > 0);
+    match manager.get_state() {
+        ServerState::Serving {
+            model_id, port: p, ..
+        } => {
+            assert_eq!(model_id, "test-model");
+            assert_eq!(p, port);
+        }
+        other => panic!("Expected Serving state, got {:?}", other),
+    }
+
+    // 2. Stop server
+    manager.stop_server().await.expect("stop should succeed");
+    assert_eq!(manager.get_state(), ServerState::Stopped);
+    assert_eq!(manager.get_active_port(), None);
+}
