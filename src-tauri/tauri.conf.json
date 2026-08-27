@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Local LLM Advisor",
+        "title": "LLM Advisor",
         "width": 1200,
         "height": 800,
         "minWidth": 900,
