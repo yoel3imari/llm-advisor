@@ -22,7 +22,6 @@ import {
   Zap,
   CheckCircle2,
   ExternalLink,
-  ChevronDown,
   MoreVerticalIcon,
 } from 'lucide-react';
 import type { FitResult, ModelRecord } from '../../types/domain';
@@ -70,6 +69,12 @@ export function ModelsTable({
 
   const gb = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(2);
   const mb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(0);
+  const formatDiskSize = (bytes: number) => {
+    if (bytes < 1024 * 1024 * 1024) {
+      return `${Math.round(bytes / (1024 * 1024))} MB`;
+    }
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  };
 
   const downloadedIds = useMemo(
     () => new Set(libraryRecords.map((r) => r.entry_id)),
@@ -226,7 +231,7 @@ export function ModelsTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Disk (GB)
+            Disk
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -237,8 +242,8 @@ export function ModelsTable({
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-zinc-300">
-            {gb(row.original.entry.file_size_bytes)}
+          <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+            {formatDiskSize(row.original.entry.file_size_bytes)}
           </span>
         ),
       },
