@@ -10,9 +10,14 @@ This document records architectural conventions, project lessons learned, and gu
   * Tauri 2 requires `src-tauri/binaries/llama-server-<target-triple>` to physically exist before `tauri_build::build()` executes in `src-tauri/build.rs`.
   * **Solution**: `src-tauri/build.rs` auto-generates an executable placeholder stub if the binary has not been fetched yet.
   * **Provisioning**: Real binaries are downloaded via `npm run sidecar:fetch` or `scripts/fetch-sidecar.sh`.
-* **macOS Architecture Detection**:
-  * macOS targets can be either `x86_64-apple-darwin` (Intel) or `aarch64-apple-darwin` (Apple Silicon).
-  * Always inspect `uname -m` (`arm64` vs `x86_64`) when writing download or launch scripts.
+* **Multi-Platform Target Detection**:
+  * macOS targets: `x86_64-apple-darwin` (Intel) or `aarch64-apple-darwin` (Apple Silicon).
+  * Linux targets: `x86_64-unknown-linux-gnu`.
+  * Always inspect `uname -s` and `uname -m` when writing download or launch scripts.
+  * On Linux, `llama-server` dynamic dependencies (`libggml.so`, `libllama.so`, `libmtmd.so`) must be placed in `src-tauri/binaries/` with `LD_LIBRARY_PATH` configured on child spawn.
+* **Linux Hardware Probing**:
+  * Native GPU detection inspects NVIDIA (`nvidia-smi`), AMD DRM (`/sys/class/drm/card*/device/mem_info_vram_total`), and PCI controllers (`lspci`).
+  * Host RAM budget is bounded to 75% of total physical memory for safe non-paging execution.
 
 ---
 
