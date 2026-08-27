@@ -8,6 +8,7 @@ import {
   Search,
   Sliders,
   Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import type { FitResult, HardwareProfile, ModelRecord, ServeConfig } from '../types/domain';
 import {
@@ -18,12 +19,14 @@ import {
 } from '../ipc/commands';
 import { ModelsTable } from '../components/dashboard/ModelsTable';
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '../components/ui/Select';
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '../components/ui/DropdownMenu';
 
 interface Props {
   profile: HardwareProfile | null;
@@ -268,47 +271,94 @@ export function DashboardView({
             />
           </div>
 
-          {/* Custom Select Dropdowns */}
+          {/* Custom DropdownMenu Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Family Filter */}
-            <Select value={familyFilter} onValueChange={setFamilyFilter}>
-              <SelectTrigger className="w-[125px]">
-                <SelectValue placeholder="Family" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Families</SelectItem>
-                {uniqueFamilies.map((fam) => (
-                  <SelectItem key={fam} value={fam.toLowerCase()} className="capitalize">
-                    {fam}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Family Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[125px]">
+                  <span className="truncate">
+                    {familyFilter === 'all'
+                      ? 'All Families'
+                      : familyFilter.charAt(0).toUpperCase() + familyFilter.slice(1)}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[140px]">
+                <DropdownMenuLabel>Filter Family</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={familyFilter} onValueChange={setFamilyFilter}>
+                  <DropdownMenuRadioItem value="all">All Families</DropdownMenuRadioItem>
+                  {uniqueFamilies.map((fam) => (
+                    <DropdownMenuRadioItem
+                      key={fam}
+                      value={fam.toLowerCase()}
+                      className="capitalize"
+                    >
+                      {fam}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Verdict Filter */}
-            <Select value={verdictFilter} onValueChange={setVerdictFilter}>
-              <SelectTrigger className="w-[125px]">
-                <SelectValue placeholder="Verdict" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Verdicts</SelectItem>
-                <SelectItem value="fits">Fits Only</SelectItem>
-                <SelectItem value="tight">Tight Fit</SelectItem>
-                <SelectItem value="nofit">No Fit</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Verdict Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[125px]">
+                  <span className="truncate">
+                    {verdictFilter === 'all'
+                      ? 'All Verdicts'
+                      : verdictFilter === 'fits'
+                      ? 'Fits Only'
+                      : verdictFilter === 'tight'
+                      ? 'Tight Fit'
+                      : 'No Fit'}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[140px]">
+                <DropdownMenuLabel>Filter Verdict</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={verdictFilter} onValueChange={setVerdictFilter}>
+                  <DropdownMenuRadioItem value="all">All Verdicts</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="fits">Fits Only</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="tight">Tight Fit</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="nofit">No Fit</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[135px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="downloaded">Downloaded (Ready)</SelectItem>
-                <SelectItem value="available">Available to Download</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Status Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[135px]">
+                  <span className="truncate">
+                    {statusFilter === 'all'
+                      ? 'All Statuses'
+                      : statusFilter === 'downloaded'
+                      ? 'Downloaded (Ready)'
+                      : 'Available to Download'}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[170px]">
+                <DropdownMenuLabel>Filter Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
+                  <DropdownMenuRadioItem value="all">All Statuses</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="downloaded">
+                    Downloaded (Ready)
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="available">
+                    Available to Download
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
