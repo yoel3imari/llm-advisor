@@ -1,8 +1,8 @@
-import { Cpu, Sparkles, FolderDown, PlayCircle, Settings } from 'lucide-react';
+import { Cpu, FolderDown, PlayCircle, Settings } from 'lucide-react';
 import type { ServerState } from '../../types/domain';
 import { ServerStatusPill } from './ServerStatusPill';
 
-export type NavTab = 'dashboard' | 'recommendations' | 'library' | 'server' | 'settings';
+export type NavTab = 'dashboard' | 'library' | 'server' | 'settings';
 
 interface Props {
   activeTab: NavTab;
@@ -13,7 +13,6 @@ interface Props {
 export function Sidebar({ activeTab, onSelectTab, serverState }: Props) {
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: Cpu },
-    { id: 'recommendations' as NavTab, label: 'Recommendations', icon: Sparkles },
     { id: 'library' as NavTab, label: 'Library', icon: FolderDown },
     { id: 'server' as NavTab, label: 'Server Control', icon: PlayCircle },
     { id: 'settings' as NavTab, label: 'Settings', icon: Settings },
@@ -28,7 +27,7 @@ export function Sidebar({ activeTab, onSelectTab, serverState }: Props) {
           </div>
           <div>
             <h1 className="font-bold text-sm tracking-tight text-white leading-none">Local LLM Advisor</h1>
-            <p className="text-[11px] text-zinc-400 mt-1">Apple Intel Memory Fit</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Hardware Fit & Inference</p>
           </div>
         </div>
 

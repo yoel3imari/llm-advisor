@@ -32,7 +32,7 @@ export interface CatalogEntry {
   tags: string[];
 }
 
-export type KvType = 'f16' | 'q8_0';
+export type KvType = 'f16' | 'q8_0' | 'q4_0';
 
 export interface ServeConfig {
   context_size: number;

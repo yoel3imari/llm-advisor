@@ -51,11 +51,11 @@ Ship a demonstrable self-contained local LLM advisor + server where every recomm
 - App flows: detect specs → browse/rank recommendations → download+verify GGUF → serve → curl `/v1/chat/completions` successfully
 
 ### Definition of Done
-- [ ] `cargo test --workspace` green (fit_engine goldens, parsers, downloader unit tests)
-- [ ] `cargo fmt --check` clean; `cargo clippy` no warnings
-- [ ] `npm run build` (frontend) succeeds
-- [ ] End-to-end QA: download a ≤1GB public GGUF, serve it, stream a completion via curl through the gateway
-- [ ] Evidence files present under `.sisyphus/evidence/`
+- [x] `cargo test --workspace` green (fit_engine goldens, parsers, downloader unit tests)
+- [x] `cargo fmt --check` clean; `cargo clippy` no warnings
+- [x] `npm run build` (frontend) succeeds
+- [x] End-to-end QA: download a ≤1GB public GGUF, serve it, stream a completion via curl through the gateway
+- [x] Evidence files present under `.sisyphus/evidence/`
 
 ### Must Have
 - Apple-Intel-aware memory budget: Host RAM budget + dGPU VRAM offload detection (`min(Metal working-set query, total RAM)` with runtime Metal call)
@@ -168,7 +168,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ## TODOs
 
-- [ ] T1. Tauri 2 Scaffold + Test Infrastructure
+- [x] T1. Tauri 2 Scaffold + Test Infrastructure
 
   **What to do**:
   - `npm create tauri-app@latest` (or manual equivalent): Tauri 2.x, React + TypeScript + Vite template, app id `dev.portfolio.local-llm-advisor`
@@ -188,9 +188,9 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - Vite default dev port for Tauri = 1420 (keep default; Playwright will target it)
 
   **Acceptance Criteria**:
-  - [ ] `cargo test --workspace` passes (stub tests)
-  - [ ] `npx vitest run` passes
-  - [ ] `npm run tauri dev` opens a window titled "Local LLM Advisor" (evidence via screencapture)
+  - [x] `cargo test --workspace` passes (stub tests)
+  - [x] `npx vitest run` passes
+  - [x] `npm run tauri dev` opens a window titled "Local LLM Advisor" (evidence via screencapture)
 
   **QA Scenarios**:
   ```
@@ -211,7 +211,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T2. Domain Types + Error Taxonomy
+- [x] T2. Domain Types + Error Taxonomy
 
   **What to do**:
   - Implement `domain` module exactly matching design doc §4 class diagram: `HardwareProfile` (incl. `cpu_name`, `arch: "x86_64"`, `gpu_name`, `gpu_vram_bytes`, `has_unified_memory`, `total_ram_bytes`, `metal_working_set_bytes`), `CatalogEntry` (incl. `n_kv_heads`, `head_dim`, `file_size_bytes`, `sha256`, `gated`, `quality_tier`, `active_params_b`), `ServeConfig` (ctx=4096 default, n_parallel=1, KvType F16/Q8_0), `FitResult` (incl. `max_context_that_fits`, `recommended_gpu_layers`), `DownloadTask`/`DownloadState` enum {Queued,Downloading{bytes_done,total},Verifying,Ready,Paused,Failed{reason}}, `ModelRecord`
@@ -229,8 +229,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - Metis catch: `n_kv_heads` GQA semantics documented on the struct field
 
   **Acceptance Criteria**:
-  - [ ] `cargo test -p domain` roundtrip serde fixtures pass (JSON→struct→JSON stable)
-  - [ ] No `unwrap()` outside tests
+  - [x] `cargo test -p domain` roundtrip serde fixtures pass (JSON→struct→JSON stable)
+  - [x] No `unwrap()` outside tests
 
   **QA Scenarios**:
   ```
@@ -249,7 +249,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T3. Static Model Catalog Authoring (~35 entries)
+- [x] T3. Static Model Catalog Authoring (~35 entries)
 
   **What to do**:
   - Script `scripts/build-catalog.mjs` (or Rust bin): for each curated model+quant, fetch HuggingFace metadata via public API (`https://huggingface.co/api/models/{repo_id}?blobs=true`) and resolve URL HEAD to capture: exact `file_size_bytes`, LFS `etag`(sha256), gated flag
@@ -269,8 +269,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - llmfit `data/` catalog structure (inspiration for entry grouping only)
 
   **Acceptance Criteria**:
-  - [ ] `catalog.json` parses via loader; all 35 entries have non-zero file_size_bytes + 64-hex sha256
-  - [ ] Spot-check script output vs HF web UI for 3 models (log the comparison)
+  - [x] `catalog.json` parses via loader; all 35 entries have non-zero file_size_bytes + 64-hex sha256
+  - [x] Spot-check script output vs HF web UI for 3 models (log the comparison)
 
   **QA Scenarios**:
   ```
@@ -289,7 +289,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T4. Metal Working-Set & VRAM Query Shim
+- [x] T4. Metal Working-Set & VRAM Query Shim
 
   **What to do**:
   - Rust fn `metal_device_info() -> Option<MetalDeviceInfo>`: query `MTLDevice.recommendedMaxWorkingSetSize`, `hasUnifiedMemory`, and device name via `objc2`+`objc2-metal` crates (preferred) OR tiny compiled Swift helper invoked once and cached
@@ -307,8 +307,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - objc2-metal crate examples on docs.rs
 
   **Acceptance Criteria**:
-  - [ ] On the dev Mac: returns device info (discrete VRAM or working set); log numbers
-  - [ ] Trait-mocked unit test covers fallback path
+  - [x] On the dev Mac: returns device info (discrete VRAM or working set); log numbers
+  - [x] Trait-mocked unit test covers fallback path
 
   **QA Scenarios**:
   ```
@@ -327,7 +327,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T5. `hw_probe` Module (TDD)
+- [x] T5. `hw_probe` Module (TDD)
 
   **What to do**:
   - CPU/RAM/disk via `sysinfo` crate; Intel CPU model + GPU identity/VRAM via `system_profiler SPHardwareDataType -xml` / `SPDisplaysDataType -xml` plist parsing (write a small plist-subset parser OR use `plist` crate) — parse from **fixture files** in tests, not live system
@@ -346,8 +346,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - `sysinfo` docs: System::new_all(), total_memory(), cpus()
 
   **Acceptance Criteria**:
-  - [ ] Fixture-driven tests green: 4 Intel Mac configs parsed correctly; malformed → AppError::HwProbe
-  - [ ] Live integration test (ignored by default, run in QA): profile matches `sysctl -n hw.memsize` within 2%
+  - [x] Fixture-driven tests green: 4 Intel Mac configs parsed correctly; malformed → AppError::HwProbe
+  - [x] Live integration test (ignored by default, run in QA): profile matches `sysctl -n hw.memsize` within 2%
 
   **QA Scenarios**:
   ```
@@ -366,7 +366,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T6. `fit_engine` Module — TDD Golden Tests
+- [x] T6. `fit_engine` Module — TDD Golden Tests
 
   **What to do**:
   - Pure fn `evaluate(profile, entry, cfg) -> FitResult`:
@@ -396,9 +396,9 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - llama.cpp ggml-common.h K-quant block sizes (citation comment)
 
   **Acceptance Criteria**:
-  - [ ] All goldens pass with EXACT byte math (documented tolerances only where stated)
-  - [ ] Property tests green (monotonicity, slot multiplication)
-  - [ ] A deliberately wrong-kv-heads mutant fixture FAILS the golden suite (proves sensitivity)
+  - [x] All goldens pass with EXACT byte math (documented tolerances only where stated)
+  - [x] Property tests green (monotonicity, slot multiplication)
+  - [x] A deliberately wrong-kv-heads mutant fixture FAILS the golden suite (proves sensitivity)
 
   **QA Scenarios**:
   ```
@@ -417,7 +417,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T7. HuggingFace Downloader (TDD)
+- [x] T7. HuggingFace Downloader (TDD)
 
   **What to do**:
   - HEAD pre-flight on `https://huggingface.co/{repo}/resolve/main/{file}` → capture ETag (sha256 for LFS) + Content-Length; attach `Authorization: Bearer {token}` when gated/token present
@@ -437,8 +437,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - reqwest streaming + tokio::fs patterns
 
   **Acceptance Criteria**
-  - [ ] Mock-server test suite green (≥6 scenarios above)
-  - [ ] Live QA: real ≤1GB model downloads, sha verified
+  - [x] Mock-server test suite green (≥6 scenarios above)
+  - [x] Live QA: real ≤1GB model downloads, sha verified
 
   **QA Scenarios**:
   ```
@@ -457,7 +457,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T8. Library Store (local model management)
+- [x] T8. Library Store (local model management)
 
   **What to do**:
   - Dir layout `~/Library/Application Support/dev.portfolio.local-llm-advisor/models/{entry_id}.gguf`; records at `.../library.json`
@@ -472,7 +472,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: Design doc Model Lifecycle state machine §6 (states ↔ records)
 
   **Acceptance Criteria**
-  - [ ] Unit tests: add/list/delete/reconcile incl. orphan & missing cases (tempdir-based)
+  - [x] Unit tests: add/list/delete/reconcile incl. orphan & missing cases (tempdir-based)
 
   **QA Scenarios**
   ```
@@ -484,7 +484,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   ```
   **Commit**: YES (groups with T7 PR scope) — `feat(library): verified model store with reconciliation`
 
-- [ ] T9. llama-server Sidecar Acquisition + Bundling
+- [x] T9. llama-server Sidecar Acquisition + Bundling
 
   **What to do**:
   - `scripts/fetch-sidecar.sh`: download pinned llama.cpp release build (Metal/Accelerate x86_64 macOS) from GitHub releases; verify sha256 against PINNED constant recorded in script + `sidecars/README.md`; place as `src-tauri/binaries/llama-server-x86_64-apple-darwin` (Tauri sidecar naming)
@@ -502,8 +502,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - llama.cpp releases page — pick a Metal/AVX2-enabled tagged x86_64 macOS release
 
   **Acceptance Criteria**:
-  - [ ] Script idempotent: re-run skips when sha matches
-  - [ ] Binary runs on dev machine: prints version
+  - [x] Script idempotent: re-run skips when sha matches
+  - [x] Binary runs on dev machine: prints version
 
   **QA Scenarios**:
   ```
@@ -521,7 +521,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T10. `server_manager` — Sidecar Lifecycle (TDD where possible)
+- [x] T10. `server_manager` — Sidecar Lifecycle (TDD where possible)
 
   **What to do**:
   - Spawn via std::process::Command (or tauri sidecar API) with args derived from ServeConfig and FitResult: `-m {path} --port {auto_free} -c {ctx} -np {slots}` `-ctk/-ctv {kv_type}` `-ngl {recommended_gpu_layers}` `--host 127.0.0.1`
@@ -542,8 +542,8 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - Design doc §10 E8/E13 behaviors
 
   **Acceptance Criteria**:
-  - [ ] Fake-child lifecycle tests green: start→serving→stop frees port (`lsof` empty), crash→Error, drop kills child
-  - [ ] Live QA: real tiny model reaches Serving; logs captured
+  - [x] Fake-child lifecycle tests green: start→serving→stop frees port (`lsof` empty), crash→Error, drop kills child
+  - [x] Live QA: real tiny model reaches Serving; logs captured
 
   **QA Scenarios**:
   ```
@@ -562,7 +562,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T11. Axum Gateway — Public OpenAI-Compatible Proxy
+- [x] T11. Axum Gateway — Public OpenAI-Compatible Proxy
 
   **What to do**:
   - axum server bound `127.0.0.1:13370` (fallback next ports upward on bind failure, log chosen port)
@@ -582,9 +582,9 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   - axum examples: reverse proxy w/ hyper client body streams
 
   **Acceptance Criteria**:
-  - [ ] curl non-stream chat returns choices[0].message.content non-empty against live tiny model
-  - [ ] `curl -N` stream shows incremental data: chunks (≥3 distinct timestamps)
-  - [ ] Idle gateway returns exact 503 envelope JSON
+  - [x] curl non-stream chat returns choices[0].message.content non-empty against live tiny model
+  - [x] `curl -N` stream shows incremental data: chunks (≥3 distinct timestamps)
+  - [x] Idle gateway returns exact 503 envelope JSON
 
   **QA Scenarios**:
   ```
@@ -600,7 +600,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   ```
   **Commit**: YES — `feat(gateway): localhost openai-compatible streaming proxy`
 
-- [ ] T12. App Shell, Navigation, IPC Bindings
+- [x] T12. App Shell, Navigation, IPC Bindings
 
   **What to do**:
   - React shell: sidebar nav (Dashboard · Recommend · Library · Server · Settings), status pill (server state), dark-mode-first styling
@@ -615,7 +615,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: Design doc §3 component names = nav labels; SD1–SD5 define events UI consumes
 
   **Acceptance Criteria**:
-  - [ ] `npm run build` green; Playwright: shell renders 5 nav items; clicking each switches route (mock IPC)
+  - [x] `npm run build` green; Playwright: shell renders 5 nav items; clicking each switches route (mock IPC)
 
   **QA Scenarios**:
   ```
@@ -632,7 +632,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T13. Specs Dashboard View
+- [x] T13. Specs Dashboard View
 
   **What to do**:
   - Cards: Intel CPU model + core count, Host RAM total vs usable budget bar, GPU identity & dedicated VRAM bar (if dGPU present), disk free; "Refresh" button → UC2 flow; unsupported-platform full-screen branch (E1)
@@ -644,7 +644,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: SD1 sequence; design doc §4 HardwareProfile fields displayed verbatim; E1 branch
 
   **Acceptance Criteria**:
-  - [ ] Playwright(mock): cards render fixture values exactly; refresh triggers detect_profile call count increment
+  - [x] Playwright(mock): cards render fixture values exactly; refresh triggers detect_profile call count increment
 
   **QA Scenarios**:
   ```
@@ -661,7 +661,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T14. Recommendations View
+- [x] T14. Recommendations View
 
   **What to do**:
   - Context-size slider (512..max trained across catalog) + KV-type toggle driving live re-fit via IPC
@@ -674,7 +674,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: SD2 sequence output contract (FitResult fields on cards); §10 E9/E15 UX notes
 
   **Acceptance Criteria**
-  - [ ] Playwright(mock): slider move re-invokes recommend with new ctx param; card order changes per fixture ranking; breakdown bars sum ≈ total label
+  - [x] Playwright(mock): slider move re-invokes recommend with new ctx param; card order changes per fixture ranking; breakdown bars sum ≈ total label
 
   **QA Scenarios**
   ```
@@ -691,7 +691,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T15. Library & Downloads View
+- [x] T15. Library & Downloads View
 
   **What to do**:
   - Table of ModelRecords: size, verified ✅, added date; actions delete/reveal; reconcile-on-mount (Missing/orphan banners E11)
@@ -703,7 +703,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: SD3 sequence states ↔ row rendering; lifecycle diagram states as badges
 
   **Acceptance Criteria**
-  - [ ] Playwright(mock): simulated task Queued→Downloading(37%)→Verifying→Ready updates one row through all badge states; cancel clears it
+  - [x] Playwright(mock): simulated task Queued→Downloading(37%)→Verifying→Ready updates one row through all badge states; cancel clears it
 
   **QA Scenarios**
   ```
@@ -719,7 +719,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T16. Server Control Panel
+- [x] T16. Server Control Panel
 
   **What to do**:
   - Model selector (Ready records only) + ServeConfig summary chips; big Serve/Stop button reflecting state machine §6 (disabled during Starting w/ spinner + stdout-derived load %); endpoint copy chip `http://127.0.0.1:13370/v1` with curl snippet; logs tail pane (last 200 lines, autoscroll toggle)
@@ -732,7 +732,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: SD4/SD5; §8 healthz fields; §10 E8/E10/E13
 
   **Acceptance Criteria**
-  - [ ] Playwright(mock): full cycle Stopped→Starting(45%)→Serving flips button & enables endpoint chip; Stop returns to Stopped
+  - [x] Playwright(mock): full cycle Stopped→Starting(45%)→Serving flips button & enables endpoint chip; Stop returns to Stopped
 
   **QA Scenarios**
   ```
@@ -748,7 +748,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ---
 
-- [ ] T17. Settings (Token, Ports, Defaults)
+- [x] T17. Settings (Token, Ports, Defaults)
 
   **What to do**:
   - HF token field → macOS Keychain via `keyring` crate (never in plaintext config/UI state after save); masked input, test-token call to HF `/api/whoami-v2`
@@ -761,7 +761,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **References**: E2 gated flow; ADR list re localhost-only port policy
 
   **Acceptance Criteria**
-  - [ ] Save token → keychain entry exists (`security find-generic-password` QA); config roundtrip test
+  - [x] Save token → keychain entry exists (`security find-generic-password` QA); config roundtrip test
 
   **QA Scenarios**
   ```
@@ -777,19 +777,19 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 
 ## Final Verification Wave
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan + design doc end-to-end. For every Must Have: verify by reading files / running commands. For every Must NOT Have: grep for violations (`llmfit` in Cargo.toml, non-localhost bind, bundled .gguf files, `unwrap()` in process paths). Verify `.sisyphus/evidence/` completeness.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `cargo clippy --workspace -- -D warnings`, `cargo fmt --check`, `cargo test`, `npm run build`. Review diffs for: `as any`/`@ts-ignore`, empty catches, console.log in prod paths, dead code, AI-slop comments, generic names.
   Output: `Build [PASS/FAIL] | Lint [PASS/FAIL] | Tests [N/N] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high`
   Clean state (delete app-support dir). Execute EVERY QA scenario from T1–T17 exactly, capture evidence to `.sisyphus/evidence/final-qa/`. Cross-task integration: full journey SD1→SD5. Edge cases: E2 (gated no-token), E3 (disk full simulated), E6 (port occupied), E13 (quit while serving → `lsof -i` empty).
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   Per task: spec vs diff 1:1. No creep beyond Must-Haves; no missing deliverables; cross-task contamination flagged; unaccounted changes listed.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N] | Unaccounted [CLEAN/N] | VERDICT`
 
@@ -814,9 +814,9 @@ curl -N -X POST http://127.0.0.1:13370/v1/chat/completions \
 ```
 
 Final Checklist
-- [ ] All Must-Have behaviors demonstrated with evidence
-- [ ] All Guardrails hold under audit greps
-- [ ] Design doc materialized as `docs/architecture.md` in repo
+- [x] All Must-Have behaviors demonstrated with evidence
+- [x] All Guardrails hold under audit greps
+- [x] Design doc materialized as `docs/architecture.md` in repo
 
 ---
 

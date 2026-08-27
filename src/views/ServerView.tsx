@@ -1,8 +1,26 @@
 import { useState, useEffect } from 'react';
-import { PlayCircle, StopCircle, Copy, Check, AlertTriangle, Globe, Terminal } from 'lucide-react';
-import type { ModelRecord, ServerState, ServeConfig } from '../types/domain';
+import {
+  PlayCircle,
+  StopCircle,
+  Copy,
+  Check,
+  AlertTriangle,
+  Globe,
+  Terminal,
+  ChevronDown,
+} from 'lucide-react';
+import type { ModelRecord, ServerState, ServeConfig, KvType } from '../types/domain';
 import { startServer, stopServer, getServerLogs } from '../ipc/commands';
 import { LogViewer } from '../components/common/LogViewer';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '../components/ui/DropdownMenu';
 
 interface Props {
   serverState: ServerState;
@@ -21,7 +39,7 @@ export function ServerView({
     initialSelectedModelId || (libraryRecords[0]?.entry_id ?? '')
   );
   const [contextSize, setContextSize] = useState<number>(4096);
-  const [kvType, setKvType] = useState<'f16' | 'q8_0'>('f16');
+  const [kvType, setKvType] = useState<KvType>('f16');
   const [logs, setLogs] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -112,38 +130,66 @@ export function ServerView({
           <div className="flex flex-wrap items-center gap-4 flex-1">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-zinc-400">Target Model</label>
-              <select
-                disabled={isServing || isStarting || libraryRecords.length === 0}
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 font-medium focus:outline-none focus:border-indigo-500 disabled:opacity-50 min-w-64"
-              >
-                {libraryRecords.length === 0 ? (
-                  <option value="">No downloaded models available</option>
-                ) : (
-                  libraryRecords.map((r) => (
-                    <option key={r.entry_id} value={r.entry_id}>
-                      {r.entry_id} ({(r.size_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB)
-                    </option>
-                  ))
-                )}
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    disabled={isServing || isStarting || libraryRecords.length === 0}
+                    className="flex items-center justify-between gap-3 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 font-medium focus:outline-none focus:border-indigo-500 disabled:opacity-50 min-w-64 hover:border-zinc-600 transition-colors"
+                  >
+                    <span className="truncate">
+                      {libraryRecords.length === 0
+                        ? 'No downloaded models available'
+                        : selectedModel || 'Select a model...'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-zinc-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-64 max-h-60 overflow-y-auto">
+                  <DropdownMenuLabel>Installed Models</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={selectedModel} onValueChange={setSelectedModel}>
+                    {libraryRecords.map((r) => (
+                      <DropdownMenuRadioItem key={r.entry_id} value={r.entry_id}>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-zinc-200">{r.entry_id}</span>
+                          <span className="text-[10px] text-zinc-400 font-mono">
+                            {(r.size_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs font-semibold text-zinc-400">Context Window</label>
-              <select
-                disabled={isServing || isStarting}
-                value={contextSize}
-                onChange={(e) => setContextSize(parseInt(e.target.value))}
-                className="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-indigo-500 disabled:opacity-50"
-              >
-                <option value="2048">2,048 tokens</option>
-                <option value="4096">4,096 tokens</option>
-                <option value="8192">8,192 tokens</option>
-                <option value="16384">16,384 tokens</option>
-                <option value="32768">32,768 tokens</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    disabled={isServing || isStarting}
+                    className="flex items-center justify-between gap-2 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-indigo-500 disabled:opacity-50 min-w-36 hover:border-zinc-600 transition-colors"
+                  >
+                    <span>{contextSize.toLocaleString()} tokens</span>
+                    <ChevronDown className="h-4 w-4 text-zinc-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  <DropdownMenuLabel>Context Window</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={contextSize.toString()}
+                    onValueChange={(val) => setContextSize(parseInt(val))}
+                  >
+                    {[2048, 4096, 8192, 16384, 32768].map((size) => (
+                      <DropdownMenuRadioItem key={size} value={size.toString()} className="font-mono">
+                        {size.toLocaleString()} tokens
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="space-y-1">
@@ -166,6 +212,15 @@ export function ServerView({
                   }`}
                 >
                   Q8_0
+                </button>
+                <button
+                  disabled={isServing || isStarting}
+                  onClick={() => setKvType('q4_0')}
+                  className={`px-3 py-1 text-xs rounded font-mono font-medium ${
+                    kvType === 'q4_0' ? 'bg-indigo-600 text-white' : 'text-zinc-400'
+                  }`}
+                >
+                  Q4_0
                 </button>
               </div>
             </div>
