@@ -96,3 +96,13 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
   if (useMock) return mock.mockSaveSettings(settings);
   return invoke<void>('save_settings', { settings });
 }
+
+export async function purgeAllModels(): Promise<number> {
+  if (useMock) return mock.mockPurgeAllModels();
+  return invoke<number>('purge_all_models');
+}
+
+export async function factoryReset(): Promise<boolean> {
+  if (useMock) return mock.mockFactoryReset();
+  return invoke<boolean>('factory_reset');
+}

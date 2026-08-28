@@ -246,13 +246,45 @@ export async function mockStartDownload(entryId: string): Promise<string> {
   const entry = MOCK_CATALOG.find((e) => e.id === entryId);
   if (!entry) throw new Error(`Model not found: ${entryId}`);
 
-  mockDownloads.push({
+  // Prevent duplicate tasks
+  if (mockDownloads.some((d) => d.entry_id === entryId)) {
+    return entryId;
+  }
+
+  const task: DownloadTask = {
     entry_id: entryId,
     state: { status: 'downloading', bytes_done: 0, total_bytes: entry.file_size_bytes },
     bytes_done: 0,
     bytes_total: entry.file_size_bytes,
     etag: entry.sha256,
-  });
+  };
+
+  mockDownloads.push(task);
+
+  // Simulate progress in mock mode
+  const interval = setInterval(() => {
+    const item = mockDownloads.find((d) => d.entry_id === entryId);
+    if (!item) {
+      clearInterval(interval);
+      return;
+    }
+    const step = Math.ceil(entry.file_size_bytes / 5);
+    item.bytes_done = Math.min(entry.file_size_bytes, item.bytes_done + step);
+    item.state = { status: 'downloading', bytes_done: item.bytes_done, total_bytes: entry.file_size_bytes };
+    if (item.bytes_done >= entry.file_size_bytes) {
+      clearInterval(interval);
+      mockDownloads = mockDownloads.filter((d) => d.entry_id !== entryId);
+      if (!mockRecords.some((r) => r.entry_id === entryId)) {
+        mockRecords.push({
+          entry_id: entryId,
+          file_path: `/models/${entryId}.gguf`,
+          size_bytes: entry.file_size_bytes,
+          verified: true,
+          added_at: new Date().toISOString(),
+        });
+      }
+    }
+  }, 1000);
 
   return entryId;
 }
@@ -299,9 +331,24 @@ export async function mockGetSettings(): Promise<AppSettings> {
     default_context_size: 4096,
     default_kv_type: 'f16',
     models_dir: '~/Library/Application Support/dev.portfolio.local-llm-advisor/models',
+    run_in_background: true,
   };
 }
 
 export async function mockSaveSettings(_settings: AppSettings): Promise<void> {
   // no-op in mock
+}
+
+export async function mockPurgeAllModels(): Promise<number> {
+  mockRecords = [];
+  mockDownloads = [];
+  return 0;
+}
+
+export async function mockFactoryReset(): Promise<boolean> {
+  mockRecords = [];
+  mockDownloads = [];
+  mockServerState = { state: 'stopped' };
+  mockLogs = [];
+  return true;
 }

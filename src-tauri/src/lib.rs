@@ -24,6 +24,7 @@ pub struct AppSettings {
     pub default_context_size: u32,
     pub default_kv_type: domain::KvType,
     pub models_dir: String,
+    pub run_in_background: bool,
 }
 
 impl Default for AppSettings {
@@ -34,6 +35,7 @@ impl Default for AppSettings {
             default_context_size: 4096,
             default_kv_type: domain::KvType::F16,
             models_dir: String::new(),
+            run_in_background: true,
         }
     }
 }
@@ -42,7 +44,40 @@ pub struct AppState {
     pub server_manager: Arc<ServerManager>,
     pub library_store: Arc<LibraryStore>,
     pub settings: Arc<RwLock<AppSettings>>,
+    pub settings_path: PathBuf,
     pub active_downloads: Arc<Mutex<HashMap<String, (DownloadTask, CancellationToken)>>>,
+}
+
+fn load_or_init_settings(
+    app_data_dir: &std::path::Path,
+    library_store: &LibraryStore,
+) -> (AppSettings, PathBuf) {
+    let settings_path = app_data_dir.join("settings.json");
+    if settings_path.exists() {
+        if let Ok(data) = std::fs::read_to_string(&settings_path) {
+            if let Ok(mut s) = serde_json::from_str::<AppSettings>(&data) {
+                if s.models_dir.is_empty() {
+                    s.models_dir = library_store.models_dir().to_string_lossy().to_string();
+                }
+                return (s, settings_path);
+            }
+        }
+    }
+
+    let default_settings = AppSettings {
+        models_dir: library_store.models_dir().to_string_lossy().to_string(),
+        ..Default::default()
+    };
+    let _ = save_settings_to_file(&settings_path, &default_settings);
+    (default_settings, settings_path)
+}
+
+fn save_settings_to_file(path: &std::path::Path, settings: &AppSettings) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -77,10 +112,70 @@ async fn delete_library_model(
     state: State<'_, AppState>,
     entry_id: String,
 ) -> Result<bool, String> {
+    // If the deleted model is currently running, stop the server first
+    let current_state = state.server_manager.get_state();
+    if let ServerState::Serving { ref model_id, .. } = current_state {
+        if model_id == &entry_id {
+            let _ = state.server_manager.stop_server().await;
+        }
+    }
     state
         .library_store
         .delete(&entry_id)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn purge_all_models(state: State<'_, AppState>) -> Result<u64, String> {
+    // Stop server if running
+    let _ = state.server_manager.stop_server().await;
+
+    // Cancel all active downloads
+    {
+        let mut downloads = state.active_downloads.lock().unwrap();
+        for (_, token) in downloads.values() {
+            token.cancel();
+        }
+        downloads.clear();
+    }
+
+    // Purge all models from store
+    state.library_store.purge_all().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn factory_reset(state: State<'_, AppState>) -> Result<bool, String> {
+    // 1. Stop server
+    let _ = state.server_manager.stop_server().await;
+
+    // 2. Cancel downloads
+    {
+        let mut downloads = state.active_downloads.lock().unwrap();
+        for (_, token) in downloads.values() {
+            token.cancel();
+        }
+        downloads.clear();
+    }
+
+    // 3. Purge all models
+    let _ = state.library_store.purge_all();
+
+    // 4. Reset settings
+    let default_settings = AppSettings {
+        models_dir: state
+            .library_store
+            .models_dir()
+            .to_string_lossy()
+            .to_string(),
+        ..Default::default()
+    };
+    let _ = save_settings_to_file(&state.settings_path, &default_settings);
+    {
+        let mut s = state.settings.write().unwrap();
+        *s = default_settings;
+    }
+
+    Ok(true)
 }
 
 #[tauri::command]
@@ -128,6 +223,21 @@ async fn start_download(state: State<'_, AppState>, entry_id: String) -> Result<
     let dest_dir = library.models_dir().to_path_buf();
     let downloads_map = state.active_downloads.clone();
     let eid = entry_id.clone();
+    let progress_map = downloads_map.clone();
+    let eid_progress = eid.clone();
+    let on_progress: Option<downloader::ProgressCallback> =
+        Some(std::sync::Arc::new(move |bytes_done, total_bytes| {
+            if let Ok(mut map) = progress_map.lock() {
+                if let Some((t, _)) = map.get_mut(&eid_progress) {
+                    t.bytes_done = bytes_done;
+                    t.bytes_total = total_bytes;
+                    t.state = DownloadState::Downloading {
+                        bytes_done,
+                        total_bytes,
+                    };
+                }
+            }
+        }));
 
     tokio::spawn(async move {
         let options = DownloadOptions {
@@ -136,7 +246,7 @@ async fn start_download(state: State<'_, AppState>, entry_id: String) -> Result<
             hf_token: token,
             base_url_override: None,
             cancel_token: Some(cancel_token),
-            on_progress: None,
+            on_progress,
         };
 
         match download_model(options).await {
@@ -232,6 +342,7 @@ async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String>
 
 #[tauri::command]
 async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Result<(), String> {
+    save_settings_to_file(&state.settings_path, &settings)?;
     *state.settings.write().unwrap() = settings;
     Ok(())
 }
@@ -281,6 +392,9 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
         .join(sidecar_name)
 }
 
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -299,27 +413,107 @@ pub fn run() {
             let sidecar_path = resolve_sidecar_path(app);
 
             let server_manager = Arc::new(ServerManager::new(sidecar_path));
-            let settings = Arc::new(RwLock::new(AppSettings {
-                models_dir: library_store.models_dir().to_string_lossy().to_string(),
-                ..Default::default()
-            }));
+            let (settings_val, settings_path) =
+                load_or_init_settings(&app_data_dir, &library_store);
+            let settings = Arc::new(RwLock::new(settings_val));
 
             // Launch Axum gateway in background
             let sm_clone = server_manager.clone();
+            let gateway_port = settings.read().unwrap().gateway_port;
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = start_gateway(sm_clone, 13370).await {
-                    tracing::error!("Failed to launch Axum gateway on 13370: {}", e);
+                if let Err(e) = start_gateway(sm_clone, gateway_port).await {
+                    tracing::error!("Failed to launch Axum gateway on {}: {}", gateway_port, e);
                 }
             });
+
+            // Set up System Tray
+            let show_item = MenuItemBuilder::with_id("show", "Show LLM Advisor").build(app)?;
+            let stop_item =
+                MenuItemBuilder::with_id("stop_server", "Stop Inference Server").build(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "Quit LLM Advisor").build(app)?;
+            let tray_menu = MenuBuilder::new(app)
+                .items(&[&show_item, &stop_item, &quit_item])
+                .build()?;
+
+            let tray_builder = TrayIconBuilder::with_id("main-tray")
+                .tooltip("Local LLM Advisor (:13370)")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "stop_server" => {
+                        let state = app.state::<AppState>();
+                        let sm = state.server_manager.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let _ = sm.stop_server().await;
+                        });
+                    }
+                    "quit" => {
+                        let state = app.state::<AppState>();
+                        let sm = state.server_manager.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let _ = sm.stop_server().await;
+                            std::process::exit(0);
+                        });
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                });
+
+            if let Some(icon) = app.default_window_icon().cloned() {
+                let _ = tray_builder.icon(icon).build(app);
+            } else {
+                let _ = tray_builder.build(app);
+            }
 
             app.manage(AppState {
                 server_manager,
                 library_store,
                 settings,
+                settings_path,
                 active_downloads: Arc::new(Mutex::new(HashMap::new())),
             });
 
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let app = window.app_handle();
+                let should_run_in_background = {
+                    if let Some(state) = app.try_state::<AppState>() {
+                        if let Ok(s) = state.settings.read() {
+                            s.run_in_background
+                        } else {
+                            true
+                        }
+                    } else {
+                        true
+                    }
+                };
+
+                if should_run_in_background {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             get_hardware_profile,
@@ -328,6 +522,8 @@ pub fn run() {
             recommend_models,
             list_library_models,
             delete_library_model,
+            purge_all_models,
+            factory_reset,
             reconcile_library,
             start_download,
             cancel_download,

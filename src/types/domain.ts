@@ -98,4 +98,5 @@ export interface AppSettings {
   default_context_size: number;
   default_kv_type: KvType;
   models_dir: string;
+  run_in_background?: boolean;
 }

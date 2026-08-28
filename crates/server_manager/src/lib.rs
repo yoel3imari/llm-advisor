@@ -201,7 +201,7 @@ impl ServerManager {
                     if l.len() >= MAX_LOG_LINES {
                         l.pop_front();
                     }
-                    l.push_back(format!("[ERR] {}", line));
+                    l.push_back(line);
                 }
             });
         }

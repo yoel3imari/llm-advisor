@@ -10,7 +10,7 @@ import {
   Sparkles,
   ChevronDown,
 } from 'lucide-react';
-import type { FitResult, HardwareProfile, ModelRecord, ServeConfig } from '../types/domain';
+import type { FitResult, HardwareProfile, ModelRecord, ServeConfig, DownloadTask } from '../types/domain';
 import {
   refreshHardwareProfile,
   recommendModels,
@@ -35,6 +35,7 @@ function isDeepEqual<T>(a: T, b: T): boolean {
 interface Props {
   profile: HardwareProfile | null;
   libraryRecords: ModelRecord[];
+  activeDownloads?: DownloadTask[];
   onProfileUpdated: (profile: HardwareProfile) => void;
   onModelDownloaded: () => void;
   onNavigateToServer: (modelId: string) => void;
@@ -44,6 +45,7 @@ interface Props {
 export function DashboardView({
   profile,
   libraryRecords,
+  activeDownloads = [],
   onProfileUpdated,
   onModelDownloaded,
   onNavigateToServer,
@@ -473,6 +475,7 @@ export function DashboardView({
           results={results}
           hostBudget={hostBudget}
           libraryRecords={libraryRecords}
+          activeDownloads={activeDownloads}
           downloadingId={downloadingId}
           onDownload={handleDownload}
           onNavigateToServer={onNavigateToServer}

@@ -10,6 +10,7 @@ import {
   listLibraryModels,
   getActiveDownloads,
   getServerState,
+  cancelDownload,
 } from './ipc/commands';
 import type { HardwareProfile, ModelRecord, DownloadTask, ServerState } from './types/domain';
 
@@ -51,54 +52,70 @@ export default function App() {
 
   useEffect(() => {
     refreshDynamicState();
-    const interval = setInterval(refreshDynamicState, 3000);
+    // Fast polling (1s) when downloads are active for smooth progress bars; standard 3s when idle
+    const pollIntervalMs = activeDownloads.length > 0 ? 1000 : 3000;
+    const interval = setInterval(refreshDynamicState, pollIntervalMs);
     return () => clearInterval(interval);
-  }, [refreshDynamicState]);
+  }, [refreshDynamicState, activeDownloads.length]);
 
   const handleNavigateToServer = (modelId: string) => {
     setTargetServerModel(modelId);
     setActiveTab('server');
   };
 
+  const handleCancelDownload = async (entryId: string) => {
+    try {
+      await cancelDownload(entryId);
+      refreshDynamicState();
+    } catch (err) {
+      console.error('Failed to cancel download', err);
+    }
+  };
+
   return (
     <TooltipProvider delayDuration={150}>
       <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 antialiased overflow-hidden font-sans">
-      <Sidebar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        serverState={serverState}
-      />
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          serverState={serverState}
+          activeDownloads={activeDownloads}
+          onCancelDownload={handleCancelDownload}
+        />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-zinc-950 overflow-hidden">
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            profile={profile}
-            libraryRecords={libraryRecords}
-            onProfileUpdated={setProfile}
-            onModelDownloaded={refreshDynamicState}
-            onNavigateToServer={handleNavigateToServer}
-            error={error}
-          />
-        )}
-        {activeTab === 'library' && (
-          <LibraryView
-            records={libraryRecords}
-            activeDownloads={activeDownloads}
-            onRefreshLibrary={refreshDynamicState}
-            onNavigateToServer={handleNavigateToServer}
-          />
-        )}
-        {activeTab === 'server' && (
-          <ServerView
-            serverState={serverState}
-            libraryRecords={libraryRecords}
-            initialSelectedModelId={targetServerModel}
-            onRefreshState={refreshDynamicState}
-          />
-        )}
-        {activeTab === 'settings' && <SettingsView />}
-      </main>
-    </div>
+        <main className="flex-1 flex flex-col min-w-0 bg-zinc-950 overflow-hidden">
+          {activeTab === 'dashboard' && (
+            <DashboardView
+              profile={profile}
+              libraryRecords={libraryRecords}
+              activeDownloads={activeDownloads}
+              onProfileUpdated={setProfile}
+              onModelDownloaded={refreshDynamicState}
+              onNavigateToServer={handleNavigateToServer}
+              error={error}
+            />
+          )}
+          {activeTab === 'library' && (
+            <LibraryView
+              records={libraryRecords}
+              activeDownloads={activeDownloads}
+              onRefreshLibrary={refreshDynamicState}
+              onNavigateToServer={handleNavigateToServer}
+            />
+          )}
+          {activeTab === 'server' && (
+            <ServerView
+              serverState={serverState}
+              libraryRecords={libraryRecords}
+              initialSelectedModelId={targetServerModel}
+              onRefreshState={refreshDynamicState}
+            />
+          )}
+          {activeTab === 'settings' && (
+            <SettingsView onSettingsChanged={refreshDynamicState} />
+          )}
+        </main>
+      </div>
     </TooltipProvider>
   );
 }

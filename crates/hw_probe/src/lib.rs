@@ -25,7 +25,10 @@ pub trait WorkingSetProvider: Send + Sync {
 pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
     // 1. Try NVIDIA nvidia-smi
     if let Ok(output) = std::process::Command::new("nvidia-smi")
-        .args(["--query-gpu=gpu_name,memory.total", "--format=csv,noheader,nounits"])
+        .args([
+            "--query-gpu=gpu_name,memory.total",
+            "--format=csv,noheader,nounits",
+        ])
         .output()
     {
         if output.status.success() {
@@ -369,7 +372,7 @@ pub fn detect_profile(
                 None
             }
         })
-        .unwrap_or_else(|| (total_ram_bytes as f64 * 0.75) as u64);
+        .unwrap_or((total_ram_bytes as f64 * 0.75) as u64);
 
     let (gpu_name, gpu_vram_bytes, has_unified_memory) = match metal_info {
         Some(m) => (Some(m.device_name), m.vram_bytes, m.has_unified_memory),
@@ -562,7 +565,8 @@ mod tests {
     fn test_linux_discrete_gpu_detection() {
         let metal = MockWorkingSetProvider {
             info: Some(MetalDeviceInfo {
-                device_name: "Advanced Micro Devices, Inc. [AMD/ATI] Mars [Radeon HD 8730M]".to_string(),
+                device_name: "Advanced Micro Devices, Inc. [AMD/ATI] Mars [Radeon HD 8730M]"
+                    .to_string(),
                 working_set_bytes: 1024 * 1024 * 1024,
                 has_unified_memory: false,
                 vram_bytes: Some(1024 * 1024 * 1024),
@@ -571,7 +575,12 @@ mod tests {
         let sys = MockSysProvider {
             total_mem: 8 * 1024 * 1024 * 1024,
             disk: 250 * 1024 * 1024 * 1024,
-            cpu: ("Intel(R) Core(TM) i5-4200M CPU @ 2.50GHz".to_string(), "x86_64".to_string(), 2, 4),
+            cpu: (
+                "Intel(R) Core(TM) i5-4200M CPU @ 2.50GHz".to_string(),
+                "x86_64".to_string(),
+                2,
+                4,
+            ),
             os: "Ubuntu 26.04 LTS".to_string(),
         };
 
@@ -583,7 +592,11 @@ mod tests {
         // Host budget = 75% of 8GB = 6GB
         assert_eq!(profile.metal_working_set_bytes, 6 * 1024 * 1024 * 1024);
         assert_eq!(profile.gpu_vram_bytes, Some(1024 * 1024 * 1024));
-        assert!(profile.gpu_name.as_ref().unwrap().contains("Radeon HD 8730M"));
+        assert!(profile
+            .gpu_name
+            .as_ref()
+            .unwrap()
+            .contains("Radeon HD 8730M"));
     }
 
     #[test]

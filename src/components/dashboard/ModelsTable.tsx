@@ -23,8 +23,8 @@ import {
   CheckCircle2,
   ExternalLink,
   MoreVerticalIcon,
+  LoaderIcon,
 } from 'lucide-react';
-import type { FitResult, ModelRecord } from '../../types/domain';
 import { VerdictBadge } from '../common/VerdictBadge';
 import {
   DropdownMenu,
@@ -35,11 +35,15 @@ import {
   DropdownMenuSeparator,
 } from '../ui/DropdownMenu';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
+import { openExternalUrl } from '../../utils/browser';
+import { DeleteConfirmDialog } from '../ui/DeleteConfirmDialog';
+import type { FitResult, ModelRecord, DownloadTask } from '../../types/domain';
 
 interface Props {
   results: FitResult[];
   hostBudget: number;
   libraryRecords: ModelRecord[];
+  activeDownloads?: DownloadTask[];
   downloadingId: string | null;
   onDownload: (entryId: string) => Promise<void>;
   onNavigateToServer: (modelId: string) => void;
@@ -54,6 +58,7 @@ export function ModelsTable({
   results,
   hostBudget,
   libraryRecords,
+  activeDownloads = [],
   downloadingId,
   onDownload,
   onNavigateToServer,
@@ -66,6 +71,10 @@ export function ModelsTable({
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'fit_score', desc: true },
   ]);
+  const [deleteModelTarget, setDeleteModelTarget] = useState<{
+    id: string;
+    sizeBytes: number;
+  } | null>(null);
 
   const gb = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(2);
   const mb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(0);
@@ -451,13 +460,17 @@ export function ModelsTable({
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = downloadedIds.has(entry.id);
-          const isCurrentDownloading = downloadingId === entry.id;
+          const activeTask = activeDownloads.find((d) => d.entry_id === entry.id);
+          const isTaskFailed =
+            activeTask &&
+            (activeTask.state.status === 'failed' || !!activeTask.error);
+          const isCurrentDownloading =
+            (!isTaskFailed && !!activeTask) || downloadingId === entry.id;
 
           if (isCurrentDownloading) {
             return (
-              <div className="flex items-center justify-end gap-1.5 font-medium text-[11px] text-indigo-400 whitespace-nowrap">
-                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
-                <span>Downloading...</span>
+              <div className="flex items-center justify-end pr-1">
+                <LoaderIcon className="animate-spin text-indigo-400" size={16} />
               </div>
             );
           }
@@ -466,10 +479,7 @@ export function ModelsTable({
             <div className="flex items-center justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  {/* <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 shadow-sm transition-colors whitespace-nowrap">
-                    
-                  </button> */}
-                    <MoreVerticalIcon className="cursor-pointer w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
+                  <MoreVerticalIcon className="cursor-pointer w-3 h-3 text-zinc-400 ml-0.5 shrink-0 hover:text-zinc-200 transition-colors" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>Model Actions</DropdownMenuLabel>
@@ -480,6 +490,14 @@ export function ModelsTable({
                         <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
                         Start Serving Model
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          openExternalUrl(`https://huggingface.co/${entry.repo_id}`)
+                        }
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                        View on HuggingFace
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
                         <Copy className="w-3.5 h-3.5 text-zinc-400" />
                         Copy Repo ID
@@ -489,7 +507,12 @@ export function ModelsTable({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             variant="danger"
-                            onClick={() => onDeleteFromLibrary(entry.id)}
+                            onClick={() =>
+                              setDeleteModelTarget({
+                                id: entry.id,
+                                sizeBytes: entry.file_size_bytes,
+                              })
+                            }
                           >
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                             Delete from Library
@@ -505,7 +528,7 @@ export function ModelsTable({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          window.open(`https://huggingface.co/${entry.repo_id}`, '_blank')
+                          openExternalUrl(`https://huggingface.co/${entry.repo_id}`)
                         }
                       >
                         <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
@@ -524,7 +547,7 @@ export function ModelsTable({
         },
       },
     ],
-    [hostBudget, libraryRecords, downloadingId, onDownload, onNavigateToServer, onDeleteFromLibrary]
+    [hostBudget, libraryRecords, activeDownloads, downloadingId, onDownload, onNavigateToServer, onDeleteFromLibrary]
   );
 
   const table = useReactTable({
@@ -647,6 +670,22 @@ export function ModelsTable({
           </div>
         )}
       </div>
+
+      {deleteModelTarget && (
+        <DeleteConfirmDialog
+          open={!!deleteModelTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteModelTarget(null);
+          }}
+          modelId={deleteModelTarget.id}
+          sizeBytes={deleteModelTarget.sizeBytes}
+          onConfirm={async () => {
+            if (onDeleteFromLibrary) {
+              await onDeleteFromLibrary(deleteModelTarget.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
