@@ -179,6 +179,16 @@ pub struct ModelRecord {
     pub added_at: DateTime<Utc>,
 }
 
+/// Metadata describing a running model instance in the multi-sidecar pool.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RunningInstanceInfo {
+    pub model_id: String,
+    pub model_path: PathBuf,
+    pub port: u16,
+    pub context_size: u32,
+    pub started_at: DateTime<Utc>,
+}
+
 /// App-wide typed error taxonomy with user-presentable messages.
 #[derive(Debug, Error, Serialize, Deserialize)]
 #[serde(tag = "type", content = "details")]

@@ -110,3 +110,17 @@ fn test_app_error_messages() {
     let gated_err = AppError::DownloadGatedNoToken;
     assert!(gated_err.to_string().contains("gated"));
 }
+
+#[test]
+fn test_running_instance_info_serde() {
+    let inst = RunningInstanceInfo {
+        model_id: "smollm2-135m-instruct-q8_0".to_string(),
+        model_path: PathBuf::from("/models/smollm2.gguf"),
+        port: 18080,
+        context_size: 4096,
+        started_at: Utc::now(),
+    };
+    let json = serde_json::to_string(&inst).unwrap();
+    let decoded: RunningInstanceInfo = serde_json::from_str(&json).unwrap();
+    assert_eq!(inst, decoded);
+}

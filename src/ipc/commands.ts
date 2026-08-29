@@ -7,6 +7,7 @@ import type {
   ModelRecord,
   DownloadTask,
   ServerState,
+  RunningInstanceInfo,
   LibraryReconciliation,
   AppSettings,
 } from '../types/domain';
@@ -72,6 +73,11 @@ export async function getServerState(): Promise<ServerState> {
   return invoke<ServerState>('get_server_state');
 }
 
+export async function listRunningInstances(): Promise<RunningInstanceInfo[]> {
+  if (useMock) return mock.mockListRunningInstances();
+  return invoke<RunningInstanceInfo[]>('list_running_instances');
+}
+
 export async function startServer(modelId: string, cfg: ServeConfig): Promise<number> {
   if (useMock) return mock.mockStartServer(modelId, cfg);
   return invoke<number>('start_server', { modelId, cfg });
@@ -82,9 +88,14 @@ export async function stopServer(): Promise<void> {
   return invoke<void>('stop_server');
 }
 
-export async function getServerLogs(): Promise<string[]> {
-  if (useMock) return mock.mockGetServerLogs();
-  return invoke<string[]>('get_server_logs');
+export async function stopInstance(modelId: string): Promise<void> {
+  if (useMock) return mock.mockStopInstance(modelId);
+  return invoke<void>('stop_instance', { modelId });
+}
+
+export async function getServerLogs(modelId?: string): Promise<string[]> {
+  if (useMock) return mock.mockGetServerLogs(modelId);
+  return invoke<string[]>('get_server_logs', { modelId });
 }
 
 export async function getSettings(): Promise<AppSettings> {

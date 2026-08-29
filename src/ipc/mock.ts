@@ -6,6 +6,7 @@ import type {
   ModelRecord,
   DownloadTask,
   ServerState,
+  RunningInstanceInfo,
   LibraryReconciliation,
   AppSettings,
 } from '../types/domain';
@@ -329,17 +330,70 @@ export async function mockGetServerState(): Promise<ServerState> {
   return { ...mockServerState };
 }
 
-export async function mockStartServer(modelId: string, _cfg: ServeConfig): Promise<number> {
+export async function mockListRunningInstances(): Promise<RunningInstanceInfo[]> {
+  if (mockServerState.state === 'serving') {
+    return mockServerState.instances || [
+      {
+        model_id: mockServerState.model_id,
+        model_path: mockServerState.model_path,
+        port: mockServerState.port,
+        context_size: mockServerState.context_size,
+        started_at: mockServerState.started_at,
+      },
+    ];
+  }
+  return [];
+}
+
+export async function mockStartServer(modelId: string, cfg: ServeConfig): Promise<number> {
+  const newInst: RunningInstanceInfo = {
+    model_id: modelId,
+    model_path: `/models/${modelId}.gguf`,
+    port: 13370,
+    context_size: cfg.context_size || 4096,
+    started_at: new Date().toISOString(),
+  };
+
+  const existingInsts =
+    mockServerState.state === 'serving' ? mockServerState.instances || [] : [];
+  const updatedInsts = [
+    ...existingInsts.filter((i) => i.model_id !== modelId),
+    newInst,
+  ];
+
   mockServerState = {
     state: 'serving',
     model_id: modelId,
     model_path: `/models/${modelId}.gguf`,
     port: 13370,
-    context_size: 4096,
-    started_at: new Date().toISOString(),
+    context_size: cfg.context_size || 4096,
+    started_at: newInst.started_at,
+    instances: updatedInsts,
   };
   mockLogs.push(`[info] Started serving model ${modelId} on port 13370`);
   return 13370;
+}
+
+export async function mockStopInstance(modelId: string): Promise<void> {
+  if (mockServerState.state === 'serving') {
+    const remaining = (mockServerState.instances || []).filter(
+      (i) => i.model_id !== modelId
+    );
+    if (remaining.length === 0) {
+      mockServerState = { state: 'stopped' };
+    } else {
+      mockServerState = {
+        state: 'serving',
+        model_id: remaining[0].model_id,
+        model_path: remaining[0].model_path,
+        port: remaining[0].port,
+        context_size: remaining[0].context_size,
+        started_at: remaining[0].started_at,
+        instances: remaining,
+      };
+    }
+  }
+  mockLogs.push(`[info] Stopped instance ${modelId}`);
 }
 
 export async function mockStopServer(): Promise<void> {
@@ -347,7 +401,7 @@ export async function mockStopServer(): Promise<void> {
   mockLogs.push(`[info] Stopped inference server`);
 }
 
-export async function mockGetServerLogs(): Promise<string[]> {
+export async function mockGetServerLogs(_modelId?: string): Promise<string[]> {
   return [...mockLogs];
 }
 

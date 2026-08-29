@@ -2,7 +2,8 @@
 
 use catalog::load_bundled_catalog;
 use domain::{
-    CatalogEntry, DownloadState, DownloadTask, FitResult, HardwareProfile, ModelRecord, ServeConfig,
+    CatalogEntry, DownloadState, DownloadTask, FitResult, HardwareProfile, ModelRecord,
+    RunningInstanceInfo, ServeConfig,
 };
 use downloader::{download_model, DownloadOptions};
 use fit_engine::rank_recommendations;
@@ -372,14 +373,37 @@ async fn start_server(
 async fn stop_server(state: State<'_, AppState>) -> Result<(), String> {
     state
         .server_manager
-        .stop_server()
+        .stop_all()
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn get_server_logs(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-    Ok(state.server_manager.get_logs())
+async fn stop_instance(state: State<'_, AppState>, model_id: String) -> Result<(), String> {
+    state
+        .server_manager
+        .stop_instance(&model_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn list_running_instances(
+    state: State<'_, AppState>,
+) -> Result<Vec<RunningInstanceInfo>, String> {
+    Ok(state.server_manager.list_instances())
+}
+
+#[tauri::command]
+async fn get_server_logs(
+    state: State<'_, AppState>,
+    model_id: Option<String>,
+) -> Result<Vec<String>, String> {
+    if let Some(ref mid) = model_id {
+        Ok(state.server_manager.get_logs_for_model(mid))
+    } else {
+        Ok(state.server_manager.get_logs())
+    }
 }
 
 #[tauri::command]
@@ -579,6 +603,8 @@ pub fn run() {
             get_server_state,
             start_server,
             stop_server,
+            stop_instance,
+            list_running_instances,
             get_server_logs,
             get_settings,
             save_settings

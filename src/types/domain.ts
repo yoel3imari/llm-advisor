@@ -84,10 +84,26 @@ export interface ModelRecord {
   added_at: string;
 }
 
+export interface RunningInstanceInfo {
+  model_id: string;
+  model_path: string;
+  port: number;
+  context_size: number;
+  started_at: string;
+}
+
 export type ServerState =
   | { state: 'stopped' }
   | { state: 'starting'; model_id: string; port: number; started_at: string }
-  | { state: 'serving'; model_id: string; model_path: string; port: number; context_size: number; started_at: string }
+  | {
+      state: 'serving';
+      model_id: string;
+      model_path: string;
+      port: number;
+      context_size: number;
+      started_at: string;
+      instances?: RunningInstanceInfo[];
+    }
   | { state: 'error'; reason: string; stderr_tail: string[] };
 
 export interface LibraryReconciliation {
