@@ -23,9 +23,28 @@ export const MOCK_PROFILE: HardwareProfile = {
   disk_free_bytes: 256 * 1024 * 1024 * 1024,
   os_version: 'macOS 14.5 (Sonoma)',
   detected_at: new Date().toISOString(),
+  gpu_bandwidth_gbps: 192.0,
+  host_bandwidth_gbps: 40.0,
 };
 
 export const MOCK_CATALOG: CatalogEntry[] = [
+  {
+    id: 'tinyllama-15m-q4_k_m',
+    repo_id: 'mradermacher/tinyllama-15M-GGUF',
+    filename: 'tinyllama-15M.Q4_K_M.gguf',
+    family: 'tinyllama',
+    params_billions: 0.015,
+    n_layers: 6,
+    n_kv_heads: 6,
+    head_dim: 48,
+    context_train: 256,
+    quant: 'Q4_K_M',
+    file_size_bytes: 14650848,
+    sha256: '1c40391e29ecec2a408532a93e229d2bf3ad8652ad96de54eb58bc30f4bedc5b',
+    gated: false,
+    quality_tier: 3,
+    tags: ['tinyllama', '15m', 'ultra-light', 'test-download'],
+  },
   {
     id: 'qwen2.5-0.5b-instruct-q4_k_m',
     repo_id: 'Qwen/Qwen2.5-0.5B-Instruct-GGUF',
@@ -209,6 +228,12 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
     const scoreSpeed = Math.min(10, Math.max(1, speed / 6));
     const scoreQuality = entry.quality_tier * 2;
 
+    const leftover = Math.max(0, hostBudget - (weights + activations + overhead));
+    const bytesPerToken = 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * kvElemBytes * slots;
+    const maxTokens = bytesPerToken > 0 ? Math.floor(leftover / bytesPerToken) : entry.context_train;
+    const usableContext = Math.min(entry.context_train, Math.max(512, maxTokens));
+    const isConstrained = usableContext < entry.context_train;
+
     return {
       entry,
       fits,
@@ -216,6 +241,8 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
       est_kv_bytes: kv,
       est_total_bytes: total,
       max_context_that_fits: fits ? entry.context_train : 2048,
+      usable_context: usableContext,
+      is_context_constrained: isConstrained,
       recommended_gpu_layers: recommendedLayers,
       speed_tps_estimate: parseFloat(speed.toFixed(1)),
       score_fit: parseFloat(scoreFit.toFixed(1)),

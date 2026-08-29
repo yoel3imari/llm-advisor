@@ -72,7 +72,7 @@ export function LogViewer({ logs }: Props) {
           </button>
         </div>
       </div>
-      <div className="flex-1 p-3 overflow-y-auto space-y-1 text-zinc-300">
+      <div className="flex-1 p-3 overflow-y-auto space-y-0.5 text-zinc-300 select-text cursor-text selection:bg-indigo-500/40 selection:text-white">
         {logs.length === 0 ? (
           <div className="text-zinc-400 italic">No logs recorded yet.</div>
         ) : (
@@ -96,7 +96,7 @@ export function LogViewer({ logs }: Props) {
             return (
               <div
                 key={idx}
-                className={`leading-relaxed whitespace-pre-wrap break-all ${colorClass}`}
+                className={`leading-relaxed whitespace-pre-wrap break-all select-text cursor-text hover:bg-zinc-900/60 px-1 -mx-1 rounded transition-colors ${colorClass}`}
               >
                 {clean}
               </div>

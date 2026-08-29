@@ -118,22 +118,31 @@ export function LibraryView({
                 return (
                   <div
                     key={task.entry_id}
-                    className="bg-red-950/30 border border-red-800/60 rounded-xl p-4 space-y-2"
+                    className="bg-red-950/30 border border-red-800/60 rounded-xl p-4 space-y-3 shadow-sm"
                   >
                     <div className="flex items-center justify-between text-sm">
-                      <div className="font-semibold text-red-200">{task.entry_id}</div>
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span className="font-semibold text-red-200">{task.entry_id}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-900/60 text-red-300 border border-red-700/60">
+                          Download Failed
+                        </span>
+                      </div>
                       <button
                         onClick={() => handleCancelDownload(task.entry_id)}
-                        className="text-red-400 hover:text-red-200 transition-colors flex items-center gap-1 text-xs"
+                        className="text-red-400 hover:text-red-200 hover:bg-red-900/40 px-2 py-1 rounded transition-colors flex items-center gap-1 text-xs"
                         title="Dismiss Error"
                       >
-                        <XCircle className="w-4 h-4" />
+                        <XCircle className="w-3.5 h-3.5" />
                         <span>Dismiss</span>
                       </button>
                     </div>
-                    <div className="text-xs text-red-300 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-                      <span>{failReason}</span>
+
+                    <div className="p-3 bg-zinc-950/80 rounded-lg border border-red-900/50 space-y-1">
+                      <div className="text-[11px] font-semibold text-red-400">Error Diagnostic:</div>
+                      <div className="text-xs text-red-300 font-mono break-all whitespace-pre-wrap leading-relaxed">
+                        {failReason}
+                      </div>
                     </div>
                   </div>
                 );

@@ -38,6 +38,14 @@ pub struct HardwareProfile {
     pub disk_free_bytes: u64,
     pub os_version: String,
     pub detected_at: DateTime<Utc>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gpu_bandwidth_gbps: Option<f32>,
+    #[serde(default = "default_host_bandwidth_gbps")]
+    pub host_bandwidth_gbps: f32,
+}
+
+fn default_host_bandwidth_gbps() -> f32 {
+    40.0
 }
 
 /// Curated catalog entry describing a GGUF model and its architecture parameters.
@@ -126,6 +134,10 @@ pub struct FitResult {
     pub est_kv_bytes: u64,
     pub est_total_bytes: u64,
     pub max_context_that_fits: u32,
+    #[serde(default)]
+    pub usable_context: u32,
+    #[serde(default)]
+    pub is_context_constrained: bool,
     pub recommended_gpu_layers: u32,
     pub speed_tps_estimate: f32,
     pub score_fit: f32,

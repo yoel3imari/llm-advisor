@@ -1,5 +1,27 @@
 [
   {
+    "id": "tinyllama-15m-q4_k_m",
+    "repo_id": "mradermacher/tinyllama-15M-GGUF",
+    "filename": "tinyllama-15M.Q4_K_M.gguf",
+    "family": "tinyllama",
+    "params_billions": 0.015,
+    "n_layers": 6,
+    "n_kv_heads": 6,
+    "head_dim": 48,
+    "context_train": 256,
+    "quant": "Q4_K_M",
+    "file_size_bytes": 14650848,
+    "sha256": "1c40391e29ecec2a408532a93e229d2bf3ad8652ad96de54eb58bc30f4bedc5b",
+    "gated": false,
+    "quality_tier": 3,
+    "tags": [
+      "tinyllama",
+      "15m",
+      "ultra-light",
+      "test-download"
+    ]
+  },
+  {
     "id": "qwen2.5-0.5b-instruct-q4_k_m",
     "repo_id": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
     "filename": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
@@ -11,7 +33,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 491400032,
-    "sha256": "0663b826e09042345d6e2069d9655cd3ae84812d8f39a5894bed7b24fc0e86cc",
+    "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -33,7 +55,7 @@
     "context_train": 32768,
     "quant": "Q8_0",
     "file_size_bytes": 675710816,
-    "sha256": "4a774f8683c7a6ec686a4223565556409433745adf6e38fa5cba5bb0ad0e738e",
+    "sha256": "ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -55,7 +77,7 @@
     "context_train": 2048,
     "quant": "Q4_K_M",
     "file_size_bytes": 668788096,
-    "sha256": "015c9bb0376d9c3c9dab434ecb3bd57961dce1921a5b1bf134c6f1b824c25c8d",
+    "sha256": "9fecc3b3cd76bba89d504f29b616eedf7da85b96540e490ca5824d3f7d2776a0",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -77,7 +99,7 @@
     "context_train": 2048,
     "quant": "Q8_0",
     "file_size_bytes": 1170781568,
-    "sha256": "af3d4c9c752f6b73d20c2438137ba7482f2aa543bcdaf7c40f5c734dc10cab60",
+    "sha256": "a4c9bb1dbaa372f6381a035fa5c02ef087aaa1ff1f843a56a22328114f03fc59",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -99,7 +121,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 807694464,
-    "sha256": "7314cd624de8068beee86215e529a23665ff09e458977e32f30b8149764e7be1",
+    "sha256": "6f85a640a97cf2bf5b8e764087b1e83da0fdb51d7c9fab7d0fece9385611df83",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -121,7 +143,7 @@
     "context_train": 131072,
     "quant": "Q8_0",
     "file_size_bytes": 1321083008,
-    "sha256": "63290f8e9d0694bf5af3297e43746b5099307fcf378a2577e924ce9665319a7a",
+    "sha256": "432f310a77f4650a88d0fd59ecdd7cebed8d684bafea53cbff0473542964f0c3",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -143,7 +165,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 1117320736,
-    "sha256": "6ca5463cf24c16cd56d7ad7461524d813b07b3f29889b2fbdbb8286a7e97a14a",
+    "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -165,7 +187,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 1117320800,
-    "sha256": "9b548caac1819ddf3489d88fc77599c8fd322f56a95473569de85f541a7830cc",
+    "sha256": "1741e5b2d062b07acf048bf0d2c514dadf2a48f94e2b4aa0cfe069af3838ee2f",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -187,7 +209,7 @@
     "context_train": 8192,
     "quant": "Q4_K_M",
     "file_size_bytes": 1708582752,
-    "sha256": "90f9c2316393fb452b47988ffa7a411f0891e2c1a7178ae868ac4f70f96f7c8d",
+    "sha256": "e0aee85060f168f0f2d8473d7ea41ce2f3230c1bc1374847505ea599288a7787",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -209,7 +231,7 @@
     "context_train": 8192,
     "quant": "Q8_0",
     "file_size_bytes": 2784495456,
-    "sha256": "97bee9b9c076d03241184716aa06998a01edb659360419e8493feb677199a186",
+    "sha256": "2d448a9aab894b8e8e18168cf3f490cb9f65632222f29f93514ac9ecc754debe",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -231,7 +253,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 2019377696,
-    "sha256": "4cb1444f81355e47d236ada8190f0325ce46412a83f3ab62a1d63bb314592ebc",
+    "sha256": "6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -253,7 +275,7 @@
     "context_train": 131072,
     "quant": "Q8_0",
     "file_size_bytes": 3421899296,
-    "sha256": "291ce1d4ca0fcef86407b7c6531bf85a1c348c65d5d3c69c57c98fec6483bb1f",
+    "sha256": "b5607b5090a8280063fff2d706bb3408ca6542341b06aab39c3eca0a28575921",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -275,7 +297,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 2104932768,
-    "sha256": "5ae0c201348e276d543a1e5c0e053370e32415774095c677319f62b302b1620a",
+    "sha256": "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -297,7 +319,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 2393232672,
-    "sha256": "216e0385d8d2da14827e44b4482f0d2885e041d99bb1103c60092eedd2da1284",
+    "sha256": "e4165e3a71af97f1b4820da61079826d8752a2088e313af0c7d346796c38eff5",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -319,7 +341,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 4920739232,
-    "sha256": "854506123b68372492b8a99bb3a999594672b394791cf1153f8da5ffb5f1c59a",
+    "sha256": "7b064f5842bf9532c91456deda288a1b672397a54fa729aa665952863033557c",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -341,7 +363,7 @@
     "context_train": 131072,
     "quant": "Q5_K_M",
     "file_size_bytes": 5732992416,
-    "sha256": "fb984c9153528e2ffbd10149938fa53e0dfcece23511bd698c3691236d470110",
+    "sha256": "14e10feba0c82a55da198dcd69d137206ad22d116a809926d27fa5f2398c69c7",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -363,7 +385,7 @@
     "context_train": 131072,
     "quant": "Q8_0",
     "file_size_bytes": 8540775840,
-    "sha256": "13ba7de6d825796cd4846a9428031ca1be96a4f615bce26c19aafb27a9cf8a2c",
+    "sha256": "9da71c45c90a821809821244d4971e5e5dfad7eb091f0b8ff0546392393b6283",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -384,7 +406,7 @@
     "context_train": 131072,
     "quant": "Q3_K_M",
     "file_size_bytes": 4018922912,
-    "sha256": "06a15ed3e389582957b272e73f7f4f2e0c1ab6d6ad624d5567c0e37807561d1c",
+    "sha256": "6be122b5c8f2a33974953e58e0ffd2be505661acc6f4caf733e4bca130e89fea",
     "gated": false,
     "quality_tier": 3,
     "tags": [
@@ -406,7 +428,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 4683074240,
-    "sha256": "8a45e4e923f03f4106bcc375cb83fc383c2c570529acb2085c6468df10b50ad5",
+    "sha256": "65b8fcd92af6b4fefa935c625d1ac27ea29dcb6ee14589c55a8f115ceaaa1423",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -428,7 +450,7 @@
     "context_train": 131072,
     "quant": "Q5_K_M",
     "file_size_bytes": 5444831936,
-    "sha256": "5f47abc334aff6919f4868913b4b0b00e468e844a91aee45e527e4a145d6ea4d",
+    "sha256": "2e998d7e181c8756c5ffc55231b9ee1cdc9d3acec4245d6e27d32bd8e738c474",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -449,7 +471,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 4372812000,
-    "sha256": "61b301599ad6e7ee371b60654026a34134dac0ddfc94a2b37ed06ebb589a0644",
+    "sha256": "1270d22c0fbb3d092fb725d4d96c457b7b687a5f5a715abe1e818da303e562b6",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -471,7 +493,7 @@
     "context_train": 8192,
     "quant": "Q4_K_M",
     "file_size_bytes": 5761057728,
-    "sha256": "f597d13cf2cbc48adc22e2d59fcdcc3d791a04b8c64b395a8206cfc72eccf766",
+    "sha256": "13b2a7b4115bbd0900162edcebe476da1ba1fc24e718e8b40d32f6e300f56dfe",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -493,7 +515,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 4683073504,
-    "sha256": "8d4165db371b07398639b632ae0fc501b22a6b641e6e5ec82196d15447d4f3e2",
+    "sha256": "731ece8d06dc7eda6f6572997feb9ee1258db0784827e642909d9b565641937b",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -515,7 +537,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 4920736608,
-    "sha256": "c0d0fb9ffe810282d5de63ac583ad8e30d3c34ed557c7cb3c48addae372a9a81",
+    "sha256": "87bcba20b4846d8dadf753d3ff48f9285d131fc95e3e0e7e934d4f20bc896f5d",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -537,7 +559,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 7477208192,
-    "sha256": "d0e60d50effe9d7a7ac9d0646872f0a040107a9f2789c89e77591f11991105e7",
+    "sha256": "7c1a10d202d8788dbe5628dc962254d10654c853cae6aaeca0618f05490d4a46",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -559,7 +581,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 8988110976,
-    "sha256": "d989c91de35f32c18bdb8bec96a4b9fff2c3e5bca066503c63a5ca54dd537a4b",
+    "sha256": "e47ad95dad6ff848b431053b375adb5d39321290ea2c638682577dafca87c008",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -581,7 +603,7 @@
     "context_train": 131072,
     "quant": "Q5_K_M",
     "file_size_bytes": 10508873856,
-    "sha256": "fd9ff5dc4878378e3ef9c63dfdbaef3abda1ca8acad14d1f439432df4a1f17bd",
+    "sha256": "48ad2dafedac636f62847f5338c356cd21f5cfa6b1e2c885360cb10c890b8cb2",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -602,7 +624,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 8988110240,
-    "sha256": "20b2cf0ac7540c6f89d3b02568d045284d2d515193f2697b21e380f9b4d0156f",
+    "sha256": "0b319bd0572f2730bfe11cc751defe82045fad5085b4e60591ac2cd2d9633181",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -624,7 +646,7 @@
     "context_train": 8192,
     "quant": "Q4_K_M",
     "file_size_bytes": 16645381632,
-    "sha256": "36c8682bd56f7da4faca16b9c17faedc42bafb4656a49a3d29c4b85b2064fa4e",
+    "sha256": "503a87ab47c9e7fb27545ec8592b4dc4493538bd47b397ceb3197e10a0370d23",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -646,7 +668,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 19851336576,
-    "sha256": "c933aa99b1a3e41ac7ceb16c6794caedbc41e6b40774085b387c1f081ea243cd",
+    "sha256": "2e5f6daea180dbc59f65a40641e94d3973b5dbaa32b3c0acf54647fa874e519e",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -668,7 +690,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 19851335840,
-    "sha256": "7c63ceb85ad6c733d78e3e44e038528197e7fe8a86dbc3eb09912b21998bc62c",
+    "sha256": "bed9b0f551f5b95bf9da5888a48f0f87c37ad6b72519c4cbd775f54ac0b9fc62",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -690,7 +712,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 26441533376,
-    "sha256": "5b1060e7b0e484e0ad266b5bfd4ad6a5cc4a05ef0c3d3981bd06b340e1fa0f25",
+    "sha256": "9193684683657e90707087bd1ed19fd0b277ab66358d19edeadc26d6fdec4f53",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -713,7 +735,7 @@
     "context_train": 32768,
     "quant": "Q3_K_M",
     "file_size_bytes": 20363356096,
-    "sha256": "254cccd6c12fd8d352b19018930829049e8c65952de859e1c34cadea99d13dd7",
+    "sha256": "bd2e1499e68195f1a6ff151e6fa5c6632acc150b80cca4a3772cbb7ca59d44cd",
     "gated": false,
     "quality_tier": 3,
     "tags": [
@@ -735,7 +757,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 42520398400,
-    "sha256": "273c07cdbbca671fa5e8fc091b7a012ace0e0354e04a54a2ed5cc645921c15bc",
+    "sha256": "f775c87029be95fb41df9e2882e6e938b73121c30ffc235ac6b6b880add49aa5",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -757,7 +779,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 42520395936,
-    "sha256": "c60038559cc9743d6d8478358a00925a32e04df0b0c2591b014726d0c2393d52",
+    "sha256": "181a82a1d6d2fa24fe4db83a68eee030384986bdbdd4773ba76424e3a6eb9fd8",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -779,7 +801,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 491400064,
-    "sha256": "07d21d704ff37d7c7f38202fb2c382d6d221a8ee652c730ef9ebbe82b567a899",
+    "sha256": "1d9614638d18024d0fbb36575a15f1302a3adf044df10345688ec4f6e1c4ff32",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -801,7 +823,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 1117320768,
-    "sha256": "eaf7c99d99dcc2e20f1c1f1b114249fa090354dfed87131397b265a221f4d9c8",
+    "sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -823,7 +845,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 2104932800,
-    "sha256": "9e90be2bcd16f4ac48605567bbbabe4c4c276a89cf9fe496da074a42c6a13a31",
+    "sha256": "724fb256bec1ff062b2f65e4569e871ad2e95ab2a3989723d1769c54294730b7",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -842,10 +864,10 @@
     "n_layers": 28,
     "n_kv_heads": 4,
     "head_dim": 128,
-    "context_train": 131072,
+    "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 4683073536,
-    "sha256": "fa9e1815472201e7dea978475c1f3ca7bc7df773eaeb3b3a383258c25b052f6f",
+    "sha256": "509287f78cb4d4cf6b3843734733b914b2c158e43e22a7f4bf5e963800894d3c",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -864,10 +886,10 @@
     "n_layers": 48,
     "n_kv_heads": 8,
     "head_dim": 128,
-    "context_train": 131072,
+    "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 8988110272,
-    "sha256": "f87bfd654aed5318df1819cc17b5204270b69d05d905c0fa6960d84e4843ba18",
+    "sha256": "c1e659736d89ac1065fb495330fb824d94001974a4bfa78e7270e43476a8d940",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -886,10 +908,10 @@
     "n_layers": 64,
     "n_kv_heads": 8,
     "head_dim": 128,
-    "context_train": 131072,
+    "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 19851335872,
-    "sha256": "2687a00b84e7e35c652ea0024cb8747070b090e9f311ab9b6461b8a71c2bc50f",
+    "sha256": "4d64b316b5e6319d9613e0d97935d9ebd631fc7e334da400d00085eca749d085",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -911,8 +933,8 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 42520398816,
-    "sha256": "9892b2dd07783188096407a0708e831805878231af6e239bdd6a60cca105d9d1",
-    "gated": true,
+    "sha256": "32df3baccb556f9840059b2528b2dee4d3d516b24afdfb9d0c56ff5f63e3a664",
+    "gated": false,
     "quality_tier": 5,
     "tags": [
       "llama",
@@ -933,7 +955,7 @@
     "context_train": 16384,
     "quant": "Q4_K_M",
     "file_size_bytes": 9053114816,
-    "sha256": "1826bcf8958a972352b79e92a40caa9098e0eea2dd8508825633df0e28c8fd4d",
+    "sha256": "009aba717c09d4a35890c7d35eb59d54e1dba884c7c526e7197d9c13ab5911d9",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -956,7 +978,7 @@
     "context_train": 8192,
     "quant": "Q8_0",
     "file_size_bytes": 144811360,
-    "sha256": "4eebc63f24ba23515a6bd73560e7bb5e6279611c38a64bd8998c5f6ab1198185",
+    "sha256": "5a1395716f7913741cc51d98581b9b1228d80987a9f7d3664106742eb06bba83",
     "gated": false,
     "quality_tier": 3,
     "tags": [
@@ -978,7 +1000,7 @@
     "context_train": 8192,
     "quant": "Q8_0",
     "file_size_bytes": 386404992,
-    "sha256": "8984394569a035f54547b90ad7b351656dd289c45808377dd2d0cf644a248a79",
+    "sha256": "48ab3034d0dd401fbc721eb1df3217902fee7dab9078992d66431f09b7750201",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -1000,7 +1022,7 @@
     "context_train": 8192,
     "quant": "Q4_K_M",
     "file_size_bytes": 1055609536,
-    "sha256": "697ef022637a26165cd8fdf936f4b7df15cff6c0a29430d8a9b16bfc0ee067e6",
+    "sha256": "decd2598bc2c8ed08c19adc3c8fdd461ee19ed5708679d1c54ef54a5a30d4f33",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -1022,7 +1044,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 7477208192,
-    "sha256": "d0e60d50effe9d7a7ac9d0646872f0a040107a9f2789c89e77591f11991105e7",
+    "sha256": "7c1a10d202d8788dbe5628dc962254d10654c853cae6aaeca0618f05490d4a46",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -1045,7 +1067,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 14333908672,
-    "sha256": "f63a3d3b6decb5564f3e2885f48b9e302448b87688427509dd0468c02ed06fbf",
+    "sha256": "d1a6d049f09730c3f8ba26cf6b0b60c89790b5fdafa9a59c819acdfe93fffd1b",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -1067,7 +1089,7 @@
     "context_train": 32768,
     "quant": "Q4_K_M",
     "file_size_bytes": 19851336544,
-    "sha256": "6c1b2667724ef0f6d6e828643aef45a41d4343054c4ef5791d87180fa30137d0",
+    "sha256": "c499801e682e2379528090c50e106837ca1d69dc3bf3ff3a9af830a0eb49cdf6",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -1091,7 +1113,7 @@
     "context_train": 163840,
     "quant": "Q4_K_M",
     "file_size_bytes": 10364416768,
-    "sha256": "c040dfad35e1a37e350f06ca1e9658396f527ef6b6ad15202e64044f292a8166",
+    "sha256": "603bd3f8a0281d16571da7c08bd661ee17ff0d1be6fcbd1b42242da257ef0bb8",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -1113,7 +1135,7 @@
     "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 4920733824,
-    "sha256": "fa9aa898c69ffd6887b3dbd7f3aa52b6d6726dc48668e1b151b576d00f78b68e",
+    "sha256": "d4403ce5a6e930f4c2509456388c20d633a15ff08dd52ef3b142ff1810ec3553",
     "gated": false,
     "quality_tier": 5,
     "tags": [
@@ -1126,7 +1148,7 @@
   },
   {
     "id": "starcoder2-7b-q4_k_m",
-    "repo_id": "bartowski/starcoder2-7b-GGUF",
+    "repo_id": "second-state/StarCoder2-7B-GGUF",
     "filename": "starcoder2-7b-Q4_K_M.gguf",
     "family": "starcoder2",
     "params_billions": 7.24,
@@ -1135,9 +1157,9 @@
     "head_dim": 128,
     "context_train": 16384,
     "quant": "Q4_K_M",
-    "file_size_bytes": 4480000000,
-    "sha256": "4b68453738b556f8f7c9e05ce413c6ea6d8ad91ee4c0eb3638421379f826372d",
-    "gated": true,
+    "file_size_bytes": 4402887488,
+    "sha256": "d6d6e50fa0c240bb5ea13bae6c06e7d3dbb689b0edc55b3610c867c44d9baa7b",
+    "gated": false,
     "quality_tier": 4,
     "tags": [
       "bigcode",
@@ -1149,7 +1171,7 @@
   },
   {
     "id": "starcoder2-15b-q4_k_m",
-    "repo_id": "bartowski/starcoder2-15b-GGUF",
+    "repo_id": "second-state/StarCoder2-15B-GGUF",
     "filename": "starcoder2-15b-Q4_K_M.gguf",
     "family": "starcoder2",
     "params_billions": 16.1,
@@ -1158,9 +1180,9 @@
     "head_dim": 128,
     "context_train": 16384,
     "quant": "Q4_K_M",
-    "file_size_bytes": 9850000000,
-    "sha256": "4b68453738b556f8f7c9e05ce413c6ea6d8ad91ee4c0eb3638421379f826372d",
-    "gated": true,
+    "file_size_bytes": 9860188000,
+    "sha256": "6b7690a2855185c19b4e1eaf530d6cf72f53c0268b237abb29f4cfd95b34739f",
+    "gated": false,
     "quality_tier": 5,
     "tags": [
       "bigcode",

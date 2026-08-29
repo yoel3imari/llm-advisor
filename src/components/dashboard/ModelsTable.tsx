@@ -85,10 +85,35 @@ export function ModelsTable({
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
-  const downloadedIds = useMemo(
-    () => new Set(libraryRecords.map((r) => r.entry_id)),
+  const libraryKey = useMemo(
+    () => libraryRecords.map((r) => r.entry_id).sort().join(','),
     [libraryRecords]
   );
+
+  const downloadedIds = useMemo(
+    () => new Set(libraryRecords.map((r) => r.entry_id)),
+    [libraryKey]
+  );
+
+  const downloadsStatusKey = useMemo(
+    () =>
+      activeDownloads
+        .map((d) => `${d.entry_id}:${d.state.status}:${d.error ? 'err' : 'ok'}`)
+        .sort()
+        .join(','),
+    [activeDownloads]
+  );
+
+  const downloadingEntryIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (downloadingId) ids.add(downloadingId);
+    for (const d of activeDownloads) {
+      if (d.state.status !== 'failed' && !d.error) {
+        ids.add(d.entry_id);
+      }
+    }
+    return ids;
+  }, [downloadingId, downloadsStatusKey]);
 
   // Filtered dataset
   const filteredData = useMemo(() => {
@@ -340,13 +365,13 @@ export function ModelsTable({
       },
       {
         id: 'max_context',
-        accessorFn: (row) => row.max_context_that_fits,
+        accessorFn: (row) => row.usable_context ?? row.max_context_that_fits,
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Max Ctx (Tokens)
+            Usable Ctx
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -356,11 +381,53 @@ export function ModelsTable({
             )}
           </button>
         ),
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
-            {row.original.max_context_that_fits.toLocaleString()}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const res = row.original;
+          const usable = res.usable_context ?? res.max_context_that_fits;
+          const native = res.entry.context_train;
+          const isConstrained = res.is_context_constrained || usable < native;
+          const usableK = usable >= 1024 ? `${Math.round(usable / 1024)}k` : `${usable}`;
+          const nativeK = native >= 1024 ? `${Math.round(native / 1024)}k` : `${native}`;
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  {isConstrained ? (
+                    <span className={`font-mono text-xs px-1.5 py-0.5 rounded border whitespace-nowrap ${
+                      usable < 4096
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-800/50 font-semibold'
+                        : 'bg-zinc-800/80 text-zinc-200 border-zinc-700/50'
+                    }`}>
+                      {usableK} <span className="text-zinc-500 font-normal">→ {nativeK}</span>
+                    </span>
+                  ) : (
+                    <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+                      {nativeK}
+                    </span>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5 max-w-xs">
+                <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
+                  Context Window Headroom
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Usable Context:</span>{' '}
+                  <span className="font-semibold text-emerald-300">{usable.toLocaleString()} tokens</span>
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Native Context:</span> <span>{native.toLocaleString()} tokens</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800/60">
+                  {isConstrained
+                    ? 'Context is dynamically bounded by RAM headroom to prevent paging.'
+                    : 'Full native model context fits within system working memory.'}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       },
       {
         id: 'gpu_layers',
@@ -415,11 +482,41 @@ export function ModelsTable({
             )}
           </button>
         ),
-        cell: ({ row }) => (
-          <span className="font-mono text-xs font-semibold text-cyan-300 whitespace-nowrap">
-            {row.original.speed_tps_estimate.toFixed(1)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const res = row.original;
+          const layers = res.recommended_gpu_layers;
+          const total = res.entry.n_layers;
+          const runMode = layers === total && total > 0
+            ? '100% GPU VRAM'
+            : layers > 0
+            ? `Partial Offload (${layers}/${total} layers)`
+            : 'CPU DDR RAM';
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-mono text-xs font-semibold text-cyan-300 cursor-help underline decoration-dotted decoration-cyan-700/60 underline-offset-2 whitespace-nowrap">
+                  {res.speed_tps_estimate.toFixed(1)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5 max-w-xs">
+                <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
+                  Throughput (Roofline Model)
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Estimated Speed:</span>{' '}
+                  <span className="font-semibold text-cyan-300">~{res.speed_tps_estimate.toFixed(1)} tok/s</span>
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Execution Mode:</span> <span>{runMode}</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800/60">
+                  Calculated from hardware memory bandwidth roofline and active parameter footprint.
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       },
       {
         id: 'fit_score',
@@ -460,12 +557,7 @@ export function ModelsTable({
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = downloadedIds.has(entry.id);
-          const activeTask = activeDownloads.find((d) => d.entry_id === entry.id);
-          const isTaskFailed =
-            activeTask &&
-            (activeTask.state.status === 'failed' || !!activeTask.error);
-          const isCurrentDownloading =
-            (!isTaskFailed && !!activeTask) || downloadingId === entry.id;
+          const isCurrentDownloading = downloadingEntryIds.has(entry.id);
 
           if (isCurrentDownloading) {
             return (
@@ -547,12 +639,20 @@ export function ModelsTable({
         },
       },
     ],
-    [hostBudget, libraryRecords, activeDownloads, downloadingId, onDownload, onNavigateToServer, onDeleteFromLibrary]
+    [
+      hostBudget,
+      downloadedIds,
+      downloadingEntryIds,
+      onDownload,
+      onNavigateToServer,
+      onDeleteFromLibrary,
+    ]
   );
 
   const table = useReactTable({
     data: filteredData,
     columns,
+    getRowId: (row) => row.entry.id,
     state: {
       sorting,
     },

@@ -14,7 +14,7 @@ use server_manager::{ServerManager, ServerState};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, RwLock};
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,7 +184,11 @@ async fn reconcile_library(state: State<'_, AppState>) -> Result<LibraryReconcil
 }
 
 #[tauri::command]
-async fn start_download(state: State<'_, AppState>, entry_id: String) -> Result<String, String> {
+async fn start_download(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    entry_id: String,
+) -> Result<String, String> {
     let catalog = load_bundled_catalog().map_err(|e| e.to_string())?;
     let entry = catalog
         .into_iter()
@@ -239,6 +243,7 @@ async fn start_download(state: State<'_, AppState>, entry_id: String) -> Result<
             }
         }));
 
+    let app_handle = app.clone();
     tokio::spawn(async move {
         let options = DownloadOptions {
             entry: entry.clone(),
@@ -260,12 +265,54 @@ async fn start_download(state: State<'_, AppState>, entry_id: String) -> Result<
                 };
                 let _ = library.add_verified(record);
                 downloads_map.lock().unwrap().remove(&eid);
+
+                // 1. Emit completion event to frontend
+                let _ = app_handle.emit(
+                    "download-complete",
+                    serde_json::json!({
+                        "entry_id": eid,
+                        "filename": entry.filename,
+                        "size_bytes": entry.file_size_bytes,
+                    }),
+                );
+
+                // 2. Fire OS desktop notification
+                {
+                    use tauri_plugin_notification::NotificationExt;
+                    let _ = app_handle
+                        .notification()
+                        .builder()
+                        .title("Model Download Complete")
+                        .body(format!("'{}' is verified and ready to serve.", eid))
+                        .show();
+                }
             }
             Err(e) => {
+                let err_msg = e.to_string();
                 if let Some((t, _)) = downloads_map.lock().unwrap().get_mut(&eid) {
                     t.state = DownloadState::Failed {
-                        reason: e.to_string(),
+                        reason: err_msg.clone(),
                     };
+                }
+
+                // 1. Emit failure event to frontend
+                let _ = app_handle.emit(
+                    "download-failed",
+                    serde_json::json!({
+                        "entry_id": eid,
+                        "reason": err_msg.clone(),
+                    }),
+                );
+
+                // 2. Fire OS desktop notification
+                {
+                    use tauri_plugin_notification::NotificationExt;
+                    let _ = app_handle
+                        .notification()
+                        .builder()
+                        .title("Model Download Failed")
+                        .body(format!("Failed to download '{}': {}", eid, err_msg))
+                        .show();
                 }
             }
         }
@@ -398,6 +445,7 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let app_data_dir = app
                 .path()

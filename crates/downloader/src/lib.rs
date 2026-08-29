@@ -122,14 +122,6 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
         )));
     }
 
-    let remote_sha256 = head_resp
-        .headers()
-        .get("x-linked-etag")
-        .or_else(|| head_resp.headers().get("etag"))
-        .and_then(|h| h.to_str().ok())
-        .map(clean_etag)
-        .filter(|s| s.len() == 64);
-
     let header_len = head_resp.content_length().unwrap_or(0);
     let total_bytes = if header_len > 0 {
         header_len
@@ -216,16 +208,12 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
     // 4. SHA256 Verification
     let computed_sha256 = compute_file_sha256(&part_path).await?;
     let matches_catalog = computed_sha256.eq_ignore_ascii_case(&entry.sha256);
-    let matches_remote = remote_sha256
-        .as_ref()
-        .map(|r| computed_sha256.eq_ignore_ascii_case(r))
-        .unwrap_or(false);
 
-    if !matches_catalog && !matches_remote {
+    if !matches_catalog {
         // Checksum mismatch -> delete corrupted part file and return typed error
         let _ = tokio::fs::remove_file(&part_path).await;
         return Err(AppError::DownloadChecksum {
-            expected: remote_sha256.unwrap_or_else(|| entry.sha256.clone()),
+            expected: entry.sha256.clone(),
             actual: computed_sha256,
         });
     }

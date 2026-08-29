@@ -11,6 +11,8 @@ export interface HardwareProfile {
   disk_free_bytes: number;
   os_version: string;
   detected_at: string;
+  gpu_bandwidth_gbps?: number | null;
+  host_bandwidth_gbps?: number;
 }
 
 export interface CatalogEntry {
@@ -48,6 +50,8 @@ export interface FitResult {
   est_kv_bytes: number;
   est_total_bytes: number;
   max_context_that_fits: number;
+  usable_context?: number;
+  is_context_constrained?: boolean;
   recommended_gpu_layers: number;
   speed_tps_estimate: number;
   score_fit: number;

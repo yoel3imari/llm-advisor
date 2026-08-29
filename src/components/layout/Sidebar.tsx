@@ -1,4 +1,4 @@
-import { Cpu, FolderDown, PlayCircle, Settings, X, Loader2 } from 'lucide-react';
+import { Cpu, FolderDown, PlayCircle, Settings, X } from 'lucide-react';
 import type { DownloadTask, ServerState } from '../../types/domain';
 import { ServerStatusPill } from './ServerStatusPill';
 
@@ -86,7 +86,7 @@ export function Sidebar({
               title="Click to open Library"
             >
               <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-200 group-hover:text-indigo-300 transition-colors">
-                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                {/* <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" /> */}
                 <span>Active Downloads</span>
               </div>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">
@@ -98,10 +98,6 @@ export function Sidebar({
               {activeDownloads.map((task) => {
                 const isFailed =
                   task.state.status === 'failed' || !!task.error;
-                const failReason =
-                  task.state.status === 'failed'
-                    ? task.state.reason
-                    : task.error || 'Download failed';
                 const progressPct =
                   task.bytes_total > 0
                     ? Math.round((task.bytes_done / task.bytes_total) * 100)
@@ -111,7 +107,9 @@ export function Sidebar({
                   return (
                     <div
                       key={task.entry_id}
-                      className="p-2.5 rounded-lg bg-red-950/40 border border-red-800/80 transition-all space-y-1 text-xs"
+                      onClick={() => onSelectTab('library')}
+                      className="p-2.5 rounded-lg bg-red-950/40 border border-red-800/80 hover:border-red-700/80 transition-all space-y-1 text-xs cursor-pointer group"
+                      title="Click to view full error in Library"
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span
@@ -133,8 +131,11 @@ export function Sidebar({
                           </button>
                         )}
                       </div>
-                      <div className="text-[10px] text-red-300 leading-tight">
-                        {failReason}
+                      <div className="text-[10px] font-semibold text-red-300 flex items-center justify-between">
+                        <span>Download failed</span>
+                        <span className="text-[9px] text-red-400/70 font-normal group-hover:underline">
+                          View in Library →
+                        </span>
                       </div>
                     </div>
                   );

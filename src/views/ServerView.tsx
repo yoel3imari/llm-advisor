@@ -295,9 +295,9 @@ export function ServerView({
             <span>Inference Server Error: {serverState.reason}</span>
           </div>
           {serverState.stderr_tail.length > 0 && (
-            <div className="font-mono bg-black/50 p-2.5 rounded border border-red-900/60 overflow-x-auto space-y-0.5">
+            <div className="font-mono bg-black/50 p-2.5 rounded border border-red-900/60 overflow-x-auto space-y-0.5 select-text cursor-text selection:bg-red-500/40 selection:text-white">
               {serverState.stderr_tail.map((line, idx) => (
-                <div key={idx}>{line}</div>
+                <div key={idx} className="select-text">{line}</div>
               ))}
             </div>
           )}

@@ -59,9 +59,19 @@ mod tests {
     #[test]
     fn test_load_bundled_catalog() {
         let catalog = load_bundled_catalog().expect("Bundled catalog must parse cleanly");
-        assert_eq!(catalog.len(), 53);
+        assert_eq!(catalog.len(), 54);
 
         // Verify specific models
+        let tiny = catalog
+            .iter()
+            .find(|e| e.id == "tinyllama-15m-q4_k_m")
+            .unwrap();
+        assert_eq!(tiny.family, "tinyllama");
+        assert_eq!(tiny.n_layers, 6);
+        assert_eq!(tiny.n_kv_heads, 6);
+        assert_eq!(tiny.head_dim, 48);
+        assert_eq!(tiny.file_size_bytes, 14650848);
+
         let llama = catalog
             .iter()
             .find(|e| e.id == "llama-3.1-8b-instruct-q4_k_m")

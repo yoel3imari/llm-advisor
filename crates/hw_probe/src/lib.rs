@@ -20,6 +20,102 @@ pub trait WorkingSetProvider: Send + Sync {
     fn get_metal_device_info(&self) -> Option<MetalDeviceInfo>;
 }
 
+/// Lookup theoretical memory bandwidth in GB/s for recognized GPUs.
+pub fn lookup_gpu_bandwidth_gbps(gpu_name: &str) -> Option<f32> {
+    let name = gpu_name.to_lowercase();
+
+    // NVIDIA GeForce RTX 40 series (Ada Lovelace)
+    if name.contains("4090") { return Some(1008.0); }
+    if name.contains("4080 super") { return Some(736.0); }
+    if name.contains("4080") { return Some(717.0); }
+    if name.contains("4070 ti super") { return Some(672.0); }
+    if name.contains("4070 ti") { return Some(504.0); }
+    if name.contains("4070 super") { return Some(504.0); }
+    if name.contains("4070") { return Some(504.0); }
+    if name.contains("4060 ti") { return Some(288.0); }
+    if name.contains("4060") { return Some(272.0); }
+
+    // NVIDIA GeForce RTX 30 series (Ampere)
+    if name.contains("3090 ti") { return Some(1008.0); }
+    if name.contains("3090") { return Some(936.0); }
+    if name.contains("3080 ti") { return Some(912.0); }
+    if name.contains("3080") { return Some(760.0); }
+    if name.contains("3070 ti") { return Some(608.0); }
+    if name.contains("3070") { return Some(448.0); }
+    if name.contains("3060 ti") { return Some(448.0); }
+    if name.contains("3060") { return Some(360.0); }
+
+    // NVIDIA Data Center / Workstation
+    if name.contains("h100") { return Some(3350.0); }
+    if name.contains("a100") { return Some(2039.0); }
+    if name.contains("l40s") || name.contains("l40") { return Some(864.0); }
+    if name.contains("l4") { return Some(300.0); }
+    if name.contains("a6000") { return Some(768.0); }
+    if name.contains("a5000") { return Some(768.0); }
+    if name.contains("a4000") { return Some(448.0); }
+    if name.contains("titan rtx") { return Some(672.0); }
+    if name.contains("titan v") { return Some(653.0); }
+
+    // Apple Silicon
+    if name.contains("m4 ultra") { return Some(800.0); }
+    if name.contains("m4 max") { return Some(410.0); }
+    if name.contains("m4 pro") { return Some(273.0); }
+    if name.contains("m4") { return Some(120.0); }
+    if name.contains("m3 ultra") { return Some(800.0); }
+    if name.contains("m3 max") { return Some(300.0); }
+    if name.contains("m3 pro") { return Some(150.0); }
+    if name.contains("m3") { return Some(100.0); }
+    if name.contains("m2 ultra") { return Some(800.0); }
+    if name.contains("m2 max") { return Some(400.0); }
+    if name.contains("m2 pro") { return Some(200.0); }
+    if name.contains("m2") { return Some(100.0); }
+    if name.contains("m1 ultra") { return Some(800.0); }
+    if name.contains("m1 max") { return Some(400.0); }
+    if name.contains("m1 pro") { return Some(200.0); }
+    if name.contains("m1") { return Some(68.25); }
+
+    // AMD Radeon RX 7000 series (RDNA3)
+    if name.contains("7900 xtx") { return Some(960.0); }
+    if name.contains("7900 xt") { return Some(800.0); }
+    if name.contains("7900 gre") { return Some(576.0); }
+    if name.contains("7800 xt") { return Some(624.0); }
+    if name.contains("7700 xt") { return Some(432.0); }
+    if name.contains("7600 xt") { return Some(288.0); }
+    if name.contains("7600") { return Some(288.0); }
+
+    // AMD Radeon RX 6000 series (RDNA2)
+    if name.contains("6950 xt") || name.contains("6900 xt") { return Some(576.0); }
+    if name.contains("6800 xt") || name.contains("6800") { return Some(512.0); }
+    if name.contains("6700 xt") { return Some(384.0); }
+    if name.contains("6600 xt") || name.contains("6600") { return Some(256.0); }
+
+    // AMD Workstation / Mac Pro / Intel Macs
+    if name.contains("vega ii") { return Some(1024.0); }
+    if name.contains("vega 64") { return Some(484.0); }
+    if name.contains("vega 56") { return Some(410.0); }
+    if name.contains("vega 48") { return Some(384.0); }
+    if name.contains("5500m") || name.contains("5500 xt") { return Some(192.0); }
+    if name.contains("5700 xt") || name.contains("5700") { return Some(448.0); }
+    if name.contains("5300m") { return Some(96.0); }
+
+    // AMD APU / Strix Halo / Ryzen AI MAX / Grace
+    if name.contains("strix halo") || name.contains("ryzen ai max") { return Some(273.0); }
+    if name.contains("grace") { return Some(500.0); }
+
+    // Intel Arc
+    if name.contains("a770") { return Some(560.0); }
+    if name.contains("a750") { return Some(512.0); }
+    if name.contains("a580") { return Some(512.0); }
+    if name.contains("a380") { return Some(186.0); }
+
+    None
+}
+
+/// Estimate default host DDR bandwidth in GB/s based on logical CPU core count.
+pub fn estimate_host_bandwidth_gbps(_logical_cores: u32) -> f32 {
+    50.0
+}
+
 /// Probe Linux GPU devices (NVIDIA, AMD DRM, Intel/lspci).
 #[cfg(target_os = "linux")]
 pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
@@ -39,10 +135,13 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
                     let name = parts[0].to_string();
                     if let Ok(mb) = parts[1].parse::<u64>() {
                         let vram_bytes = mb * 1024 * 1024;
+                        let is_unified = name.to_lowercase().contains("grace")
+                            || name.to_lowercase().contains("tegra")
+                            || name.to_lowercase().contains("orin");
                         return Some(MetalDeviceInfo {
                             device_name: name,
                             working_set_bytes: vram_bytes,
-                            has_unified_memory: false,
+                            has_unified_memory: is_unified,
                             vram_bytes: Some(vram_bytes),
                         });
                     }
@@ -104,18 +203,24 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
                 }
             }
 
+            // If discrete GPU is found, prioritize it and filter out small iGPUs <= 2GB
             if let Some(d_name) = discrete_name {
+                let is_unified = d_name.to_lowercase().contains("strix halo")
+                    || d_name.to_lowercase().contains("ryzen ai max");
                 return Some(MetalDeviceInfo {
                     device_name: d_name,
                     working_set_bytes: drm_vram.unwrap_or(0),
-                    has_unified_memory: false,
+                    has_unified_memory: is_unified,
                     vram_bytes: drm_vram,
                 });
             } else if let Some(i_name) = integrated_name {
+                // If only integrated GPU exists and VRAM <= 2GB, working_set_bytes is 0 (fallback to host RAM)
+                let is_unified = i_name.to_lowercase().contains("strix halo")
+                    || i_name.to_lowercase().contains("ryzen ai max");
                 return Some(MetalDeviceInfo {
                     device_name: i_name,
-                    working_set_bytes: 0,
-                    has_unified_memory: false,
+                    working_set_bytes: if is_unified { drm_vram.unwrap_or(0) } else { 0 },
+                    has_unified_memory: is_unified,
                     vram_bytes: drm_vram,
                 });
             }
@@ -379,6 +484,9 @@ pub fn detect_profile(
         None => (None, None, false),
     };
 
+    let gpu_bandwidth_gbps = gpu_name.as_deref().and_then(lookup_gpu_bandwidth_gbps);
+    let host_bandwidth_gbps = estimate_host_bandwidth_gbps(logical_cores);
+
     Ok(HardwareProfile {
         cpu_name,
         arch,
@@ -392,6 +500,8 @@ pub fn detect_profile(
         disk_free_bytes,
         os_version,
         detected_at: Utc::now(),
+        gpu_bandwidth_gbps,
+        host_bandwidth_gbps,
     })
 }
 
@@ -617,5 +727,15 @@ mod tests {
             }
             other => panic!("Unexpected error: {:?}", other),
         }
+    }
+
+    #[test]
+    fn test_lookup_gpu_bandwidth() {
+        assert_eq!(lookup_gpu_bandwidth_gbps("NVIDIA GeForce RTX 4090"), Some(1008.0));
+        assert_eq!(lookup_gpu_bandwidth_gbps("NVIDIA GeForce RTX 3090"), Some(936.0));
+        assert_eq!(lookup_gpu_bandwidth_gbps("Apple M3 Max"), Some(300.0));
+        assert_eq!(lookup_gpu_bandwidth_gbps("AMD Radeon RX 7900 XTX"), Some(960.0));
+        assert_eq!(lookup_gpu_bandwidth_gbps("AMD Radeon Pro 5500M"), Some(192.0));
+        assert_eq!(lookup_gpu_bandwidth_gbps("Unknown Custom GPU XYZ"), None);
     }
 }
