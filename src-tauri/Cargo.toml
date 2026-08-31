@@ -1,5 +1,5 @@
 [package]
-name = "local-llm-advisor"
+name = "llm-advisor"
 version.workspace = true
 edition.workspace = true
 

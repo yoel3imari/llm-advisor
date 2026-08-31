@@ -63,7 +63,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
     gateway_port: 13370,
     default_context_size: 4096,
     default_kv_type: 'f16',
-    models_dir: '~/Library/Application Support/dev.portfolio.local-llm-advisor/models',
+    models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
     run_in_background: true,
   });
   const [records, setRecords] = useState<ModelRecord[]>([]);
@@ -94,7 +94,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
           gateway_port: 13370,
           default_context_size: 4096,
           default_kv_type: 'f16' as KvType,
-          models_dir: '~/Library/Application Support/dev.portfolio.local-llm-advisor/models',
+          models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
           run_in_background: true,
         })),
         listLibraryModels().catch(() => []),

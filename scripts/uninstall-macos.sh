@@ -19,9 +19,9 @@ echo -e "${BOLD}${CYAN}=====================================================${NC
 
 # 1. Terminate running processes
 echo -e "${YELLOW}[1/4] Checking for running instances...${NC}"
-if pgrep -x "local-llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
+if pgrep -x "llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
     echo "Stopping running Local LLM Advisor and sidecar processes..."
-    pkill -x "local-llm-advisor" >/dev/null 2>&1 || true
+    pkill -x "llm-advisor" >/dev/null 2>&1 || true
     pkill -f "llama-server" >/dev/null 2>&1 || true
     sleep 1
     echo -e "${GREEN}✓ Processes stopped.${NC}"
@@ -30,9 +30,9 @@ else
 fi
 
 # 2. Paths to clean
-DATA_DIR="$HOME/Library/Application Support/dev.portfolio.local-llm-advisor"
-CACHE_DIR="$HOME/Library/Caches/dev.portfolio.local-llm-advisor"
-SAVED_STATE="$HOME/Library/Saved Application State/dev.portfolio.local-llm-advisor.savedState"
+DATA_DIR="$HOME/Library/Application Support/dev.yoel3imari.llm-advisor"
+CACHE_DIR="$HOME/Library/Caches/dev.yoel3imari.llm-advisor"
+SAVED_STATE="$HOME/Library/Saved Application State/dev.yoel3imari.llm-advisor.savedState"
 APP_BUNDLE="/Applications/Local LLM Advisor.app"
 
 # Calculate space to be reclaimed
@@ -65,7 +65,7 @@ echo -e "${GREEN}✓ Removed application data & model storage (${RECLAIM_SIZE} r
 
 # 4. Clean Keychain credentials
 echo -e "\n${YELLOW}[4/4] Clearing secure tokens from macOS Keychain...${NC}"
-security delete-generic-password -s "local-llm-advisor" >/dev/null 2>&1 || true
+security delete-generic-password -s "llm-advisor" >/dev/null 2>&1 || true
 echo -e "${GREEN}✓ Keychain credentials cleared.${NC}"
 
 echo -e "\n${BOLD}${GREEN}=====================================================${NC}"

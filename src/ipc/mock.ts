@@ -173,7 +173,7 @@ export const MOCK_CATALOG: CatalogEntry[] = [
 let mockRecords: ModelRecord[] = [
   {
     entry_id: 'qwen2.5-0.5b-instruct-q4_k_m',
-    file_path: '/Users/demo/Library/Application Support/dev.portfolio.local-llm-advisor/models/qwen2.5-0.5b-instruct-q4_k_m.gguf',
+    file_path: '/Users/demo/Library/Application Support/dev.yoel3imari.llm-advisor/models/qwen2.5-0.5b-instruct-q4_k_m.gguf',
     size_bytes: 397737696,
     verified: true,
     added_at: new Date(Date.now() - 86400000).toISOString(),
@@ -413,7 +413,7 @@ export async function mockGetSettings(): Promise<AppSettings> {
     gateway_port: 13370,
     default_context_size: 4096,
     default_kv_type: 'f16',
-    models_dir: '~/Library/Application Support/dev.portfolio.local-llm-advisor/models',
+    models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
     run_in_background: true,
   };
 }
@@ -457,7 +457,7 @@ export async function mockCleanUninstall(options?: CleanUninstallOptions): Promi
     models_deleted: modelsCount,
     configs_cleared: options?.clear_configs !== false,
     cache_purged: options?.clear_cache !== false,
-    app_data_dir: '/Users/demo/Library/Application Support/dev.portfolio.local-llm-advisor',
+    app_data_dir: '/Users/demo/Library/Application Support/dev.yoel3imari.llm-advisor',
     success: true,
   };
 }

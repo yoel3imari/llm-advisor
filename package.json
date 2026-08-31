@@ -1,12 +1,12 @@
 {
-  "name": "local-llm-advisor",
+  "name": "llm-advisor",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:bundle": "LD_LIBRARY_PATH=\"$(pwd)/src-tauri/binaries:${LD_LIBRARY_PATH:-}\" tauri build",
+    "build:bundle": "LD_LIBRARY_PATH=\"$(pwd)/src-tauri/binaries:${LD_LIBRARY_PATH:-}\" tauri build && bash ./scripts/post-bundle.sh",
     "build:deb": "tauri build -b deb",
     "build:appimage": "LD_LIBRARY_PATH=\"$(pwd)/src-tauri/binaries:${LD_LIBRARY_PATH:-}\" tauri build -b appimage",
     "preview": "vite preview",

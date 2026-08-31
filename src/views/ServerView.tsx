@@ -409,15 +409,19 @@ export function ServerView({
 
       {/* Error state alert */}
       {serverState.state === 'error' && (
-        <div className="p-4 bg-red-950/80 border border-red-800 rounded-xl space-y-2 text-xs text-red-200">
-          <div className="flex items-center gap-2 font-bold text-red-300">
-            <AlertTriangle className="w-4 h-4" />
-            <span>Inference Server Error: {serverState.reason}</span>
+        <div className="p-4 bg-red-950/80 border border-red-800 rounded-xl space-y-2 text-xs text-red-200 shrink-0">
+          <div className="flex items-center gap-2 font-bold text-red-300 min-w-0">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span className="truncate" title={serverState.reason}>
+              Inference Server Error: {serverState.reason}
+            </span>
           </div>
           {serverState.stderr_tail.length > 0 && (
-            <div className="font-mono bg-black/50 p-2.5 rounded border border-red-900/60 overflow-x-auto space-y-0.5 select-text cursor-text selection:bg-red-500/40 selection:text-white">
+            <div className="font-mono bg-black/50 p-2.5 rounded border border-red-900/60 overflow-auto max-h-36 space-y-0.5 select-text cursor-text selection:bg-red-500/40 selection:text-white">
               {serverState.stderr_tail.map((line, idx) => (
-                <div key={idx} className="select-text">{line}</div>
+                <div key={idx} className="select-text whitespace-nowrap">
+                  {line}
+                </div>
               ))}
             </div>
           )}

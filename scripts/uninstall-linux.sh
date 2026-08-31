@@ -19,9 +19,9 @@ echo -e "${BOLD}${CYAN}=====================================================${NC
 
 # 1. Terminate running processes
 echo -e "${YELLOW}[1/3] Checking for running instances...${NC}"
-if pgrep -x "local-llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
+if pgrep -x "llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
     echo "Stopping running Local LLM Advisor and sidecar processes..."
-    pkill -x "local-llm-advisor" >/dev/null 2>&1 || true
+    pkill -x "llm-advisor" >/dev/null 2>&1 || true
     pkill -f "llama-server" >/dev/null 2>&1 || true
     sleep 1
     echo -e "${GREEN}✓ Processes stopped.${NC}"
@@ -33,9 +33,9 @@ fi
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
-DATA_DIR="$XDG_DATA_HOME/dev.portfolio.local-llm-advisor"
-CONFIG_DIR="$XDG_CONFIG_HOME/dev.portfolio.local-llm-advisor"
-DESKTOP_FILE="$XDG_DATA_HOME/applications/local-llm-advisor.desktop"
+DATA_DIR="$XDG_DATA_HOME/dev.yoel3imari.llm-advisor"
+CONFIG_DIR="$XDG_CONFIG_HOME/dev.yoel3imari.llm-advisor"
+DESKTOP_FILE="$XDG_DATA_HOME/applications/llm-advisor.desktop"
 
 RECLAIM_SIZE="0 MB"
 if [ -d "$DATA_DIR" ]; then

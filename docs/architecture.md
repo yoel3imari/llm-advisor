@@ -6,7 +6,7 @@
 >
 > **Stack**: Tauri 2.x · Rust core · web UI · bundled llama-server x86_64 sidecar (MIT)
 >
-> **Status artifact for**: `.sisyphus/plans/local-llm-advisor-mvp.md` (implementation plan). Diagrams are Mermaid — render natively on GitHub and VS Code.
+> **Status artifact for**: `.sisyphus/plans/llm-advisor-mvp.md` (implementation plan). Diagrams are Mermaid — render natively on GitHub and VS Code.
 
 ---
 
@@ -643,8 +643,8 @@ To ensure safety during updates and allow storing weights on external drives:
 | Data Type | Purpose | macOS Path | Windows Path | Linux Path |
 |---|---|---|---|---|
 | **App Binaries** | Read-only app code | `/Applications/Local LLM Advisor.app` | `C:\Program Files\Local LLM Advisor\` | `/usr/bin/` or AppImage mount |
-| **App Config & Logs** | Small JSON files (<100KB) | `~/Library/Application Support/dev.portfolio.local-llm-advisor/` | `%APPDATA%\dev.portfolio.local-llm-advisor\` | `~/.config/local-llm-advisor/` |
-| **Model Store (GGUF)** | Multi-GB weights (1GB–50GB) | `~/Library/Application Support/dev.portfolio.local-llm-advisor/models/` *(Configurable in Settings)* | `%LOCALAPPDATA%\local-llm-advisor\models\` | `~/.local/share/local-llm-advisor/models/` |
+| **App Config & Logs** | Small JSON files (<100KB) | `~/Library/Application Support/dev.yoel3imari.llm-advisor/` | `%APPDATA%\dev.yoel3imari.llm-advisor\` | `~/.config/llm-advisor/` |
+| **Model Store (GGUF)** | Multi-GB weights (1GB–50GB) | `~/Library/Application Support/dev.yoel3imari.llm-advisor/models/` *(Configurable in Settings)* | `%LOCALAPPDATA%\llm-advisor\models\` | `~/.local/share/llm-advisor/models/` |
 | **Secrets** | HF Access Token | macOS Keychain | Windows Credential Manager | Linux Secret Service (libsecret) |
 
 ### 13.3 Cryptographically Verified Auto-Updates

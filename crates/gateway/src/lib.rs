@@ -99,7 +99,7 @@ async fn models_handler(State(state): State<Arc<GatewayState>>) -> impl IntoResp
                 "id": inst.model_id,
                 "object": "model",
                 "created": inst.started_at.timestamp(),
-                "owned_by": "local-llm-advisor",
+                "owned_by": "llm-advisor",
                 "port": inst.port,
                 "context_size": inst.context_size
             })

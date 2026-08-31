@@ -77,7 +77,7 @@ find "${TMP_DIR}/extracted" -type f \( -name "*.so*" -o -name "*.dylib*" \) | wh
     cp "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
 done
 
-# Create so version symlinks if on Linux
+# Create so version symlinks if on Linux or dylib version symlinks on macOS
 for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
     (cd "$dir" && \
      ln -sf libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
@@ -89,8 +89,46 @@ for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
      ln -sf libggml.so.0.22.0 libggml.so.0 2>/dev/null || true && \
      ln -sf libggml.so.0.22.0 libggml.so 2>/dev/null || true && \
      ln -sf libmtmd.so.0.3.0 libmtmd.so.0 2>/dev/null || true && \
-     ln -sf libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true)
+     ln -sf libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true && \
+     ln -sf libllama-common.0.3.0.dylib libllama-common.0.dylib 2>/dev/null || true && \
+     ln -sf libllama-common.0.3.0.dylib libllama-common.dylib 2>/dev/null || true && \
+     ln -sf libllama.0.3.0.dylib libllama.0.dylib 2>/dev/null || true && \
+     ln -sf libllama.0.3.0.dylib libllama.dylib 2>/dev/null || true && \
+     ln -sf libggml-base.0.22.0.dylib libggml-base.0.dylib 2>/dev/null || true && \
+     ln -sf libggml-base.0.22.0.dylib libggml-base.dylib 2>/dev/null || true && \
+     ln -sf libggml.0.22.0.dylib libggml.0.dylib 2>/dev/null || true && \
+     ln -sf libggml.0.22.0.dylib libggml.dylib 2>/dev/null || true && \
+     ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.0.dylib 2>/dev/null || true && \
+     ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.dylib 2>/dev/null || true && \
+     ln -sf libggml-blas.0.22.0.dylib libggml-blas.0.dylib 2>/dev/null || true && \
+     ln -sf libggml-blas.0.22.0.dylib libggml-blas.dylib 2>/dev/null || true && \
+     ln -sf libggml-metal.0.22.0.dylib libggml-metal.0.dylib 2>/dev/null || true && \
+     ln -sf libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
+     ln -sf libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
+     ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
 done
+
+echo "==> Verifying binary execution..."
+if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >/dev/null 2>&1; then
+    echo "==> Precompiled binary failed verification on this system (e.g. SDK version / symbol mismatch)."
+    if command -v cmake &>/dev/null && command -v clang &>/dev/null; then
+        echo "==> Compiling native llama-server from source (tag ${PINNED_TAG})..."
+        BUILD_DIR="${TMP_DIR}/native-build"
+        git clone --depth 1 --branch "${PINNED_TAG}" https://github.com/ggml-org/llama.cpp.git "${BUILD_DIR}"
+        cmake -B "${BUILD_DIR}/build" -S "${BUILD_DIR}" \
+            -DGGML_BUILD_TESTS=OFF -DGGML_BUILD_EXAMPLES=OFF \
+            -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+            -DLLAMA_BUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
+        cmake --build "${BUILD_DIR}/build" --config Release --target llama-server -j4
+        
+        cp -a "${BUILD_DIR}/build/bin"/* "${SIDECAR_DIR}/"
+        cp -a "${BUILD_DIR}/build/bin"/* "${BINARIES_DIR}/"
+        cp "${BUILD_DIR}/build/bin/llama-server" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
+        echo "==> Native build completed successfully."
+    else
+        echo "Warning: cmake/clang not found to compile native fallback. Please ensure build dependencies are installed."
+    fi
+fi
 
 echo "==> Successfully installed sidecar to:"
 echo "    - ${SIDECAR_DIR}/llama-server"
@@ -99,7 +137,5 @@ echo "    - ${BINARIES_DIR}/${TAURI_BIN_NAME}"
 SHA="$((sha256sum "${SIDECAR_DIR}/llama-server" 2>/dev/null || shasum -a 256 "${SIDECAR_DIR}/llama-server") | awk '{print $1}')"
 echo "==> Computed SHA256: ${SHA}"
 
-echo "==> Verifying execution..."
-LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version || true
-
 rm -rf "${TMP_DIR}"
+

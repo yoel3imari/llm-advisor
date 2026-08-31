@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-> **Quick Summary**: Build Phase 1–3 of the system designed in [`local-llm-advisor-design.md`](./local-llm-advisor-design.md): hardware profiling → RAM/VRAM-fit recommendations → GGUF download/library → bundled llama-server serving an OpenAI-compatible endpoint on `127.0.0.1:13370`.
+> **Quick Summary**: Build Phase 1–3 of the system designed in [`llm-advisor-design.md`](./llm-advisor-design.md): hardware profiling → RAM/VRAM-fit recommendations → GGUF download/library → bundled llama-server serving an OpenAI-compatible endpoint on `127.0.0.1:13370`.
 >
 > **Deliverables**:
 > - Working Tauri 2 desktop app (macOS Apple Intel x86_64) with Specs Dashboard, Recommendations, Library, Server Control views
@@ -19,7 +19,7 @@
 ## Context
 
 ### Original Request
-Build a desktop app that retrieves local machine specs, suggests open LLM models that can run on it, and provides an Ollama-like inference endpoint. User explicitly requested design-first workflow (use cases + UML), which is complete in `local-llm-advisor-design.md`.
+Build a desktop app that retrieves local machine specs, suggests open LLM models that can run on it, and provides an Ollama-like inference endpoint. User explicitly requested design-first workflow (use cases + UML), which is complete in `llm-advisor-design.md`.
 
 ### Interview Summary (confirmed decisions)
 - **Stack**: Tauri 2.x · Rust · React+TS+Vite webview
@@ -171,7 +171,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 - [x] T1. Tauri 2 Scaffold + Test Infrastructure
 
   **What to do**:
-  - `npm create tauri-app@latest` (or manual equivalent): Tauri 2.x, React + TypeScript + Vite template, app id `dev.portfolio.local-llm-advisor`
+  - `npm create tauri-app@latest` (or manual equivalent): Tauri 2.x, React + TypeScript + Vite template, app id `dev.yoel3imari.llm-advisor`
   - Rust workspace layout under `src-tauri/`: crates as modules (`domain`, `hw_probe`, `fit_engine`, `catalog`, `downloader`, `library`, `server_manager`, `gateway`) — separate lib crate or well-separated modules; document choice in repo README
   - Frontend: add `vitest`; one trivial passing test
   - Rust: one trivial passing test per crate module stub; `cargo fmt` config; clippy clean baseline
@@ -460,7 +460,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
 - [x] T8. Library Store (local model management)
 
   **What to do**:
-  - Dir layout `~/Library/Application Support/dev.portfolio.local-llm-advisor/models/{entry_id}.gguf`; records at `.../library.json`
+  - Dir layout `~/Library/Application Support/dev.yoel3imari.llm-advisor/models/{entry_id}.gguf`; records at `.../library.json`
   - Ops: add_verified(record), list(), delete(id) (file+record), reconcile() — scan dir vs records: orphan files reported+prunable, missing files marked Missing
   - Atomic record writes (tmp+rename); concurrent-safe via std Mutex
 
@@ -767,7 +767,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   ```
   Scenario: Token lands in Keychain only
     Tool: Bash
-    Steps: drive save via example binary; security find-generic-password -s local-llm-advisor > evidence; grep config.json for token value || echo NOT-IN-CONFIG
+    Steps: drive save via example binary; security find-generic-password -s llm-advisor > evidence; grep config.json for token value || echo NOT-IN-CONFIG
     Expected Result: keychain hit; prints NOT-IN-CONFIG
     Evidence: .sisyphus/evidence/task-17-keychain.txt
   ```
