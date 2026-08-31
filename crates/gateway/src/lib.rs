@@ -1,7 +1,7 @@
 //! High-performance localhost Axum reverse proxy gateway bridging external OpenAI clients
-//! to the internal llama-server inference sidecar with zero-buffering SSE streaming.
+//! to the internal llama-server inference sidecars with zero-buffering SSE streaming and multi-model routing.
 
-use axum::body::Body;
+use axum::body::{to_bytes, Body};
 use axum::extract::State;
 use axum::http::{Method, Request, Response, StatusCode};
 use axum::response::IntoResponse;
@@ -68,6 +68,7 @@ async fn healthz_handler(State(state): State<Arc<GatewayState>>) -> impl IntoRes
     let server_state = state.server_manager.get_state();
     let model = state.server_manager.get_active_model_id();
     let port = state.server_manager.get_active_port();
+    let instances = state.server_manager.list_instances();
 
     let state_str = match server_state {
         ServerState::Stopped => "stopped",
@@ -81,32 +82,34 @@ async fn healthz_handler(State(state): State<Arc<GatewayState>>) -> impl IntoRes
         Json(json!({
             "status": "ok",
             "state": state_str,
-            "model": model,
-            "internal_port": port
+            "primary_model": model,
+            "internal_port": port,
+            "instances": instances
         })),
     )
 }
 
-/// GET /v1/models
+/// GET /v1/models (Returns all running model instances)
 async fn models_handler(State(state): State<Arc<GatewayState>>) -> impl IntoResponse {
-    if let Some(model_id) = state.server_manager.get_active_model_id() {
-        Json(json!({
-            "object": "list",
-            "data": [
-                {
-                    "id": model_id,
-                    "object": "model",
-                    "created": 1700000000,
-                    "owned_by": "local-llm-advisor"
-                }
-            ]
-        }))
-    } else {
-        Json(json!({
-            "object": "list",
-            "data": []
-        }))
-    }
+    let running_instances = state.server_manager.list_instances();
+    let models_data: Vec<serde_json::Value> = running_instances
+        .into_iter()
+        .map(|inst| {
+            json!({
+                "id": inst.model_id,
+                "object": "model",
+                "created": inst.started_at.timestamp(),
+                "owned_by": "local-llm-advisor",
+                "port": inst.port,
+                "context_size": inst.context_size
+            })
+        })
+        .collect();
+
+    Json(json!({
+        "object": "list",
+        "data": models_data
+    }))
 }
 
 /// OpenAI 503 error envelope response.
@@ -120,6 +123,25 @@ fn server_not_serving_503() -> Response<Body> {
     });
     Response::builder()
         .status(StatusCode::SERVICE_UNAVAILABLE)
+        .header("Content-Type", "application/json")
+        .body(Body::from(serde_json::to_vec(&body_json).unwrap()))
+        .unwrap()
+}
+
+/// Model not loaded 404 response.
+fn model_not_found_404(requested: &str, available: &[String]) -> Response<Body> {
+    let body_json = json!({
+        "error": {
+            "message": format!(
+                "Model '{}' is not currently loaded. Loaded models in pool: {:?}",
+                requested, available
+            ),
+            "type": "model_not_found",
+            "code": 404
+        }
+    });
+    Response::builder()
+        .status(StatusCode::NOT_FOUND)
         .header("Content-Type", "application/json")
         .body(Body::from(serde_json::to_vec(&body_json).unwrap()))
         .unwrap()
@@ -155,19 +177,58 @@ async fn proxy_completions(
     proxy_to_sidecar(state, req, "/v1/completions").await
 }
 
-/// Internal relay helper with streaming body forwarding.
+/// Internal relay helper with streaming body forwarding and model routing.
 async fn proxy_to_sidecar(
     state: Arc<GatewayState>,
     req: Request<Body>,
     target_path: &str,
 ) -> Response<Body> {
-    let internal_port = match state.server_manager.get_active_port() {
-        Some(p) => p,
-        None => return server_not_serving_503(),
+    let running_models = state.server_manager.get_running_model_ids();
+    if running_models.is_empty() {
+        return server_not_serving_503();
+    }
+
+    let (parts, body) = req.into_parts();
+
+    // Buffer incoming request body (up to 16MB) to inspect requested model
+    let body_bytes = match to_bytes(body, 16 * 1024 * 1024).await {
+        Ok(b) => b,
+        Err(e) => {
+            let err_json = json!({
+                "error": {
+                    "message": format!("Failed to read request body: {}", e),
+                    "type": "invalid_request_error",
+                    "code": 400
+                }
+            });
+            return Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(Body::from(serde_json::to_vec(&err_json).unwrap()))
+                .unwrap();
+        }
     };
 
-    let target_uri = format!("http://127.0.0.1:{}{}", internal_port, target_path);
-    let (parts, body) = req.into_parts();
+    // Extract requested "model" field if present
+    let requested_model = serde_json::from_slice::<serde_json::Value>(&body_bytes)
+        .ok()
+        .and_then(|v| {
+            v.get("model")
+                .and_then(|m| m.as_str().map(|s| s.to_string()))
+        });
+
+    let target_port = match state
+        .server_manager
+        .get_port_for_model(requested_model.as_deref())
+    {
+        Some(p) => p,
+        None => {
+            let req_name = requested_model.as_deref().unwrap_or("unknown");
+            return model_not_found_404(req_name, &running_models);
+        }
+    };
+
+    let target_uri = format!("http://127.0.0.1:{}{}", target_port, target_path);
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
@@ -183,11 +244,7 @@ async fn proxy_to_sidecar(
         }
     }
 
-    // Convert axum body stream to reqwest body stream
-    let data_stream = body
-        .into_data_stream()
-        .map(|res| res.map_err(std::io::Error::other));
-    upstream_req = upstream_req.body(reqwest::Body::wrap_stream(data_stream));
+    upstream_req = upstream_req.body(body_bytes);
 
     match upstream_req.send().await {
         Ok(upstream_resp) => {

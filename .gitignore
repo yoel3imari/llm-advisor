@@ -91,3 +91,4 @@ ehthumbs.db
 *~
 *.sublime-workspace
 *.sublime-project
+hf_models.json

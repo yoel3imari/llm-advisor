@@ -23,6 +23,19 @@ impl Bytes {
     }
 }
 
+/// CPU SIMD instruction set features detected at runtime.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct CpuFeatures {
+    pub has_avx512: bool,
+    pub has_avx2: bool,
+    pub has_avx: bool,
+    pub has_fma: bool,
+    pub has_neon: bool,
+    pub has_dotprod: bool,
+    pub has_sve: bool,
+    pub has_amx: bool,
+}
+
 /// Hardware profile detected on the host system.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HardwareProfile {
@@ -38,6 +51,47 @@ pub struct HardwareProfile {
     pub disk_free_bytes: u64,
     pub os_version: String,
     pub detected_at: DateTime<Utc>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gpu_bandwidth_gbps: Option<f32>,
+    #[serde(default = "default_host_bandwidth_gbps")]
+    pub host_bandwidth_gbps: f32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu_features: Option<CpuFeatures>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accelerator_backend: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub driver_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub power_source: Option<String>,
+}
+
+impl Default for HardwareProfile {
+    fn default() -> Self {
+        Self {
+            cpu_name: "x86_64 Processor".to_string(),
+            arch: "x86_64".to_string(),
+            cpu_physical_cores: 4,
+            cpu_logical_cores: 8,
+            gpu_name: None,
+            gpu_vram_bytes: None,
+            has_unified_memory: false,
+            total_ram_bytes: 16 * 1024 * 1024 * 1024,
+            metal_working_set_bytes: 12 * 1024 * 1024 * 1024,
+            disk_free_bytes: 100 * 1024 * 1024 * 1024,
+            os_version: "Generic OS".to_string(),
+            detected_at: Utc::now(),
+            gpu_bandwidth_gbps: None,
+            host_bandwidth_gbps: 40.0,
+            cpu_features: None,
+            accelerator_backend: None,
+            driver_version: None,
+            power_source: None,
+        }
+    }
+}
+
+fn default_host_bandwidth_gbps() -> f32 {
+    40.0
 }
 
 /// Curated catalog entry describing a GGUF model and its architecture parameters.
@@ -126,6 +180,10 @@ pub struct FitResult {
     pub est_kv_bytes: u64,
     pub est_total_bytes: u64,
     pub max_context_that_fits: u32,
+    #[serde(default)]
+    pub usable_context: u32,
+    #[serde(default)]
+    pub is_context_constrained: bool,
     pub recommended_gpu_layers: u32,
     pub speed_tps_estimate: f32,
     pub score_fit: f32,
@@ -165,6 +223,16 @@ pub struct ModelRecord {
     pub size_bytes: u64,
     pub verified: bool,
     pub added_at: DateTime<Utc>,
+}
+
+/// Metadata describing a running model instance in the multi-sidecar pool.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RunningInstanceInfo {
+    pub model_id: String,
+    pub model_path: PathBuf,
+    pub port: u16,
+    pub context_size: u32,
+    pub started_at: DateTime<Utc>,
 }
 
 /// App-wide typed error taxonomy with user-presentable messages.

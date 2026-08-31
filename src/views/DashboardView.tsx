@@ -10,7 +10,7 @@ import {
   Sparkles,
   ChevronDown,
 } from 'lucide-react';
-import type { FitResult, HardwareProfile, ModelRecord, ServeConfig } from '../types/domain';
+import type { FitResult, HardwareProfile, ModelRecord, ServeConfig, DownloadTask } from '../types/domain';
 import {
   refreshHardwareProfile,
   recommendModels,
@@ -35,6 +35,7 @@ function isDeepEqual<T>(a: T, b: T): boolean {
 interface Props {
   profile: HardwareProfile | null;
   libraryRecords: ModelRecord[];
+  activeDownloads?: DownloadTask[];
   onProfileUpdated: (profile: HardwareProfile) => void;
   onModelDownloaded: () => void;
   onNavigateToServer: (modelId: string) => void;
@@ -44,6 +45,7 @@ interface Props {
 export function DashboardView({
   profile,
   libraryRecords,
+  activeDownloads = [],
   onProfileUpdated,
   onModelDownloaded,
   onNavigateToServer,
@@ -133,17 +135,14 @@ export function DashboardView({
     [results]
   );
 
-  if (error || (profile && (profile.arch === 'aarch64' || profile.arch === 'arm64'))) {
+  if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
         <div className="w-14 h-14 rounded-full bg-amber-950/80 border border-amber-800 flex items-center justify-center text-amber-400">
           <AlertTriangle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-white">Platform Not Supported in v1</h2>
-        <p className="text-sm text-zinc-400 max-w-md">
-          {error ||
-            'This build of Local LLM Advisor supports x86_64 systems (Linux & macOS). ARM64 architecture is scheduled for v2.'}
-        </p>
+        <h2 className="text-xl font-bold text-white">Hardware Profiling Error</h2>
+        <p className="text-sm text-zinc-400 max-w-md">{error}</p>
       </div>
     );
   }
@@ -174,7 +173,7 @@ export function DashboardView({
             Dashboard & Recommendations
             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/60">
               <Sparkles className="w-3 h-3 text-indigo-400" />
-              Live Fit
+              {profile.accelerator_backend || 'Live Fit'}
             </span>
           </h2>
           <p className="text-sm text-zinc-400 mt-0.5">
@@ -212,7 +211,9 @@ export function DashboardView({
           <div className="flex items-center justify-between text-cyan-400">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4" />
-              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">Host RAM Budget</h3>
+              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">
+                {profile.has_unified_memory ? 'Unified Memory' : 'Host RAM Budget'}
+              </h3>
             </div>
             <span className="text-[10px] font-mono font-bold text-cyan-300">
               {workingSetPct}% Usable
@@ -229,24 +230,34 @@ export function DashboardView({
           </div>
         </div>
 
-        {/* Dedicated GPU Card */}
+        {/* Dedicated / Unified GPU Card */}
         <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between text-purple-400">
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4" />
-              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">GPU & VRAM</h3>
+              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">
+                {profile.has_unified_memory ? 'UMA Accelerator' : 'GPU & VRAM'}
+              </h3>
             </div>
-            {gpuVramGb > 0 && (
+            {gpuVramGb > 0 ? (
               <span className="text-[10px] font-mono font-bold text-purple-300">
                 {gpuVramGb} GB VRAM
               </span>
-            )}
+            ) : profile.has_unified_memory ? (
+              <span className="text-[10px] font-mono font-bold text-purple-300">
+                UMA Metal
+              </span>
+            ) : null}
           </div>
-          <div className="font-semibold text-sm text-zinc-100 truncate" title={profile.gpu_name || 'CPU Inference Engine'}>
-            {profile.gpu_name || 'CPU Engine / Integrated'}
+          <div className="font-semibold text-sm text-zinc-100 truncate" title={profile.gpu_name || profile.accelerator_backend || 'CPU Inference Engine'}>
+            {profile.gpu_name || profile.accelerator_backend || 'CPU Engine / Integrated'}
           </div>
           <div className="text-xs text-zinc-400">
-            {gpuVramGb > 0 ? `${gpuVramGb} GB Dedicated VRAM` : 'Shared System RAM'}
+            {profile.has_unified_memory
+              ? 'Unified System RAM'
+              : gpuVramGb > 0
+              ? `${gpuVramGb} GB Dedicated VRAM`
+              : profile.accelerator_backend || 'Shared System RAM'}
           </div>
         </div>
 
@@ -473,6 +484,7 @@ export function DashboardView({
           results={results}
           hostBudget={hostBudget}
           libraryRecords={libraryRecords}
+          activeDownloads={activeDownloads}
           downloadingId={downloadingId}
           onDownload={handleDownload}
           onNavigateToServer={onNavigateToServer}

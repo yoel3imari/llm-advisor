@@ -23,8 +23,8 @@ import {
   CheckCircle2,
   ExternalLink,
   MoreVerticalIcon,
+  LoaderIcon,
 } from 'lucide-react';
-import type { FitResult, ModelRecord } from '../../types/domain';
 import { VerdictBadge } from '../common/VerdictBadge';
 import {
   DropdownMenu,
@@ -35,11 +35,15 @@ import {
   DropdownMenuSeparator,
 } from '../ui/DropdownMenu';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
+import { openExternalUrl } from '../../utils/browser';
+import { DeleteConfirmDialog } from '../ui/DeleteConfirmDialog';
+import type { FitResult, ModelRecord, DownloadTask } from '../../types/domain';
 
 interface Props {
   results: FitResult[];
   hostBudget: number;
   libraryRecords: ModelRecord[];
+  activeDownloads?: DownloadTask[];
   downloadingId: string | null;
   onDownload: (entryId: string) => Promise<void>;
   onNavigateToServer: (modelId: string) => void;
@@ -54,6 +58,7 @@ export function ModelsTable({
   results,
   hostBudget,
   libraryRecords,
+  activeDownloads = [],
   downloadingId,
   onDownload,
   onNavigateToServer,
@@ -66,6 +71,10 @@ export function ModelsTable({
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'fit_score', desc: true },
   ]);
+  const [deleteModelTarget, setDeleteModelTarget] = useState<{
+    id: string;
+    sizeBytes: number;
+  } | null>(null);
 
   const gb = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(2);
   const mb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(0);
@@ -76,10 +85,35 @@ export function ModelsTable({
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
-  const downloadedIds = useMemo(
-    () => new Set(libraryRecords.map((r) => r.entry_id)),
+  const libraryKey = useMemo(
+    () => libraryRecords.map((r) => r.entry_id).sort().join(','),
     [libraryRecords]
   );
+
+  const downloadedIds = useMemo(
+    () => new Set(libraryRecords.map((r) => r.entry_id)),
+    [libraryKey]
+  );
+
+  const downloadsStatusKey = useMemo(
+    () =>
+      activeDownloads
+        .map((d) => `${d.entry_id}:${d.state.status}:${d.error ? 'err' : 'ok'}`)
+        .sort()
+        .join(','),
+    [activeDownloads]
+  );
+
+  const downloadingEntryIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (downloadingId) ids.add(downloadingId);
+    for (const d of activeDownloads) {
+      if (d.state.status !== 'failed' && !d.error) {
+        ids.add(d.entry_id);
+      }
+    }
+    return ids;
+  }, [downloadingId, downloadsStatusKey]);
 
   // Filtered dataset
   const filteredData = useMemo(() => {
@@ -331,13 +365,13 @@ export function ModelsTable({
       },
       {
         id: 'max_context',
-        accessorFn: (row) => row.max_context_that_fits,
+        accessorFn: (row) => row.usable_context ?? row.max_context_that_fits,
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
           >
-            Max Ctx (Tokens)
+            Usable Ctx
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -347,11 +381,53 @@ export function ModelsTable({
             )}
           </button>
         ),
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
-            {row.original.max_context_that_fits.toLocaleString()}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const res = row.original;
+          const usable = res.usable_context ?? res.max_context_that_fits;
+          const native = res.entry.context_train;
+          const isConstrained = res.is_context_constrained || usable < native;
+          const usableK = usable >= 1024 ? `${Math.round(usable / 1024)}k` : `${usable}`;
+          const nativeK = native >= 1024 ? `${Math.round(native / 1024)}k` : `${native}`;
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  {isConstrained ? (
+                    <span className={`font-mono text-xs px-1.5 py-0.5 rounded border whitespace-nowrap ${
+                      usable < 4096
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-800/50 font-semibold'
+                        : 'bg-zinc-800/80 text-zinc-200 border-zinc-700/50'
+                    }`}>
+                      {usableK} <span className="text-zinc-500 font-normal">→ {nativeK}</span>
+                    </span>
+                  ) : (
+                    <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+                      {nativeK}
+                    </span>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5 max-w-xs">
+                <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
+                  Context Window Headroom
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Usable Context:</span>{' '}
+                  <span className="font-semibold text-emerald-300">{usable.toLocaleString()} tokens</span>
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Native Context:</span> <span>{native.toLocaleString()} tokens</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800/60">
+                  {isConstrained
+                    ? 'Context is dynamically bounded by RAM headroom to prevent paging.'
+                    : 'Full native model context fits within system working memory.'}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       },
       {
         id: 'gpu_layers',
@@ -406,11 +482,41 @@ export function ModelsTable({
             )}
           </button>
         ),
-        cell: ({ row }) => (
-          <span className="font-mono text-xs font-semibold text-cyan-300 whitespace-nowrap">
-            {row.original.speed_tps_estimate.toFixed(1)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const res = row.original;
+          const layers = res.recommended_gpu_layers;
+          const total = res.entry.n_layers;
+          const runMode = layers === total && total > 0
+            ? '100% GPU VRAM'
+            : layers > 0
+            ? `Partial Offload (${layers}/${total} layers)`
+            : 'CPU DDR RAM';
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-mono text-xs font-semibold text-cyan-300 cursor-help underline decoration-dotted decoration-cyan-700/60 underline-offset-2 whitespace-nowrap">
+                  {res.speed_tps_estimate.toFixed(1)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="space-y-1 font-mono text-[11px] p-2.5 max-w-xs">
+                <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1">
+                  Throughput (Roofline Model)
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Estimated Speed:</span>{' '}
+                  <span className="font-semibold text-cyan-300">~{res.speed_tps_estimate.toFixed(1)} tok/s</span>
+                </div>
+                <div className="flex justify-between gap-4 text-zinc-300">
+                  <span>Execution Mode:</span> <span>{runMode}</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800/60">
+                  Calculated from hardware memory bandwidth roofline and active parameter footprint.
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       },
       {
         id: 'fit_score',
@@ -451,13 +557,12 @@ export function ModelsTable({
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = downloadedIds.has(entry.id);
-          const isCurrentDownloading = downloadingId === entry.id;
+          const isCurrentDownloading = downloadingEntryIds.has(entry.id);
 
           if (isCurrentDownloading) {
             return (
-              <div className="flex items-center justify-end gap-1.5 font-medium text-[11px] text-indigo-400 whitespace-nowrap">
-                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
-                <span>Downloading...</span>
+              <div className="flex items-center justify-end pr-1">
+                <LoaderIcon className="animate-spin text-indigo-400" size={16} />
               </div>
             );
           }
@@ -466,10 +571,7 @@ export function ModelsTable({
             <div className="flex items-center justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  {/* <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 shadow-sm transition-colors whitespace-nowrap">
-                    
-                  </button> */}
-                    <MoreVerticalIcon className="cursor-pointer w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
+                  <MoreVerticalIcon className="cursor-pointer w-3 h-3 text-zinc-400 ml-0.5 shrink-0 hover:text-zinc-200 transition-colors" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>Model Actions</DropdownMenuLabel>
@@ -480,6 +582,14 @@ export function ModelsTable({
                         <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
                         Start Serving Model
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          openExternalUrl(`https://huggingface.co/${entry.repo_id}`)
+                        }
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                        View on HuggingFace
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
                         <Copy className="w-3.5 h-3.5 text-zinc-400" />
                         Copy Repo ID
@@ -489,7 +599,12 @@ export function ModelsTable({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             variant="danger"
-                            onClick={() => onDeleteFromLibrary(entry.id)}
+                            onClick={() =>
+                              setDeleteModelTarget({
+                                id: entry.id,
+                                sizeBytes: entry.file_size_bytes,
+                              })
+                            }
                           >
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                             Delete from Library
@@ -505,7 +620,7 @@ export function ModelsTable({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          window.open(`https://huggingface.co/${entry.repo_id}`, '_blank')
+                          openExternalUrl(`https://huggingface.co/${entry.repo_id}`)
                         }
                       >
                         <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
@@ -524,12 +639,20 @@ export function ModelsTable({
         },
       },
     ],
-    [hostBudget, libraryRecords, downloadingId, onDownload, onNavigateToServer, onDeleteFromLibrary]
+    [
+      hostBudget,
+      downloadedIds,
+      downloadingEntryIds,
+      onDownload,
+      onNavigateToServer,
+      onDeleteFromLibrary,
+    ]
   );
 
   const table = useReactTable({
     data: filteredData,
     columns,
+    getRowId: (row) => row.entry.id,
     state: {
       sorting,
     },
@@ -647,6 +770,22 @@ export function ModelsTable({
           </div>
         )}
       </div>
+
+      {deleteModelTarget && (
+        <DeleteConfirmDialog
+          open={!!deleteModelTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteModelTarget(null);
+          }}
+          modelId={deleteModelTarget.id}
+          sizeBytes={deleteModelTarget.sizeBytes}
+          onConfirm={async () => {
+            if (onDeleteFromLibrary) {
+              await onDeleteFromLibrary(deleteModelTarget.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

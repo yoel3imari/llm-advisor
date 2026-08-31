@@ -1,3 +1,14 @@
+export interface CpuFeatures {
+  has_avx512: boolean;
+  has_avx2: boolean;
+  has_avx: boolean;
+  has_fma: boolean;
+  has_neon: boolean;
+  has_dotprod: boolean;
+  has_sve: boolean;
+  has_amx: boolean;
+}
+
 export interface HardwareProfile {
   cpu_name: string;
   arch: string;
@@ -11,6 +22,12 @@ export interface HardwareProfile {
   disk_free_bytes: number;
   os_version: string;
   detected_at: string;
+  gpu_bandwidth_gbps?: number | null;
+  host_bandwidth_gbps?: number;
+  cpu_features?: CpuFeatures | null;
+  accelerator_backend?: string | null;
+  driver_version?: string | null;
+  power_source?: string | null;
 }
 
 export interface CatalogEntry {
@@ -48,6 +65,8 @@ export interface FitResult {
   est_kv_bytes: number;
   est_total_bytes: number;
   max_context_that_fits: number;
+  usable_context?: number;
+  is_context_constrained?: boolean;
   recommended_gpu_layers: number;
   speed_tps_estimate: number;
   score_fit: number;
@@ -80,10 +99,26 @@ export interface ModelRecord {
   added_at: string;
 }
 
+export interface RunningInstanceInfo {
+  model_id: string;
+  model_path: string;
+  port: number;
+  context_size: number;
+  started_at: string;
+}
+
 export type ServerState =
   | { state: 'stopped' }
   | { state: 'starting'; model_id: string; port: number; started_at: string }
-  | { state: 'serving'; model_id: string; model_path: string; port: number; context_size: number; started_at: string }
+  | {
+      state: 'serving';
+      model_id: string;
+      model_path: string;
+      port: number;
+      context_size: number;
+      started_at: string;
+      instances?: RunningInstanceInfo[];
+    }
   | { state: 'error'; reason: string; stderr_tail: string[] };
 
 export interface LibraryReconciliation {
@@ -98,4 +133,21 @@ export interface AppSettings {
   default_context_size: number;
   default_kv_type: KvType;
   models_dir: string;
+  run_in_background?: boolean;
 }
+
+export interface CleanUninstallOptions {
+  delete_models?: boolean;
+  clear_configs?: boolean;
+  clear_cache?: boolean;
+}
+
+export interface UninstallResult {
+  reclaimed_bytes: number;
+  models_deleted: number;
+  configs_cleared: boolean;
+  cache_purged: boolean;
+  app_data_dir?: string;
+  success: boolean;
+}
+

@@ -59,9 +59,19 @@ mod tests {
     #[test]
     fn test_load_bundled_catalog() {
         let catalog = load_bundled_catalog().expect("Bundled catalog must parse cleanly");
-        assert_eq!(catalog.len(), 35);
+        assert_eq!(catalog.len(), 54);
 
         // Verify specific models
+        let tiny = catalog
+            .iter()
+            .find(|e| e.id == "tinyllama-15m-q4_k_m")
+            .unwrap();
+        assert_eq!(tiny.family, "tinyllama");
+        assert_eq!(tiny.n_layers, 6);
+        assert_eq!(tiny.n_kv_heads, 6);
+        assert_eq!(tiny.head_dim, 48);
+        assert_eq!(tiny.file_size_bytes, 14650848);
+
         let llama = catalog
             .iter()
             .find(|e| e.id == "llama-3.1-8b-instruct-q4_k_m")
@@ -71,6 +81,21 @@ mod tests {
         assert_eq!(llama.n_kv_heads, 8);
         assert_eq!(llama.head_dim, 128);
         assert_eq!(llama.quality_tier, 4);
+
+        let deepseek = catalog
+            .iter()
+            .find(|e| e.id == "deepseek-r1-distill-qwen-7b-q4_k_m")
+            .unwrap();
+        assert_eq!(deepseek.family, "deepseek-r1");
+        assert_eq!(deepseek.n_layers, 28);
+        assert_eq!(deepseek.n_kv_heads, 4);
+
+        let coder = catalog
+            .iter()
+            .find(|e| e.id == "qwen2.5-coder-7b-instruct-q4_k_m")
+            .unwrap();
+        assert_eq!(coder.family, "qwen2.5-coder");
+        assert_eq!(coder.n_layers, 28);
 
         let moe = catalog
             .iter()

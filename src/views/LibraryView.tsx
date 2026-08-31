@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FolderDown, Trash2, CheckCircle, RefreshCw, AlertCircle, PlayCircle, XCircle } from 'lucide-react';
 import type { ModelRecord, DownloadTask, LibraryReconciliation } from '../types/domain';
 import { deleteLibraryModel, reconcileLibrary, cancelDownload } from '../ipc/commands';
+import { DeleteConfirmDialog } from '../components/ui/DeleteConfirmDialog';
 
 interface Props {
   records: ModelRecord[];
@@ -18,15 +19,14 @@ export function LibraryView({
 }: Props) {
   const [reconciliation, setReconciliation] = useState<LibraryReconciliation | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ModelRecord | null>(null);
 
   const handleDelete = async (entryId: string) => {
-    if (window.confirm(`Are you sure you want to delete model '${entryId}' from disk?`)) {
-      try {
-        await deleteLibraryModel(entryId);
-        onRefreshLibrary();
-      } catch (err) {
-        console.error('Failed to delete model', err);
-      }
+    try {
+      await deleteLibraryModel(entryId);
+      onRefreshLibrary();
+    } catch (err) {
+      console.error('Failed to delete model', err);
     }
   };
 
@@ -105,9 +105,48 @@ export function LibraryView({
           </h3>
           <div className="space-y-3">
             {activeDownloads.map((task) => {
+              const isFailed = task.state.status === 'failed' || !!task.error;
+              const failReason =
+                task.state.status === 'failed'
+                  ? task.state.reason
+                  : task.error || 'Download failed';
               const progressPct = task.bytes_total > 0
                 ? Math.round((task.bytes_done / task.bytes_total) * 100)
                 : 0;
+
+              if (isFailed) {
+                return (
+                  <div
+                    key={task.entry_id}
+                    className="bg-red-950/30 border border-red-800/60 rounded-xl p-4 space-y-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span className="font-semibold text-red-200">{task.entry_id}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-900/60 text-red-300 border border-red-700/60">
+                          Download Failed
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleCancelDownload(task.entry_id)}
+                        className="text-red-400 hover:text-red-200 hover:bg-red-900/40 px-2 py-1 rounded transition-colors flex items-center gap-1 text-xs"
+                        title="Dismiss Error"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Dismiss</span>
+                      </button>
+                    </div>
+
+                    <div className="p-3 bg-zinc-950/80 rounded-lg border border-red-900/50 space-y-1">
+                      <div className="text-[11px] font-semibold text-red-400">Error Diagnostic:</div>
+                      <div className="text-xs text-red-300 font-mono break-all whitespace-pre-wrap leading-relaxed">
+                        {failReason}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div
@@ -189,7 +228,7 @@ export function LibraryView({
                         <PlayCircle className="w-3.5 h-3.5" /> Serve
                       </button>
                       <button
-                        onClick={() => handleDelete(rec.entry_id)}
+                        onClick={() => setDeleteTarget(rec)}
                         className="p-1.5 text-zinc-400 hover:text-red-400 transition-colors rounded hover:bg-zinc-800"
                         title="Delete Model"
                       >
@@ -203,6 +242,20 @@ export function LibraryView({
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <DeleteConfirmDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+          modelId={deleteTarget.entry_id}
+          sizeBytes={deleteTarget.size_bytes}
+          onConfirm={async () => {
+            await handleDelete(deleteTarget.entry_id);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -202,4 +202,25 @@ impl LibraryStore {
         }
         Ok(reclaimed_bytes)
     }
+
+    /// Purge all downloaded model files and clear the records store.
+    pub fn purge_all(&self) -> Result<u64, AppError> {
+        let _guard = self.lock.lock().unwrap();
+        let mut reclaimed_bytes: u64 = 0;
+
+        if let Ok(entries) = fs::read_dir(&self.models_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Ok(meta) = fs::metadata(&path) {
+                        reclaimed_bytes += meta.len();
+                    }
+                    let _ = fs::remove_file(&path);
+                }
+            }
+        }
+
+        self.write_records_unlocked(&[])?;
+        Ok(reclaimed_bytes)
+    }
 }

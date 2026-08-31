@@ -8,7 +8,12 @@ fn main() {
         let _ = std::fs::create_dir_all(binaries_dir);
     }
 
-    let expected_bin = binaries_dir.join(format!("llama-server-{}", target));
+    let bin_name = if target.contains("windows") {
+        format!("llama-server-{}.exe", target)
+    } else {
+        format!("llama-server-{}", target)
+    };
+    let expected_bin = binaries_dir.join(&bin_name);
     if !expected_bin.exists() {
         #[cfg(unix)]
         {

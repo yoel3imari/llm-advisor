@@ -88,7 +88,6 @@ if [ "$OS" = "linux" ]; then
     
     # WebKitGTK check (prefer 4.1, fallback 4.0)
     if [ "$check_pkg_config" = true ] && (pkg-config --exists "webkit2gtk-4.1" 2>/dev/null || pkg-config --exists "webkit2gtk-4.0" 2>/dev/null); then
-        local w_ver
         w_ver="$(pkg-config --modversion webkit2gtk-4.1 2>/dev/null || pkg-config --modversion webkit2gtk-4.0 2>/dev/null)"
         echo -e "  [${GREEN}✓${RESET}] WebKitGTK Webview Engine (${CYAN}$w_ver${RESET})"
     else

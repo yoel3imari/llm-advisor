@@ -6,8 +6,11 @@ import type {
   ModelRecord,
   DownloadTask,
   ServerState,
+  RunningInstanceInfo,
   LibraryReconciliation,
   AppSettings,
+  CleanUninstallOptions,
+  UninstallResult,
 } from '../types/domain';
 
 export const MOCK_PROFILE: HardwareProfile = {
@@ -23,9 +26,28 @@ export const MOCK_PROFILE: HardwareProfile = {
   disk_free_bytes: 256 * 1024 * 1024 * 1024,
   os_version: 'macOS 14.5 (Sonoma)',
   detected_at: new Date().toISOString(),
+  gpu_bandwidth_gbps: 192.0,
+  host_bandwidth_gbps: 40.0,
 };
 
 export const MOCK_CATALOG: CatalogEntry[] = [
+  {
+    id: 'tinyllama-15m-q4_k_m',
+    repo_id: 'mradermacher/tinyllama-15M-GGUF',
+    filename: 'tinyllama-15M.Q4_K_M.gguf',
+    family: 'tinyllama',
+    params_billions: 0.015,
+    n_layers: 6,
+    n_kv_heads: 6,
+    head_dim: 48,
+    context_train: 256,
+    quant: 'Q4_K_M',
+    file_size_bytes: 14650848,
+    sha256: '1c40391e29ecec2a408532a93e229d2bf3ad8652ad96de54eb58bc30f4bedc5b',
+    gated: false,
+    quality_tier: 3,
+    tags: ['tinyllama', '15m', 'ultra-light', 'test-download'],
+  },
   {
     id: 'qwen2.5-0.5b-instruct-q4_k_m',
     repo_id: 'Qwen/Qwen2.5-0.5B-Instruct-GGUF',
@@ -209,6 +231,12 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
     const scoreSpeed = Math.min(10, Math.max(1, speed / 6));
     const scoreQuality = entry.quality_tier * 2;
 
+    const leftover = Math.max(0, hostBudget - (weights + activations + overhead));
+    const bytesPerToken = 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * kvElemBytes * slots;
+    const maxTokens = bytesPerToken > 0 ? Math.floor(leftover / bytesPerToken) : entry.context_train;
+    const usableContext = Math.min(entry.context_train, Math.max(512, maxTokens));
+    const isConstrained = usableContext < entry.context_train;
+
     return {
       entry,
       fits,
@@ -216,6 +244,8 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
       est_kv_bytes: kv,
       est_total_bytes: total,
       max_context_that_fits: fits ? entry.context_train : 2048,
+      usable_context: usableContext,
+      is_context_constrained: isConstrained,
       recommended_gpu_layers: recommendedLayers,
       speed_tps_estimate: parseFloat(speed.toFixed(1)),
       score_fit: parseFloat(scoreFit.toFixed(1)),
@@ -246,13 +276,45 @@ export async function mockStartDownload(entryId: string): Promise<string> {
   const entry = MOCK_CATALOG.find((e) => e.id === entryId);
   if (!entry) throw new Error(`Model not found: ${entryId}`);
 
-  mockDownloads.push({
+  // Prevent duplicate tasks
+  if (mockDownloads.some((d) => d.entry_id === entryId)) {
+    return entryId;
+  }
+
+  const task: DownloadTask = {
     entry_id: entryId,
     state: { status: 'downloading', bytes_done: 0, total_bytes: entry.file_size_bytes },
     bytes_done: 0,
     bytes_total: entry.file_size_bytes,
     etag: entry.sha256,
-  });
+  };
+
+  mockDownloads.push(task);
+
+  // Simulate progress in mock mode
+  const interval = setInterval(() => {
+    const item = mockDownloads.find((d) => d.entry_id === entryId);
+    if (!item) {
+      clearInterval(interval);
+      return;
+    }
+    const step = Math.ceil(entry.file_size_bytes / 5);
+    item.bytes_done = Math.min(entry.file_size_bytes, item.bytes_done + step);
+    item.state = { status: 'downloading', bytes_done: item.bytes_done, total_bytes: entry.file_size_bytes };
+    if (item.bytes_done >= entry.file_size_bytes) {
+      clearInterval(interval);
+      mockDownloads = mockDownloads.filter((d) => d.entry_id !== entryId);
+      if (!mockRecords.some((r) => r.entry_id === entryId)) {
+        mockRecords.push({
+          entry_id: entryId,
+          file_path: `/models/${entryId}.gguf`,
+          size_bytes: entry.file_size_bytes,
+          verified: true,
+          added_at: new Date().toISOString(),
+        });
+      }
+    }
+  }, 1000);
 
   return entryId;
 }
@@ -270,17 +332,70 @@ export async function mockGetServerState(): Promise<ServerState> {
   return { ...mockServerState };
 }
 
-export async function mockStartServer(modelId: string, _cfg: ServeConfig): Promise<number> {
+export async function mockListRunningInstances(): Promise<RunningInstanceInfo[]> {
+  if (mockServerState.state === 'serving') {
+    return mockServerState.instances || [
+      {
+        model_id: mockServerState.model_id,
+        model_path: mockServerState.model_path,
+        port: mockServerState.port,
+        context_size: mockServerState.context_size,
+        started_at: mockServerState.started_at,
+      },
+    ];
+  }
+  return [];
+}
+
+export async function mockStartServer(modelId: string, cfg: ServeConfig): Promise<number> {
+  const newInst: RunningInstanceInfo = {
+    model_id: modelId,
+    model_path: `/models/${modelId}.gguf`,
+    port: 13370,
+    context_size: cfg.context_size || 4096,
+    started_at: new Date().toISOString(),
+  };
+
+  const existingInsts =
+    mockServerState.state === 'serving' ? mockServerState.instances || [] : [];
+  const updatedInsts = [
+    ...existingInsts.filter((i) => i.model_id !== modelId),
+    newInst,
+  ];
+
   mockServerState = {
     state: 'serving',
     model_id: modelId,
     model_path: `/models/${modelId}.gguf`,
     port: 13370,
-    context_size: 4096,
-    started_at: new Date().toISOString(),
+    context_size: cfg.context_size || 4096,
+    started_at: newInst.started_at,
+    instances: updatedInsts,
   };
   mockLogs.push(`[info] Started serving model ${modelId} on port 13370`);
   return 13370;
+}
+
+export async function mockStopInstance(modelId: string): Promise<void> {
+  if (mockServerState.state === 'serving') {
+    const remaining = (mockServerState.instances || []).filter(
+      (i) => i.model_id !== modelId
+    );
+    if (remaining.length === 0) {
+      mockServerState = { state: 'stopped' };
+    } else {
+      mockServerState = {
+        state: 'serving',
+        model_id: remaining[0].model_id,
+        model_path: remaining[0].model_path,
+        port: remaining[0].port,
+        context_size: remaining[0].context_size,
+        started_at: remaining[0].started_at,
+        instances: remaining,
+      };
+    }
+  }
+  mockLogs.push(`[info] Stopped instance ${modelId}`);
 }
 
 export async function mockStopServer(): Promise<void> {
@@ -288,7 +403,7 @@ export async function mockStopServer(): Promise<void> {
   mockLogs.push(`[info] Stopped inference server`);
 }
 
-export async function mockGetServerLogs(): Promise<string[]> {
+export async function mockGetServerLogs(_modelId?: string): Promise<string[]> {
   return [...mockLogs];
 }
 
@@ -299,9 +414,55 @@ export async function mockGetSettings(): Promise<AppSettings> {
     default_context_size: 4096,
     default_kv_type: 'f16',
     models_dir: '~/Library/Application Support/dev.portfolio.local-llm-advisor/models',
+    run_in_background: true,
   };
 }
 
 export async function mockSaveSettings(_settings: AppSettings): Promise<void> {
   // no-op in mock
 }
+
+export async function mockPurgeAllModels(): Promise<number> {
+  mockRecords = [];
+  mockDownloads = [];
+  return 0;
+}
+
+export async function mockFactoryReset(): Promise<boolean> {
+  mockRecords = [];
+  mockDownloads = [];
+  mockServerState = { state: 'stopped' };
+  mockLogs = [];
+  return true;
+}
+
+export async function mockCleanUninstall(options?: CleanUninstallOptions): Promise<UninstallResult> {
+  const reclaimed = mockRecords.reduce((acc, r) => acc + (r.size_bytes || 0), 0);
+  const modelsCount = mockRecords.length;
+
+  if (options?.delete_models !== false) {
+    mockRecords = [];
+    mockDownloads = [];
+  }
+  if (options?.clear_configs !== false) {
+    // Reset configuration
+  }
+  if (options?.clear_cache !== false) {
+    mockLogs = [];
+  }
+  mockServerState = { state: 'stopped' };
+
+  return {
+    reclaimed_bytes: reclaimed,
+    models_deleted: modelsCount,
+    configs_cleared: options?.clear_configs !== false,
+    cache_purged: options?.clear_cache !== false,
+    app_data_dir: '/Users/demo/Library/Application Support/dev.portfolio.local-llm-advisor',
+    success: true,
+  };
+}
+
+export async function mockPruneOrphans(orphans: string[]): Promise<number> {
+  return orphans.length;
+}
+

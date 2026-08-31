@@ -105,10 +105,21 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
         .await
         .map_err(|e| AppError::DownloadNetwork(format!("Preflight HEAD failed: {}", e)))?;
 
-    if head_resp.status() == reqwest::StatusCode::UNAUTHORIZED
-        || head_resp.status() == reqwest::StatusCode::FORBIDDEN
+    let head_status = head_resp.status();
+    if head_status == reqwest::StatusCode::UNAUTHORIZED
+        || head_status == reqwest::StatusCode::FORBIDDEN
     {
         return Err(AppError::DownloadGatedNoToken);
+    }
+    if !head_status.is_success()
+        && head_status != reqwest::StatusCode::FOUND
+        && head_status != reqwest::StatusCode::TEMPORARY_REDIRECT
+        && head_status != reqwest::StatusCode::SEE_OTHER
+    {
+        return Err(AppError::DownloadNetwork(format!(
+            "Preflight request returned HTTP {}",
+            head_status
+        )));
     }
 
     let header_len = head_resp.content_length().unwrap_or(0);
@@ -144,6 +155,12 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
         let status = response.status();
         if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
             return Err(AppError::DownloadGatedNoToken);
+        }
+        if !status.is_success() && status != reqwest::StatusCode::PARTIAL_CONTENT {
+            return Err(AppError::DownloadNetwork(format!(
+                "Download stream returned HTTP {}",
+                status
+            )));
         }
 
         let is_partial = status == reqwest::StatusCode::PARTIAL_CONTENT;
@@ -190,7 +207,9 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
 
     // 4. SHA256 Verification
     let computed_sha256 = compute_file_sha256(&part_path).await?;
-    if !computed_sha256.eq_ignore_ascii_case(&entry.sha256) {
+    let matches_catalog = computed_sha256.eq_ignore_ascii_case(&entry.sha256);
+
+    if !matches_catalog {
         // Checksum mismatch -> delete corrupted part file and return typed error
         let _ = tokio::fs::remove_file(&part_path).await;
         return Err(AppError::DownloadChecksum {
