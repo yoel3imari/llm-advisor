@@ -14,7 +14,8 @@ This document records architectural conventions, project lessons learned, and gu
   * macOS targets: `x86_64-apple-darwin` (Intel) or `aarch64-apple-darwin` (Apple Silicon).
   * Linux targets: `x86_64-unknown-linux-gnu`.
   * Always inspect `uname -s` and `uname -m` when writing download or launch scripts.
-  * On Linux, `llama-server` dynamic dependencies (`libggml.so`, `libllama.so`, `libmtmd.so`) must be placed in `src-tauri/binaries/` with `LD_LIBRARY_PATH` configured on child spawn.
+  * On Linux, `llama-server` dynamic dependencies (`libggml.so`, `libllama.so`, `libmtmd.so`, `libllama-server-impl.so`) must be placed in `src-tauri/binaries/` with `LD_LIBRARY_PATH` configured on child spawn.
+  * **AppImage / linuxdeploy Guardrail**: When bundling `.AppImage`, `linuxdeploy` traces ELF dynamic dependencies. Ensure `LD_LIBRARY_PATH="$PWD/src-tauri/binaries:$LD_LIBRARY_PATH"` is set so `linuxdeploy` discovers internal `.so` files and avoids `Could not find dependency: libllama-server-impl.so`.
 * **Linux Hardware Probing**:
   * Native GPU detection inspects NVIDIA (`nvidia-smi`), AMD DRM (`/sys/class/drm/card*/device/mem_info_vram_total`), and PCI controllers (`lspci`).
   * Host RAM budget is bounded to 75% of total physical memory for safe non-paging execution.

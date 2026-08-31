@@ -6,19 +6,19 @@ This document details all verification procedures and acceptance criteria that m
 
 ## 1. Build & Environment Pre-Flight
 
-- [ ] **System Dependency Preflight (Doctor)**:
+- [X] **System Dependency Preflight (Doctor)**:
   ```bash
   npm run doctor
   ```
   *Verify that all toolchains (Node, NPM, Rust, Cargo, curl), platform libraries (WebKitGTK, GTK3, OpenSSL, RSVG, AppIndicator), and embedded sidecars report `[✓]`.*
 
-- [ ] **Inference Sidecar Provisioning**:
+- [X] **Inference Sidecar Provisioning**:
   ```bash
   npm run sidecar:fetch
   ```
   *Verify that the real `llama-server` binary and all required shared libraries (`libggml.so`, `libllama.so`, or `.dylib`/`.dll`) are downloaded into `src-tauri/binaries/` and execute cleanly.*
 
-- [ ] **Automated Test Suite**:
+- [X] **Automated Test Suite**:
   ```bash
   cargo test
   npm test
@@ -27,7 +27,10 @@ This document details all verification procedures and acceptance criteria that m
 
 - [ ] **Clean Production Build**:
   ```bash
-  npm run tauri build
+  npm run build:bundle   # Bundles all supported packages (deb, AppImage)
+  # or target-specific:
+  npm run build:deb
+  npm run build:appimage
   ```
   *Verify that the bundle compiles and packages without missing assets or build errors.*
 
