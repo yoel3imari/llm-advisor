@@ -153,13 +153,23 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
 
     // Start model 1
     let port1 = manager
-        .start_server("model-1".to_string(), model1_path, ServeConfig::default(), None)
+        .start_server(
+            "model-1".to_string(),
+            model1_path,
+            ServeConfig::default(),
+            None,
+        )
         .await
         .expect("start model 1");
 
     // Start model 2 concurrently
     let port2 = manager
-        .start_server("model-2".to_string(), model2_path, ServeConfig::default(), None)
+        .start_server(
+            "model-2".to_string(),
+            model2_path,
+            ServeConfig::default(),
+            None,
+        )
         .await
         .expect("start model 2");
 
@@ -169,7 +179,10 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
     assert_eq!(manager.get_port_for_model(Some("model-2")), Some(port2));
 
     // Stop only model 1
-    manager.stop_instance("model-1").await.expect("stop model 1");
+    manager
+        .stop_instance("model-1")
+        .await
+        .expect("stop model 1");
     assert_eq!(manager.list_instances().len(), 1);
     assert_eq!(manager.get_port_for_model(Some("model-1")), Some(port2)); // fallback to the only running model
     assert_eq!(manager.get_port_for_model(Some("model-2")), Some(port2));

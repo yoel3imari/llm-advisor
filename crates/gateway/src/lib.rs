@@ -212,7 +212,10 @@ async fn proxy_to_sidecar(
     // Extract requested "model" field if present
     let requested_model = serde_json::from_slice::<serde_json::Value>(&body_bytes)
         .ok()
-        .and_then(|v| v.get("model").and_then(|m| m.as_str().map(|s| s.to_string())));
+        .and_then(|v| {
+            v.get("model")
+                .and_then(|m| m.as_str().map(|s| s.to_string()))
+        });
 
     let target_port = match state
         .server_manager

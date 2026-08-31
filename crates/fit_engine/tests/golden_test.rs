@@ -39,6 +39,7 @@ fn sample_profile_16gb_intel() -> HardwareProfile {
         detected_at: Utc::now(),
         gpu_bandwidth_gbps: Some(192.0),
         host_bandwidth_gbps: 40.0,
+        ..Default::default()
     }
 }
 
@@ -97,6 +98,7 @@ fn test_golden_llama31_8b_on_8gb_tight_or_nofit() {
         detected_at: Utc::now(),
         gpu_bandwidth_gbps: None,
         host_bandwidth_gbps: 40.0,
+        ..Default::default()
     };
 
     // Context 8192
@@ -149,6 +151,7 @@ fn test_golden_moe_mixtral_active_params_speed() {
         detected_at: Utc::now(),
         gpu_bandwidth_gbps: Some(1024.0),
         host_bandwidth_gbps: 40.0,
+        ..Default::default()
     };
 
     let cfg = ServeConfig::default();
@@ -256,6 +259,7 @@ fn test_llama_3_1_70b_q2_k_on_16gb_ram_fails() {
         detected_at: Utc::now(),
         gpu_bandwidth_gbps: Some(192.0),
         host_bandwidth_gbps: 40.0,
+        ..Default::default()
     };
 
     let entry = CatalogEntry {
@@ -325,12 +329,18 @@ fn test_usable_context_calculation() {
     let cfg = ServeConfig::default();
 
     let (usable_ctx, is_constrained) = calculate_usable_context(&entry, &profile, &cfg);
-    assert!(usable_ctx > 8192, "16GB profile should support significant context for 8B model");
+    assert!(
+        usable_ctx > 8192,
+        "16GB profile should support significant context for 8B model"
+    );
     assert!(usable_ctx <= entry.context_train);
     // With 12GB working set - ~5.8GB base overhead = ~6.2GB for KV cache
     // 6.2GB / (131KB per token) ≈ 47k tokens
     assert!(usable_ctx >= 40000);
-    assert!(is_constrained, "128k native context should be constrained to ~47k on 16GB Mac");
+    assert!(
+        is_constrained,
+        "128k native context should be constrained to ~47k on 16GB Mac"
+    );
 }
 
 #[test]
@@ -344,9 +354,15 @@ fn test_roofline_speed_throughput() {
     // Full 32 GPU layers offload
     let speed_gpu = estimate_speed_tps(&entry, &profile_rtx4090, 32);
     // (1008 * 0.55 / 4.58 GB) * 1.0 ≈ 121 TPS
-    assert!(speed_gpu > 80.0 && speed_gpu < 160.0, "RTX 4090 8B should achieve ~120 tok/s");
+    assert!(
+        speed_gpu > 80.0 && speed_gpu < 160.0,
+        "RTX 4090 8B should achieve ~120 tok/s"
+    );
 
     // CPU only
     let speed_cpu = estimate_speed_tps(&entry, &profile_rtx4090, 0);
-    assert!(speed_cpu < 10.0, "CPU only speed should be much lower than GPU");
+    assert!(
+        speed_cpu < 10.0,
+        "CPU only speed should be much lower than GPU"
+    );
 }

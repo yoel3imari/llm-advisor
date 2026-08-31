@@ -41,6 +41,24 @@ impl Default for AppSettings {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CleanUninstallOptions {
+    pub delete_models: Option<bool>,
+    pub clear_configs: Option<bool>,
+    pub clear_cache: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UninstallResult {
+    pub reclaimed_bytes: u64,
+    pub models_deleted: usize,
+    pub configs_cleared: bool,
+    pub cache_purged: bool,
+    pub app_data_dir: String,
+    pub success: bool,
+}
+
+
 pub struct AppState {
     pub server_manager: Arc<ServerManager>,
     pub library_store: Arc<LibraryStore>,
@@ -180,7 +198,80 @@ async fn factory_reset(state: State<'_, AppState>) -> Result<bool, String> {
 }
 
 #[tauri::command]
+async fn clean_uninstall(
+    state: State<'_, AppState>,
+    options: Option<CleanUninstallOptions>,
+) -> Result<UninstallResult, String> {
+    let opts = options.unwrap_or_default();
+    let delete_models = opts.delete_models.unwrap_or(true);
+    let clear_configs = opts.clear_configs.unwrap_or(true);
+    let clear_cache = opts.clear_cache.unwrap_or(true);
+
+    // 1. Stop all server instances
+    let _ = state.server_manager.stop_all().await;
+
+    // 2. Cancel all active downloads
+    {
+        let mut downloads = state.active_downloads.lock().unwrap();
+        for (_, token) in downloads.values() {
+            token.cancel();
+        }
+        downloads.clear();
+    }
+
+    // 3. Count models before purging
+    let models_count = state.library_store.list().unwrap_or_default().len();
+    let mut reclaimed_bytes = 0u64;
+
+    // 4. Purge models if requested
+    if delete_models {
+        if let Ok(bytes) = state.library_store.purge_all() {
+            reclaimed_bytes = bytes;
+        }
+    }
+
+    // 5. Clear configurations if requested
+    if clear_configs {
+        let default_settings = AppSettings {
+            models_dir: state
+                .library_store
+                .models_dir()
+                .to_string_lossy()
+                .to_string(),
+            ..Default::default()
+        };
+        let _ = save_settings_to_file(&state.settings_path, &default_settings);
+        {
+            let mut s = state.settings.write().unwrap();
+            *s = default_settings;
+        }
+    }
+
+    let app_data_dir = state
+        .library_store
+        .base_dir()
+        .to_string_lossy()
+        .to_string();
+
+    Ok(UninstallResult {
+        reclaimed_bytes,
+        models_deleted: models_count,
+        configs_cleared: clear_configs,
+        cache_purged: clear_cache,
+        app_data_dir,
+        success: true,
+    })
+}
+
+#[tauri::command]
+async fn prune_orphans(state: State<'_, AppState>, orphans: Vec<String>) -> Result<u64, String> {
+    let paths: Vec<PathBuf> = orphans.into_iter().map(PathBuf::from).collect();
+    state.library_store.prune_orphans(&paths).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn reconcile_library(state: State<'_, AppState>) -> Result<LibraryReconciliation, String> {
+
     state.library_store.reconcile().map_err(|e| e.to_string())
 }
 
@@ -421,7 +512,19 @@ async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Res
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     let sidecar_name = if cfg!(target_os = "macos") {
-        "llama-server-x86_64-apple-darwin"
+        if cfg!(target_arch = "aarch64") {
+            "llama-server-aarch64-apple-darwin"
+        } else {
+            "llama-server-x86_64-apple-darwin"
+        }
+    } else if cfg!(target_os = "windows") {
+        if cfg!(target_arch = "aarch64") {
+            "llama-server-aarch64-pc-windows-msvc.exe"
+        } else {
+            "llama-server-x86_64-pc-windows-msvc.exe"
+        }
+    } else if cfg!(target_arch = "aarch64") {
+        "llama-server-aarch64-unknown-linux-gnu"
     } else {
         "llama-server-x86_64-unknown-linux-gnu"
     };
@@ -432,6 +535,8 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     if let Ok(resource_dir) = app.path().resource_dir() {
         candidate_paths.push(resource_dir.join("binaries").join(sidecar_name));
         candidate_paths.push(resource_dir.join(sidecar_name));
+        candidate_paths.push(resource_dir.join("llama-server"));
+        candidate_paths.push(resource_dir.join("llama-server.exe"));
     }
 
     // 2. Next to executable
@@ -439,6 +544,8 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
         if let Some(exe_dir) = exe_path.parent() {
             candidate_paths.push(exe_dir.join("binaries").join(sidecar_name));
             candidate_paths.push(exe_dir.join(sidecar_name));
+            candidate_paths.push(exe_dir.join("llama-server"));
+            candidate_paths.push(exe_dir.join("llama-server.exe"));
         }
     }
 
@@ -446,6 +553,11 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     if let Ok(cwd) = std::env::current_dir() {
         candidate_paths.push(cwd.join("src-tauri").join("binaries").join(sidecar_name));
         candidate_paths.push(cwd.join("sidecars").join("binaries").join("llama-server"));
+        candidate_paths.push(
+            cwd.join("sidecars")
+                .join("binaries")
+                .join("llama-server.exe"),
+        );
         candidate_paths.push(cwd.join("binaries").join(sidecar_name));
     }
 
@@ -551,6 +663,9 @@ pub fn run() {
                 });
 
             if let Some(icon) = app.default_window_icon().cloned() {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_icon(icon.clone());
+                }
                 let _ = tray_builder.icon(icon).build(app);
             } else {
                 let _ = tray_builder.build(app);
@@ -607,7 +722,9 @@ pub fn run() {
             list_running_instances,
             get_server_logs,
             get_settings,
-            save_settings
+            save_settings,
+            clean_uninstall,
+            prune_orphans
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

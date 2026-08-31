@@ -9,6 +9,8 @@ import type {
   RunningInstanceInfo,
   LibraryReconciliation,
   AppSettings,
+  CleanUninstallOptions,
+  UninstallResult,
 } from '../types/domain';
 
 export const MOCK_PROFILE: HardwareProfile = {
@@ -433,3 +435,34 @@ export async function mockFactoryReset(): Promise<boolean> {
   mockLogs = [];
   return true;
 }
+
+export async function mockCleanUninstall(options?: CleanUninstallOptions): Promise<UninstallResult> {
+  const reclaimed = mockRecords.reduce((acc, r) => acc + (r.size_bytes || 0), 0);
+  const modelsCount = mockRecords.length;
+
+  if (options?.delete_models !== false) {
+    mockRecords = [];
+    mockDownloads = [];
+  }
+  if (options?.clear_configs !== false) {
+    // Reset configuration
+  }
+  if (options?.clear_cache !== false) {
+    mockLogs = [];
+  }
+  mockServerState = { state: 'stopped' };
+
+  return {
+    reclaimed_bytes: reclaimed,
+    models_deleted: modelsCount,
+    configs_cleared: options?.clear_configs !== false,
+    cache_purged: options?.clear_cache !== false,
+    app_data_dir: '/Users/demo/Library/Application Support/dev.portfolio.local-llm-advisor',
+    success: true,
+  };
+}
+
+export async function mockPruneOrphans(orphans: string[]): Promise<number> {
+  return orphans.length;
+}
+

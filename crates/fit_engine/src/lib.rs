@@ -196,10 +196,15 @@ pub fn estimate_speed_tps(
         }
     });
 
-    let (effective_bandwidth, run_mode_factor) = if entry.n_layers > 0 && recommended_gpu_layers > 0 {
+    let (effective_bandwidth, run_mode_factor) = if entry.n_layers > 0 && recommended_gpu_layers > 0
+    {
         let gpu_ratio = (recommended_gpu_layers as f32) / (entry.n_layers as f32);
         if gpu_ratio >= 0.99 {
-            let factor = if entry.active_params_b.is_some() { 0.8 } else { 1.0 };
+            let factor = if entry.active_params_b.is_some() {
+                0.8
+            } else {
+                1.0
+            };
             (gpu_bw, factor)
         } else {
             let cpu_ratio = 1.0 - gpu_ratio;

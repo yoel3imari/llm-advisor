@@ -1,3 +1,14 @@
+export interface CpuFeatures {
+  has_avx512: boolean;
+  has_avx2: boolean;
+  has_avx: boolean;
+  has_fma: boolean;
+  has_neon: boolean;
+  has_dotprod: boolean;
+  has_sve: boolean;
+  has_amx: boolean;
+}
+
 export interface HardwareProfile {
   cpu_name: string;
   arch: string;
@@ -13,6 +24,10 @@ export interface HardwareProfile {
   detected_at: string;
   gpu_bandwidth_gbps?: number | null;
   host_bandwidth_gbps?: number;
+  cpu_features?: CpuFeatures | null;
+  accelerator_backend?: string | null;
+  driver_version?: string | null;
+  power_source?: string | null;
 }
 
 export interface CatalogEntry {
@@ -120,3 +135,19 @@ export interface AppSettings {
   models_dir: string;
   run_in_background?: boolean;
 }
+
+export interface CleanUninstallOptions {
+  delete_models?: boolean;
+  clear_configs?: boolean;
+  clear_cache?: boolean;
+}
+
+export interface UninstallResult {
+  reclaimed_bytes: number;
+  models_deleted: number;
+  configs_cleared: boolean;
+  cache_purged: boolean;
+  app_data_dir?: string;
+  success: boolean;
+}
+

@@ -168,10 +168,10 @@ impl ServerManager {
 
                 // 3. Substring match (e.g. "smollm2" matches "smollm2-135m-instruct-q8_0")
                 let req_lower = req.to_lowercase();
-                if let Some(p) = instances
-                    .values()
-                    .find(|p| p.model_id.to_lowercase().contains(&req_lower) || req_lower.contains(&p.model_id.to_lowercase()))
-                {
+                if let Some(p) = instances.values().find(|p| {
+                    p.model_id.to_lowercase().contains(&req_lower)
+                        || req_lower.contains(&p.model_id.to_lowercase())
+                }) {
                     return Some(p.port);
                 }
 
@@ -189,8 +189,7 @@ impl ServerManager {
     pub fn get_active_model_id(&self) -> Option<String> {
         let instances = self.instances.lock().unwrap();
         let primary_id = self.primary_model_id.read().unwrap().clone();
-        primary_id
-            .or_else(|| instances.values().next().map(|p| p.model_id.clone()))
+        primary_id.or_else(|| instances.values().next().map(|p| p.model_id.clone()))
     }
 
     /// Get a list of all currently running model IDs.
@@ -306,6 +305,31 @@ impl ServerManager {
             cmd.arg("-ngl").arg(layers.to_string());
         }
 
+        // Environment Sanitization: strip dangerous preload libraries
+        cmd.env_remove("LD_PRELOAD");
+        cmd.env_remove("DYLD_INSERT_LIBRARIES");
+        cmd.env_remove("LD_AUDIT");
+
+        #[cfg(target_os = "linux")]
+        {
+            let shm_path = std::path::Path::new("/dev/shm");
+            if shm_path.exists() {
+                let disks = sysinfo::Disks::new_with_refreshed_list();
+                for disk in disks.list() {
+                    if disk.mount_point() == shm_path
+                        && disk.available_space() < 2 * 1024 * 1024 * 1024
+                    {
+                        warn!(
+                            "Shared memory /dev/shm is constrained ({} MB), passing --no-mmap",
+                            disk.available_space() / (1024 * 1024)
+                        );
+                        cmd.arg("--no-mmap");
+                        break;
+                    }
+                }
+            }
+        }
+
         if let Some(parent) = self.sidecar_path.parent() {
             let current_ld = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
             let new_ld = format!("{}:{}", parent.display(), current_ld);
@@ -314,11 +338,21 @@ impl ServerManager {
             let current_dyld = std::env::var("DYLD_LIBRARY_PATH").unwrap_or_default();
             let new_dyld = format!("{}:{}", parent.display(), current_dyld);
             cmd.env("DYLD_LIBRARY_PATH", new_dyld);
+
+            #[cfg(target_os = "windows")]
+            {
+                let current_path = std::env::var("PATH").unwrap_or_default();
+                let new_path = format!("{};{}", parent.display(), current_path);
+                cmd.env("PATH", new_path);
+            }
         }
 
         cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
 
-        info!("Spawning llama-server for {} on 127.0.0.1:{}", model_id, port);
+        info!(
+            "Spawning llama-server for {} on 127.0.0.1:{}",
+            model_id, port
+        );
         let mut child = cmd.spawn().map_err(|e| {
             AppError::ServerSpawn(format!("Failed to execute sidecar process: {}", e))
         })?;
@@ -410,8 +444,7 @@ impl ServerManager {
 
         while start_time.elapsed() < timeout {
             if let Ok(Some(status)) = child.try_wait() {
-                let stderr_tail: Vec<String> =
-                    self.get_logs().into_iter().rev().take(15).collect();
+                let stderr_tail: Vec<String> = self.get_logs().into_iter().rev().take(15).collect();
                 let reason = format!(
                     "llama-server for {} exited unexpectedly with status {}",
                     model_id, status
@@ -438,7 +471,10 @@ impl ServerManager {
             let _ = Self::terminate_child(&mut child).await;
             let stderr_tail: Vec<String> = self.get_logs().into_iter().rev().take(15).collect();
             *self.state.write().unwrap() = ServerState::Error {
-                reason: format!("Health check for {} timed out after {}s", model_id, timeout_secs),
+                reason: format!(
+                    "Health check for {} timed out after {}s",
+                    model_id, timeout_secs
+                ),
                 stderr_tail,
             };
             return Err(AppError::ServerHealthTimeout);
@@ -471,16 +507,21 @@ impl ServerManager {
 
     /// Terminate a child process gracefully.
     async fn terminate_child(child: &mut Child) -> Result<(), AppError> {
-        info!("Terminating llama-server process (PID: {})...", child.id());
+        let pid = child.id();
+        info!("Terminating llama-server process (PID: {})...", pid);
 
         #[cfg(unix)]
         {
             unsafe {
-                libc::kill(child.id() as i32, libc::SIGTERM);
+                libc::kill(pid as i32, libc::SIGTERM);
             }
         }
         #[cfg(not(unix))]
         {
+            // On Windows, taskkill /T /F terminates the entire process tree reliably
+            let _ = std::process::Command::new("taskkill")
+                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                .output();
             let _ = child.kill();
         }
 
@@ -495,7 +536,7 @@ impl ServerManager {
         }
 
         if !exited {
-            warn!("Process did not exit after SIGTERM, sending SIGKILL...");
+            warn!("Process did not exit after termination request, sending force kill...");
             let _ = child.kill();
             let _ = child.wait();
         }

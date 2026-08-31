@@ -10,6 +10,8 @@ import type {
   RunningInstanceInfo,
   LibraryReconciliation,
   AppSettings,
+  CleanUninstallOptions,
+  UninstallResult,
 } from '../types/domain';
 import * as mock from './mock';
 
@@ -117,3 +119,14 @@ export async function factoryReset(): Promise<boolean> {
   if (useMock) return mock.mockFactoryReset();
   return invoke<boolean>('factory_reset');
 }
+
+export async function cleanUninstall(options?: CleanUninstallOptions): Promise<UninstallResult> {
+  if (useMock) return mock.mockCleanUninstall(options);
+  return invoke<UninstallResult>('clean_uninstall', { options });
+}
+
+export async function pruneOrphans(orphans: string[]): Promise<number> {
+  if (useMock) return mock.mockPruneOrphans(orphans);
+  return invoke<number>('prune_orphans', { orphans });
+}
+

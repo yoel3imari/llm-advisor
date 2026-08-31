@@ -166,12 +166,22 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
 
     let manager = Arc::new(ServerManager::new(fake_server_path));
     let _port1 = manager
-        .start_server("smollm2-135m".to_string(), m1_path, domain::ServeConfig::default(), None)
+        .start_server(
+            "smollm2-135m".to_string(),
+            m1_path,
+            domain::ServeConfig::default(),
+            None,
+        )
         .await
         .expect("start smollm2");
 
     let _port2 = manager
-        .start_server("qwen2.5-coder".to_string(), m2_path, domain::ServeConfig::default(), None)
+        .start_server(
+            "qwen2.5-coder".to_string(),
+            m2_path,
+            domain::ServeConfig::default(),
+            None,
+        )
         .await
         .expect("start qwen2.5");
 

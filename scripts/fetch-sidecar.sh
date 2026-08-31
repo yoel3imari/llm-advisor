@@ -28,8 +28,16 @@ if [ "${OS}" = "darwin" ]; then
         TAURI_BIN_NAME="llama-server-x86_64-apple-darwin"
     fi
 elif [ "${OS}" = "linux" ]; then
-    TARGET_URL="${LINUX_X64_URL}"
-    TAURI_BIN_NAME="llama-server-x86_64-unknown-linux-gnu"
+    if [ "${ARCH}" = "arm64" ] || [ "${ARCH}" = "aarch64" ]; then
+        TARGET_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-ubuntu-arm64.tar.gz"
+        TAURI_BIN_NAME="llama-server-aarch64-unknown-linux-gnu"
+    else
+        TARGET_URL="${LINUX_X64_URL}"
+        TAURI_BIN_NAME="llama-server-x86_64-unknown-linux-gnu"
+    fi
+elif [[ "${OS}" == *"mingw"* ]] || [[ "${OS}" == *"msys"* ]] || [[ "${OS}" == *"cygwin"* ]] || [[ "${OS}" == "windows_nt" ]]; then
+    TARGET_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-win-avx2-x64.zip"
+    TAURI_BIN_NAME="llama-server-x86_64-pc-windows-msvc.exe"
 else
     echo "Unsupported OS: ${OS}"
     exit 1

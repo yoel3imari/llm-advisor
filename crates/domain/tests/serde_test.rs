@@ -37,6 +37,7 @@ fn test_hardware_profile_serde_roundtrip() {
         detected_at: Utc::now(),
         gpu_bandwidth_gbps: Some(192.0),
         host_bandwidth_gbps: 40.0,
+        ..Default::default()
     };
 
     let serialized = serde_json::to_string(&profile).expect("serialize");

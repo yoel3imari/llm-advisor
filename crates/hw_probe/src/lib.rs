@@ -25,88 +25,220 @@ pub fn lookup_gpu_bandwidth_gbps(gpu_name: &str) -> Option<f32> {
     let name = gpu_name.to_lowercase();
 
     // NVIDIA GeForce RTX 40 series (Ada Lovelace)
-    if name.contains("4090") { return Some(1008.0); }
-    if name.contains("4080 super") { return Some(736.0); }
-    if name.contains("4080") { return Some(717.0); }
-    if name.contains("4070 ti super") { return Some(672.0); }
-    if name.contains("4070 ti") { return Some(504.0); }
-    if name.contains("4070 super") { return Some(504.0); }
-    if name.contains("4070") { return Some(504.0); }
-    if name.contains("4060 ti") { return Some(288.0); }
-    if name.contains("4060") { return Some(272.0); }
+    if name.contains("4090") {
+        return Some(1008.0);
+    }
+    if name.contains("4080 super") {
+        return Some(736.0);
+    }
+    if name.contains("4080") {
+        return Some(717.0);
+    }
+    if name.contains("4070 ti super") {
+        return Some(672.0);
+    }
+    if name.contains("4070 ti") {
+        return Some(504.0);
+    }
+    if name.contains("4070 super") {
+        return Some(504.0);
+    }
+    if name.contains("4070") {
+        return Some(504.0);
+    }
+    if name.contains("4060 ti") {
+        return Some(288.0);
+    }
+    if name.contains("4060") {
+        return Some(272.0);
+    }
 
     // NVIDIA GeForce RTX 30 series (Ampere)
-    if name.contains("3090 ti") { return Some(1008.0); }
-    if name.contains("3090") { return Some(936.0); }
-    if name.contains("3080 ti") { return Some(912.0); }
-    if name.contains("3080") { return Some(760.0); }
-    if name.contains("3070 ti") { return Some(608.0); }
-    if name.contains("3070") { return Some(448.0); }
-    if name.contains("3060 ti") { return Some(448.0); }
-    if name.contains("3060") { return Some(360.0); }
+    if name.contains("3090 ti") {
+        return Some(1008.0);
+    }
+    if name.contains("3090") {
+        return Some(936.0);
+    }
+    if name.contains("3080 ti") {
+        return Some(912.0);
+    }
+    if name.contains("3080") {
+        return Some(760.0);
+    }
+    if name.contains("3070 ti") {
+        return Some(608.0);
+    }
+    if name.contains("3070") {
+        return Some(448.0);
+    }
+    if name.contains("3060 ti") {
+        return Some(448.0);
+    }
+    if name.contains("3060") {
+        return Some(360.0);
+    }
 
     // NVIDIA Data Center / Workstation
-    if name.contains("h100") { return Some(3350.0); }
-    if name.contains("a100") { return Some(2039.0); }
-    if name.contains("l40s") || name.contains("l40") { return Some(864.0); }
-    if name.contains("l4") { return Some(300.0); }
-    if name.contains("a6000") { return Some(768.0); }
-    if name.contains("a5000") { return Some(768.0); }
-    if name.contains("a4000") { return Some(448.0); }
-    if name.contains("titan rtx") { return Some(672.0); }
-    if name.contains("titan v") { return Some(653.0); }
+    if name.contains("h100") {
+        return Some(3350.0);
+    }
+    if name.contains("a100") {
+        return Some(2039.0);
+    }
+    if name.contains("l40s") || name.contains("l40") {
+        return Some(864.0);
+    }
+    if name.contains("l4") {
+        return Some(300.0);
+    }
+    if name.contains("a6000") {
+        return Some(768.0);
+    }
+    if name.contains("a5000") {
+        return Some(768.0);
+    }
+    if name.contains("a4000") {
+        return Some(448.0);
+    }
+    if name.contains("titan rtx") {
+        return Some(672.0);
+    }
+    if name.contains("titan v") {
+        return Some(653.0);
+    }
 
     // Apple Silicon
-    if name.contains("m4 ultra") { return Some(800.0); }
-    if name.contains("m4 max") { return Some(410.0); }
-    if name.contains("m4 pro") { return Some(273.0); }
-    if name.contains("m4") { return Some(120.0); }
-    if name.contains("m3 ultra") { return Some(800.0); }
-    if name.contains("m3 max") { return Some(300.0); }
-    if name.contains("m3 pro") { return Some(150.0); }
-    if name.contains("m3") { return Some(100.0); }
-    if name.contains("m2 ultra") { return Some(800.0); }
-    if name.contains("m2 max") { return Some(400.0); }
-    if name.contains("m2 pro") { return Some(200.0); }
-    if name.contains("m2") { return Some(100.0); }
-    if name.contains("m1 ultra") { return Some(800.0); }
-    if name.contains("m1 max") { return Some(400.0); }
-    if name.contains("m1 pro") { return Some(200.0); }
-    if name.contains("m1") { return Some(68.25); }
+    if name.contains("m4 ultra") {
+        return Some(800.0);
+    }
+    if name.contains("m4 max") {
+        return Some(410.0);
+    }
+    if name.contains("m4 pro") {
+        return Some(273.0);
+    }
+    if name.contains("m4") {
+        return Some(120.0);
+    }
+    if name.contains("m3 ultra") {
+        return Some(800.0);
+    }
+    if name.contains("m3 max") {
+        return Some(300.0);
+    }
+    if name.contains("m3 pro") {
+        return Some(150.0);
+    }
+    if name.contains("m3") {
+        return Some(100.0);
+    }
+    if name.contains("m2 ultra") {
+        return Some(800.0);
+    }
+    if name.contains("m2 max") {
+        return Some(400.0);
+    }
+    if name.contains("m2 pro") {
+        return Some(200.0);
+    }
+    if name.contains("m2") {
+        return Some(100.0);
+    }
+    if name.contains("m1 ultra") {
+        return Some(800.0);
+    }
+    if name.contains("m1 max") {
+        return Some(400.0);
+    }
+    if name.contains("m1 pro") {
+        return Some(200.0);
+    }
+    if name.contains("m1") {
+        return Some(68.25);
+    }
 
     // AMD Radeon RX 7000 series (RDNA3)
-    if name.contains("7900 xtx") { return Some(960.0); }
-    if name.contains("7900 xt") { return Some(800.0); }
-    if name.contains("7900 gre") { return Some(576.0); }
-    if name.contains("7800 xt") { return Some(624.0); }
-    if name.contains("7700 xt") { return Some(432.0); }
-    if name.contains("7600 xt") { return Some(288.0); }
-    if name.contains("7600") { return Some(288.0); }
+    if name.contains("7900 xtx") {
+        return Some(960.0);
+    }
+    if name.contains("7900 xt") {
+        return Some(800.0);
+    }
+    if name.contains("7900 gre") {
+        return Some(576.0);
+    }
+    if name.contains("7800 xt") {
+        return Some(624.0);
+    }
+    if name.contains("7700 xt") {
+        return Some(432.0);
+    }
+    if name.contains("7600 xt") {
+        return Some(288.0);
+    }
+    if name.contains("7600") {
+        return Some(288.0);
+    }
 
     // AMD Radeon RX 6000 series (RDNA2)
-    if name.contains("6950 xt") || name.contains("6900 xt") { return Some(576.0); }
-    if name.contains("6800 xt") || name.contains("6800") { return Some(512.0); }
-    if name.contains("6700 xt") { return Some(384.0); }
-    if name.contains("6600 xt") || name.contains("6600") { return Some(256.0); }
+    if name.contains("6950 xt") || name.contains("6900 xt") {
+        return Some(576.0);
+    }
+    if name.contains("6800 xt") || name.contains("6800") {
+        return Some(512.0);
+    }
+    if name.contains("6700 xt") {
+        return Some(384.0);
+    }
+    if name.contains("6600 xt") || name.contains("6600") {
+        return Some(256.0);
+    }
 
     // AMD Workstation / Mac Pro / Intel Macs
-    if name.contains("vega ii") { return Some(1024.0); }
-    if name.contains("vega 64") { return Some(484.0); }
-    if name.contains("vega 56") { return Some(410.0); }
-    if name.contains("vega 48") { return Some(384.0); }
-    if name.contains("5500m") || name.contains("5500 xt") { return Some(192.0); }
-    if name.contains("5700 xt") || name.contains("5700") { return Some(448.0); }
-    if name.contains("5300m") { return Some(96.0); }
+    if name.contains("vega ii") {
+        return Some(1024.0);
+    }
+    if name.contains("vega 64") {
+        return Some(484.0);
+    }
+    if name.contains("vega 56") {
+        return Some(410.0);
+    }
+    if name.contains("vega 48") {
+        return Some(384.0);
+    }
+    if name.contains("5500m") || name.contains("5500 xt") {
+        return Some(192.0);
+    }
+    if name.contains("5700 xt") || name.contains("5700") {
+        return Some(448.0);
+    }
+    if name.contains("5300m") {
+        return Some(96.0);
+    }
 
     // AMD APU / Strix Halo / Ryzen AI MAX / Grace
-    if name.contains("strix halo") || name.contains("ryzen ai max") { return Some(273.0); }
-    if name.contains("grace") { return Some(500.0); }
+    if name.contains("strix halo") || name.contains("ryzen ai max") {
+        return Some(273.0);
+    }
+    if name.contains("grace") {
+        return Some(500.0);
+    }
 
     // Intel Arc
-    if name.contains("a770") { return Some(560.0); }
-    if name.contains("a750") { return Some(512.0); }
-    if name.contains("a580") { return Some(512.0); }
-    if name.contains("a380") { return Some(186.0); }
+    if name.contains("a770") {
+        return Some(560.0);
+    }
+    if name.contains("a750") {
+        return Some(512.0);
+    }
+    if name.contains("a580") {
+        return Some(512.0);
+    }
+    if name.contains("a380") {
+        return Some(186.0);
+    }
 
     None
 }
@@ -239,6 +371,152 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
     None
 }
 
+/// Detect host CPU SIMD features at runtime.
+pub fn detect_cpu_features() -> domain::CpuFeatures {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        domain::CpuFeatures {
+            has_avx512: is_x86_feature_detected!("avx512f") && is_x86_feature_detected!("avx512vl"),
+            has_avx2: is_x86_feature_detected!("avx2"),
+            has_avx: is_x86_feature_detected!("avx"),
+            has_fma: is_x86_feature_detected!("fma"),
+            has_neon: false,
+            has_dotprod: false,
+            has_sve: false,
+            has_amx: false,
+        }
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        #[cfg(target_os = "macos")]
+        {
+            domain::CpuFeatures {
+                has_avx512: false,
+                has_avx2: false,
+                has_avx: false,
+                has_fma: false,
+                has_neon: true,
+                has_dotprod: true,
+                has_sve: false,
+                has_amx: false,
+            }
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            domain::CpuFeatures {
+                has_avx512: false,
+                has_avx2: false,
+                has_avx: false,
+                has_fma: false,
+                has_neon: true,
+                has_dotprod: false,
+                has_sve: false,
+                has_amx: false,
+            }
+        }
+    }
+    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+    {
+        domain::CpuFeatures::default()
+    }
+}
+
+/// Check available shared memory on Linux (/dev/shm).
+pub fn get_linux_dev_shm_free_bytes() -> Option<u64> {
+    #[cfg(target_os = "linux")]
+    {
+        let path = std::path::Path::new("/dev/shm");
+        if path.exists() {
+            let disks = sysinfo::Disks::new_with_refreshed_list();
+            for disk in disks.list() {
+                if disk.mount_point() == path {
+                    return Some(disk.available_space());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Calculate proportional --tensor-split parameters for multi-GPU configurations.
+pub fn calculate_tensor_split(vram_allocations: &[u64]) -> Option<String> {
+    if vram_allocations.len() <= 1 {
+        return None;
+    }
+    let total_vram: u64 = vram_allocations.iter().sum();
+    if total_vram == 0 {
+        return None;
+    }
+    let fractions: Vec<String> = vram_allocations
+        .iter()
+        .map(|&v| {
+            let ratio = (v as f64 / total_vram as f64) * 100.0;
+            format!("{:.0}", ratio.max(1.0))
+        })
+        .collect();
+    Some(fractions.join(","))
+}
+
+/// Probe macOS GPU devices (Apple Silicon Metal / Intel discrete AMD / integrated).
+#[cfg(target_os = "macos")]
+pub fn query_macos_gpu() -> Option<MetalDeviceInfo> {
+    if let Ok(output) = std::process::Command::new("system_profiler")
+        .args(["SPDisplaysDataType", "-xml"])
+        .output()
+    {
+        if output.status.success() {
+            let xml = String::from_utf8_lossy(&output.stdout);
+            if let Ok(displays) = parse_displays_plist(&xml) {
+                if let Some(name) = displays.discrete_gpu_name.or(displays.primary_gpu_name) {
+                    let vram = displays
+                        .discrete_gpu_vram_bytes
+                        .or(displays.primary_gpu_vram_bytes);
+                    let is_apple_silicon = name.contains("Apple M") || name.contains("Apple ");
+                    return Some(MetalDeviceInfo {
+                        device_name: name,
+                        working_set_bytes: vram.unwrap_or(0),
+                        has_unified_memory: is_apple_silicon,
+                        vram_bytes: if is_apple_silicon { None } else { vram },
+                    });
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Probe Windows GPU devices (NVIDIA / AMD / Intel / DXGI).
+#[cfg(target_os = "windows")]
+pub fn query_windows_gpu() -> Option<MetalDeviceInfo> {
+    if let Ok(output) = std::process::Command::new("nvidia-smi")
+        .args([
+            "--query-gpu=gpu_name,memory.total",
+            "--format=csv,noheader,nounits",
+        ])
+        .output()
+    {
+        if output.status.success() {
+            let text = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = text.lines().next() {
+                let parts: Vec<&str> = first_line.split(',').map(|s| s.trim()).collect();
+                if parts.len() >= 2 {
+                    let name = parts[0].to_string();
+                    if let Ok(mb) = parts[1].parse::<u64>() {
+                        let vram_bytes = mb * 1024 * 1024;
+                        return Some(MetalDeviceInfo {
+                            device_name: name,
+                            working_set_bytes: vram_bytes,
+                            has_unified_memory: false,
+                            vram_bytes: Some(vram_bytes),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Default runtime Metal/GPU provider.
 pub struct RuntimeMetalProvider;
 
@@ -246,15 +524,17 @@ impl WorkingSetProvider for RuntimeMetalProvider {
     fn get_metal_device_info(&self) -> Option<MetalDeviceInfo> {
         #[cfg(target_os = "macos")]
         {
-            // On macOS Intel/Metal, query system working set limits
-            // If runtime metal call is unavailable, returns None (triggering 0.75 fallback)
-            None
+            query_macos_gpu()
         }
         #[cfg(target_os = "linux")]
         {
             query_linux_gpu()
         }
-        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        #[cfg(target_os = "windows")]
+        {
+            query_windows_gpu()
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
         {
             None
         }
@@ -452,14 +732,7 @@ pub fn detect_profile(
     sys: &dyn SysProvider,
 ) -> Result<HardwareProfile, AppError> {
     let (cpu_name, arch, physical_cores, logical_cores) = sys.cpu_info();
-
-    // Guardrail: Unsupported platform check for Apple Silicon / ARM64
-    if arch == "aarch64" || arch == "arm64" {
-        return Err(AppError::UnsupportedPlatform(
-            "Apple Silicon (ARM64) is deferred to v2. Only x86_64 architecture is supported in v1."
-                .to_string(),
-        ));
-    }
+    let cpu_features = detect_cpu_features();
 
     let total_ram_bytes = sys.total_memory();
     let disk_free_bytes = sys.disk_free();
@@ -467,7 +740,30 @@ pub fn detect_profile(
 
     let metal_info = metal.get_metal_device_info();
 
-    // Host budget = min(metal_working_set, total_ram) or 75% fallback
+    let is_apple_silicon = (arch == "aarch64" || arch == "arm64")
+        && (os_version.to_lowercase().contains("mac")
+            || cpu_name.contains("Apple M")
+            || cpu_name.contains("Apple "));
+
+    let (gpu_name, gpu_vram_bytes, has_unified_memory) = match metal_info.as_ref() {
+        Some(m) => {
+            let is_unified = m.has_unified_memory || is_apple_silicon;
+            (
+                Some(m.device_name.clone()),
+                if is_unified { None } else { m.vram_bytes },
+                is_unified,
+            )
+        }
+        None => {
+            if is_apple_silicon {
+                (Some(format!("{} (Metal UMA)", cpu_name)), None, true)
+            } else {
+                (None, None, false)
+            }
+        }
+    };
+
+    // Host budget = min(metal_working_set, total_ram) if unified or 75% fallback
     let metal_working_set_bytes = metal_info
         .as_ref()
         .and_then(|m| {
@@ -479,13 +775,43 @@ pub fn detect_profile(
         })
         .unwrap_or((total_ram_bytes as f64 * 0.75) as u64);
 
-    let (gpu_name, gpu_vram_bytes, has_unified_memory) = match metal_info {
-        Some(m) => (Some(m.device_name), m.vram_bytes, m.has_unified_memory),
-        None => (None, None, false),
-    };
-
     let gpu_bandwidth_gbps = gpu_name.as_deref().and_then(lookup_gpu_bandwidth_gbps);
     let host_bandwidth_gbps = estimate_host_bandwidth_gbps(logical_cores);
+
+    // Dynamic accelerator backend detection
+    let accelerator_backend =
+        if has_unified_memory && (os_version.to_lowercase().contains("mac") || is_apple_silicon) {
+            Some("Apple Metal (Unified Memory)".to_string())
+        } else if let Some(ref name) = gpu_name {
+            let name_lower = name.to_lowercase();
+            if name_lower.contains("nvidia")
+                || name_lower.contains("geforce")
+                || name_lower.contains("rtx")
+                || name_lower.contains("gtx")
+                || name_lower.contains("tesla")
+                || name_lower.contains("quadro")
+            {
+                Some("NVIDIA CUDA".to_string())
+            } else if name_lower.contains("amd") || name_lower.contains("radeon") {
+                Some("AMD ROCm / Vulkan".to_string())
+            } else if name_lower.contains("intel")
+                && (name_lower.contains("arc")
+                    || name_lower.contains("iris")
+                    || name_lower.contains("uhd"))
+            {
+                Some("Intel oneAPI / Vulkan".to_string())
+            } else {
+                Some("Vulkan Compute".to_string())
+            }
+        } else if cpu_features.has_avx512 {
+            Some("CPU (AVX-512)".to_string())
+        } else if cpu_features.has_avx2 {
+            Some("CPU (AVX2)".to_string())
+        } else if cpu_features.has_neon {
+            Some("CPU (ARM NEON)".to_string())
+        } else {
+            Some("CPU (Generic)".to_string())
+        };
 
     Ok(HardwareProfile {
         cpu_name,
@@ -502,6 +828,10 @@ pub fn detect_profile(
         detected_at: Utc::now(),
         gpu_bandwidth_gbps,
         host_bandwidth_gbps,
+        cpu_features: Some(cpu_features),
+        accelerator_backend,
+        driver_version: None,
+        power_source: None,
     })
 }
 
@@ -710,32 +1040,73 @@ mod tests {
     }
 
     #[test]
-    fn test_unsupported_platform_aarch64() {
+    fn test_apple_silicon_aarch64_profile_detection() {
         let metal = MockWorkingSetProvider { info: None };
         let sys = MockSysProvider {
-            total_mem: 16 * 1024 * 1024 * 1024,
-            disk: 100 * 1024 * 1024 * 1024,
-            cpu: ("Apple M2 Max".to_string(), "aarch64".to_string(), 12, 12),
+            total_mem: 36 * 1024 * 1024 * 1024,
+            disk: 500 * 1024 * 1024 * 1024,
+            cpu: ("Apple M3 Max".to_string(), "aarch64".to_string(), 14, 14),
             os: "macOS 14.5".to_string(),
         };
 
-        let res = detect_profile(&metal, &sys);
-        assert!(res.is_err());
-        match res.err().unwrap() {
-            AppError::UnsupportedPlatform(msg) => {
-                assert!(msg.contains("Apple Silicon"));
-            }
-            other => panic!("Unexpected error: {:?}", other),
+        let profile = detect_profile(&metal, &sys).unwrap();
+        assert_eq!(profile.arch, "aarch64");
+        assert!(profile.has_unified_memory);
+        assert_eq!(profile.total_ram_bytes, 36 * 1024 * 1024 * 1024);
+        assert_eq!(
+            profile.metal_working_set_bytes,
+            (36.0 * 0.75 * 1024.0 * 1024.0 * 1024.0) as u64
+        );
+        assert_eq!(profile.gpu_bandwidth_gbps, Some(300.0));
+        assert!(profile
+            .accelerator_backend
+            .as_ref()
+            .unwrap()
+            .contains("Metal"));
+    }
+
+    #[test]
+    fn test_cpu_feature_detection() {
+        let features = detect_cpu_features();
+        #[cfg(target_arch = "x86_64")]
+        {
+            let _ = features.has_avx;
+            let _ = features.has_avx2;
+            let _ = features.has_avx512;
         }
+        #[cfg(target_arch = "aarch64")]
+        assert!(features.has_neon);
+    }
+
+    #[test]
+    fn test_calculate_tensor_split() {
+        let vrams = vec![24 * 1024 * 1024 * 1024, 12 * 1024 * 1024 * 1024];
+        let split = calculate_tensor_split(&vrams).unwrap();
+        assert_eq!(split, "67,33");
+
+        let single = vec![16 * 1024 * 1024 * 1024];
+        assert_eq!(calculate_tensor_split(&single), None);
     }
 
     #[test]
     fn test_lookup_gpu_bandwidth() {
-        assert_eq!(lookup_gpu_bandwidth_gbps("NVIDIA GeForce RTX 4090"), Some(1008.0));
-        assert_eq!(lookup_gpu_bandwidth_gbps("NVIDIA GeForce RTX 3090"), Some(936.0));
+        assert_eq!(
+            lookup_gpu_bandwidth_gbps("NVIDIA GeForce RTX 4090"),
+            Some(1008.0)
+        );
+        assert_eq!(
+            lookup_gpu_bandwidth_gbps("NVIDIA GeForce RTX 3090"),
+            Some(936.0)
+        );
         assert_eq!(lookup_gpu_bandwidth_gbps("Apple M3 Max"), Some(300.0));
-        assert_eq!(lookup_gpu_bandwidth_gbps("AMD Radeon RX 7900 XTX"), Some(960.0));
-        assert_eq!(lookup_gpu_bandwidth_gbps("AMD Radeon Pro 5500M"), Some(192.0));
+        assert_eq!(
+            lookup_gpu_bandwidth_gbps("AMD Radeon RX 7900 XTX"),
+            Some(960.0)
+        );
+        assert_eq!(
+            lookup_gpu_bandwidth_gbps("AMD Radeon Pro 5500M"),
+            Some(192.0)
+        );
         assert_eq!(lookup_gpu_bandwidth_gbps("Unknown Custom GPU XYZ"), None);
     }
 }
