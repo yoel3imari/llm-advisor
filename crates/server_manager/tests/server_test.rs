@@ -192,3 +192,28 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
     assert_eq!(manager.list_instances().len(), 0);
     assert_eq!(manager.get_state(), ServerState::Stopped);
 }
+
+#[test]
+fn test_ensure_sidecar_dependencies_syncs_libs() {
+    let dir = tempdir().unwrap();
+    let sidecar_bin_dir = dir.path().join("target").join("debug");
+    std::fs::create_dir_all(&sidecar_bin_dir).unwrap();
+    let sidecar_bin = sidecar_bin_dir.join("llama-server");
+    std::fs::write(&sidecar_bin, b"fake binary").unwrap();
+
+    // Call ensure_sidecar_dependencies on the sidecar path
+    ensure_sidecar_dependencies(&sidecar_bin);
+
+    // If source binaries dir exists in workspace, check that it doesn't crash and copies available libs
+    let src_binaries = std::path::PathBuf::from("src-tauri/binaries");
+    if src_binaries.exists() {
+        if let Ok(entries) = std::fs::read_dir(&src_binaries) {
+            for entry in entries.filter_map(Result::ok) {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.contains(".dylib") || name.contains(".so") || name.contains(".metallib") {
+                    assert!(sidecar_bin_dir.join(&name).exists());
+                }
+            }
+        }
+    }
+}

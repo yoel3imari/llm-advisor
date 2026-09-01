@@ -13,7 +13,7 @@ use library::{LibraryReconciliation, LibraryStore};
 use serde::{Deserialize, Serialize};
 use server_manager::{ServerManager, ServerState};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, Manager, State};
 use tokio_util::sync::CancellationToken;
@@ -509,6 +509,29 @@ async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Res
     Ok(())
 }
 
+fn is_valid_executable(path: &Path) -> bool {
+    if !path.is_file() {
+        return false;
+    }
+    if let Ok(meta) = std::fs::metadata(path) {
+        if meta.len() < 512 {
+            return false;
+        }
+        if let Ok(mut f) = std::fs::File::open(path) {
+            use std::io::Read;
+            let mut header = [0u8; 16];
+            if let Ok(n) = f.read(&mut header) {
+                if n >= 2 && &header[..2] == b"#!" {
+                    return false;
+                }
+            }
+        }
+        true
+    } else {
+        false
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     let sidecar_name = if cfg!(target_os = "macos") {
@@ -561,18 +584,31 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
         candidate_paths.push(cwd.join("binaries").join(sidecar_name));
     }
 
-    for path in candidate_paths {
+    // First pass: find verified real binary
+    for path in &candidate_paths {
+        if is_valid_executable(path) {
+            server_manager::ensure_sidecar_dependencies(path);
+            return path.clone();
+        }
+    }
+
+    // Second pass: any existing path
+    for path in &candidate_paths {
         if path.exists() {
-            return path;
+            server_manager::ensure_sidecar_dependencies(path);
+            return path.clone();
         }
     }
 
     // Default fallback
-    app.path()
+    let fallback = app
+        .path()
         .resource_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("binaries")
-        .join(sidecar_name)
+        .join(sidecar_name);
+    server_manager::ensure_sidecar_dependencies(&fallback);
+    fallback
 }
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};

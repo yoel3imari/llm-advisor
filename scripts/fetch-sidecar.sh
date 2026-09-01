@@ -72,14 +72,18 @@ cp "${SERVER_BIN}" "${SIDECAR_DIR}/llama-server"
 cp "${SERVER_BIN}" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
 
 # Also copy shared libs (libggml, etc.) into binaries dirs
-find "${TMP_DIR}/extracted" -type f \( -name "*.so*" -o -name "*.dylib*" \) | while read -r lib; do
-    cp "${lib}" "${SIDECAR_DIR}/" 2>/dev/null || true
-    cp "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
+find "${TMP_DIR}/extracted" \( -type f -o -type l \) \( -name "*.so*" -o -name "*.dylib*" -o -name "*.dll*" -o -name "*.metal*" -o -name "*.metallib*" \) | while read -r lib; do
+    cp -a "${lib}" "${SIDECAR_DIR}/" 2>/dev/null || true
+    cp -a "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
 done
 
 # Create so version symlinks if on Linux or dylib version symlinks on macOS
 for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
     (cd "$dir" && \
+     ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
+     ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
+     ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
+     ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
      ln -sf libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
      ln -sf libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
      ln -sf libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
@@ -108,8 +112,24 @@ for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
      ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
 done
 
+if [ "${OS}" = "darwin" ] && command -v install_name_tool &>/dev/null; then
+    echo "==> Configuring Mach-O @rpath and @loader_path on macOS..."
+    for bin in "${SIDECAR_DIR}/llama-server" "${BINARIES_DIR}/${TAURI_BIN_NAME}"; do
+        [ -f "$bin" ] || continue
+        install_name_tool -add_rpath "@loader_path" "$bin" 2>/dev/null || true
+        install_name_tool -add_rpath "@executable_path" "$bin" 2>/dev/null || true
+        install_name_tool -add_rpath "@loader_path/." "$bin" 2>/dev/null || true
+    done
+    for dylib in "${BINARIES_DIR}"/*.dylib* "${SIDECAR_DIR}"/*.dylib*; do
+        [ -f "$dylib" ] || continue
+        install_name_tool -id "@rpath/$(basename "$dylib")" "$dylib" 2>/dev/null || true
+        install_name_tool -add_rpath "@loader_path" "$dylib" 2>/dev/null || true
+        install_name_tool -add_rpath "@executable_path" "$dylib" 2>/dev/null || true
+    done
+fi
+
 echo "==> Verifying binary execution..."
-if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >/dev/null 2>&1; then
+if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >/dev/null 2>&1; then
     echo "==> Precompiled binary failed verification on this system (e.g. SDK version / symbol mismatch)."
     if command -v cmake &>/dev/null && command -v clang &>/dev/null; then
         echo "==> Compiling native llama-server from source (tag ${PINNED_TAG})..."
@@ -118,17 +138,89 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${SI
         cmake -B "${BUILD_DIR}/build" -S "${BUILD_DIR}" \
             -DGGML_BUILD_TESTS=OFF -DGGML_BUILD_EXAMPLES=OFF \
             -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
-            -DLLAMA_BUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release
+            -DLLAMA_BUILD_SERVER=ON -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+            -DCMAKE_INSTALL_RPATH="@loader_path;@executable_path" \
+            -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
+            -DCMAKE_MACOSX_RPATH=ON
         cmake --build "${BUILD_DIR}/build" --config Release --target llama-server -j4
         
-        cp -a "${BUILD_DIR}/build/bin"/* "${SIDECAR_DIR}/"
-        cp -a "${BUILD_DIR}/build/bin"/* "${BINARIES_DIR}/"
-        cp "${BUILD_DIR}/build/bin/llama-server" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
+        NATIVE_SERVER_BIN="$(find "${BUILD_DIR}/build" -type f \( -name "llama-server" -o -name "server" \) | head -n 1)"
+        if [ -n "${NATIVE_SERVER_BIN}" ]; then
+            chmod +x "${NATIVE_SERVER_BIN}"
+            cp "${NATIVE_SERVER_BIN}" "${SIDECAR_DIR}/llama-server"
+            cp "${NATIVE_SERVER_BIN}" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
+        fi
+        
+        find "${BUILD_DIR}/build" \( -type f -o -type l \) \( -name "*.so*" -o -name "*.dylib*" -o -name "*.dll*" -o -name "*.metal*" -o -name "*.metallib*" \) | while read -r lib; do
+            cp -a "${lib}" "${SIDECAR_DIR}/" 2>/dev/null || true
+            cp -a "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
+        done
+
+        for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
+            (cd "$dir" && \
+             ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
+             ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
+             ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
+             ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
+             ln -sf libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
+             ln -sf libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
+             ln -sf libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
+             ln -sf libllama.so.0.3.0 libllama.so 2>/dev/null || true && \
+             ln -sf libggml-base.so.0.22.0 libggml-base.so.0 2>/dev/null || true && \
+             ln -sf libggml-base.so.0.22.0 libggml-base.so 2>/dev/null || true && \
+             ln -sf libggml.so.0.22.0 libggml.so.0 2>/dev/null || true && \
+             ln -sf libggml.so.0.22.0 libggml.so 2>/dev/null || true && \
+             ln -sf libmtmd.so.0.3.0 libmtmd.so.0 2>/dev/null || true && \
+             ln -sf libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true && \
+             ln -sf libllama-common.0.3.0.dylib libllama-common.0.dylib 2>/dev/null || true && \
+             ln -sf libllama-common.0.3.0.dylib libllama-common.dylib 2>/dev/null || true && \
+             ln -sf libllama.0.3.0.dylib libllama.0.dylib 2>/dev/null || true && \
+             ln -sf libllama.0.3.0.dylib libllama.dylib 2>/dev/null || true && \
+             ln -sf libggml-base.0.22.0.dylib libggml-base.0.dylib 2>/dev/null || true && \
+             ln -sf libggml-base.0.22.0.dylib libggml-base.dylib 2>/dev/null || true && \
+             ln -sf libggml.0.22.0.dylib libggml.0.dylib 2>/dev/null || true && \
+             ln -sf libggml.0.22.0.dylib libggml.dylib 2>/dev/null || true && \
+             ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.0.dylib 2>/dev/null || true && \
+             ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.dylib 2>/dev/null || true && \
+             ln -sf libggml-blas.0.22.0.dylib libggml-blas.0.dylib 2>/dev/null || true && \
+             ln -sf libggml-blas.0.22.0.dylib libggml-blas.dylib 2>/dev/null || true && \
+             ln -sf libggml-metal.0.22.0.dylib libggml-metal.0.dylib 2>/dev/null || true && \
+             ln -sf libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
+             ln -sf libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
+             ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
+        done
+
+        if [ "${OS}" = "darwin" ] && command -v install_name_tool &>/dev/null; then
+            for bin in "${SIDECAR_DIR}/llama-server" "${BINARIES_DIR}/${TAURI_BIN_NAME}"; do
+                [ -f "$bin" ] || continue
+                install_name_tool -add_rpath "@loader_path" "$bin" 2>/dev/null || true
+                install_name_tool -add_rpath "@executable_path" "$bin" 2>/dev/null || true
+                install_name_tool -add_rpath "@loader_path/." "$bin" 2>/dev/null || true
+            done
+            for dylib in "${BINARIES_DIR}"/*.dylib* "${SIDECAR_DIR}"/*.dylib*; do
+                [ -f "$dylib" ] || continue
+                install_name_tool -id "@rpath/$(basename "$dylib")" "$dylib" 2>/dev/null || true
+                install_name_tool -add_rpath "@loader_path" "$dylib" 2>/dev/null || true
+                install_name_tool -add_rpath "@executable_path" "$dylib" 2>/dev/null || true
+            done
+        fi
         echo "==> Native build completed successfully."
     else
         echo "Warning: cmake/clang not found to compile native fallback. Please ensure build dependencies are installed."
     fi
 fi
+
+# Synchronize to target directories if present
+for target_dir in "${ROOT_DIR}/target/debug" "${ROOT_DIR}/target/release"; do
+    if [ -d "$target_dir" ]; then
+        echo "==> Synchronizing libraries to ${target_dir}..."
+        cp -a "${BINARIES_DIR}"/*.dylib* "$target_dir/" 2>/dev/null || true
+        cp -a "${BINARIES_DIR}"/*.so* "$target_dir/" 2>/dev/null || true
+        cp -a "${BINARIES_DIR}"/*.dll* "$target_dir/" 2>/dev/null || true
+        cp -a "${BINARIES_DIR}"/*.metal* "$target_dir/" 2>/dev/null || true
+    fi
+done
 
 echo "==> Successfully installed sidecar to:"
 echo "    - ${SIDECAR_DIR}/llama-server"

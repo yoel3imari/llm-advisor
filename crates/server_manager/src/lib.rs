@@ -330,19 +330,65 @@ impl ServerManager {
             }
         }
 
+        ensure_sidecar_dependencies(&self.sidecar_path);
+
         if let Some(parent) = self.sidecar_path.parent() {
+            cmd.current_dir(parent);
+
+            let mut search_paths = vec![parent.to_path_buf()];
+            if let Ok(cwd) = std::env::current_dir() {
+                search_paths.push(cwd.join("src-tauri").join("binaries"));
+                search_paths.push(cwd.join("sidecars").join("binaries"));
+                search_paths.push(cwd.join("binaries"));
+            }
+            if let Ok(exe) = std::env::current_exe() {
+                if let Some(p) = exe.parent() {
+                    search_paths.push(p.to_path_buf());
+                    search_paths.push(p.join("binaries"));
+                }
+            }
+
+            let path_entries: Vec<String> = search_paths
+                .iter()
+                .filter(|p| p.exists())
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
+
+            let paths_joined = path_entries.join(":");
+
             let current_ld = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
-            let new_ld = format!("{}:{}", parent.display(), current_ld);
-            cmd.env("LD_LIBRARY_PATH", new_ld);
+            let new_ld = if current_ld.is_empty() {
+                paths_joined.clone()
+            } else {
+                format!("{}:{}", paths_joined, current_ld)
+            };
+            cmd.env("LD_LIBRARY_PATH", &new_ld);
 
             let current_dyld = std::env::var("DYLD_LIBRARY_PATH").unwrap_or_default();
-            let new_dyld = format!("{}:{}", parent.display(), current_dyld);
-            cmd.env("DYLD_LIBRARY_PATH", new_dyld);
+            let new_dyld = if current_dyld.is_empty() {
+                paths_joined.clone()
+            } else {
+                format!("{}:{}", paths_joined, current_dyld)
+            };
+            cmd.env("DYLD_LIBRARY_PATH", &new_dyld);
+
+            let current_fallback = std::env::var("DYLD_FALLBACK_LIBRARY_PATH").unwrap_or_default();
+            let new_fallback = if current_fallback.is_empty() {
+                format!("{}:/usr/local/lib:/usr/lib", paths_joined)
+            } else {
+                format!("{}:{}", paths_joined, current_fallback)
+            };
+            cmd.env("DYLD_FALLBACK_LIBRARY_PATH", &new_fallback);
 
             #[cfg(target_os = "windows")]
             {
+                let win_paths_joined = path_entries.join(";");
                 let current_path = std::env::var("PATH").unwrap_or_default();
-                let new_path = format!("{};{}", parent.display(), current_path);
+                let new_path = if current_path.is_empty() {
+                    win_paths_joined
+                } else {
+                    format!("{};{}", win_paths_joined, current_path)
+                };
                 cmd.env("PATH", new_path);
             }
         }
@@ -595,6 +641,61 @@ impl Drop for ServerManager {
             for (_, mut proc) in instances.drain() {
                 let _ = proc.child.kill();
                 let _ = proc.child.wait();
+            }
+        }
+    }
+}
+
+/// Ensure shared dynamic libraries (.dylib, .so, .dll, .metal) are synchronized next to the sidecar executable.
+pub fn ensure_sidecar_dependencies(sidecar_path: &std::path::Path) {
+    let Some(parent) = sidecar_path.parent() else {
+        return;
+    };
+
+    let mut candidate_source_dirs = Vec::new();
+    if let Ok(cwd) = std::env::current_dir() {
+        candidate_source_dirs.push(cwd.join("src-tauri").join("binaries"));
+        candidate_source_dirs.push(cwd.join("sidecars").join("binaries"));
+        candidate_source_dirs.push(cwd.join("binaries"));
+    }
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            candidate_source_dirs.push(exe_dir.join("binaries"));
+            candidate_source_dirs.push(exe_dir.to_path_buf());
+        }
+    }
+
+    let lib_extensions = ["dylib", "so", "dll", "metal", "metallib"];
+
+    for src_dir in candidate_source_dirs {
+        if !src_dir.exists() || src_dir == parent {
+            continue;
+        }
+
+        if let Ok(entries) = std::fs::read_dir(&src_dir) {
+            for entry in entries.filter_map(Result::ok) {
+                let path = entry.path();
+                let file_name = entry.file_name();
+                let name_str = file_name.to_string_lossy();
+
+                let is_lib = lib_extensions.iter().any(|ext| name_str.contains(ext));
+                if is_lib {
+                    let dest = parent.join(&file_name);
+                    if !dest.exists() {
+                        if let Ok(symlink_target) = std::fs::read_link(&path) {
+                            #[cfg(unix)]
+                            {
+                                let _ = std::os::unix::fs::symlink(&symlink_target, &dest);
+                            }
+                            #[cfg(not(unix))]
+                            {
+                                let _ = std::fs::copy(&path, &dest);
+                            }
+                        } else {
+                            let _ = std::fs::copy(&path, &dest);
+                        }
+                    }
+                }
             }
         }
     }

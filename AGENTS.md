@@ -16,10 +16,10 @@ This document records architectural conventions, project lessons learned, and gu
   * Always inspect `uname -s` and `uname -m` when writing download or launch scripts.
   * On Linux, `llama-server` dynamic dependencies (`libggml.so`, `libllama.so`, `libmtmd.so`, `libllama-server-impl.so`) must be placed in `src-tauri/binaries/` with `LD_LIBRARY_PATH` configured on child spawn.
   * **AppImage / linuxdeploy Guardrail**: When bundling `.AppImage`, `linuxdeploy` traces ELF dynamic dependencies. Ensure `LD_LIBRARY_PATH="$PWD/src-tauri/binaries:$LD_LIBRARY_PATH"` is set so `linuxdeploy` discovers internal `.so` files and avoids `Could not find dependency: libllama-server-impl.so`.
-* **macOS Dynamic Library Bundling Guardrail**:
-  * Tauri 2 only copies the single binary in `externalBin` into `Contents/MacOS/llama-server`.
-  * Because `llama-server` is dynamically linked against `.dylib` files (`libllama-server-impl.dylib`, `libllama.dylib`, `libggml.dylib`, `libllama-common.dylib`, `libmtmd.dylib`, etc.) resolving via `@loader_path`, all `.dylib` files and their version symlinks must be synchronized into `Contents/MacOS/` via `scripts/post-bundle.sh`.
-  * Precompiled GitHub release binaries for `llama.cpp` require macOS 13.3+ Accelerate ILP64 symbols; on macOS 12 (Monterey), `scripts/fetch-sidecar.sh` performs automated verification and compiles natively if needed.
+* **macOS Dynamic Library Bundling & Dev Guardrail**:
+  * Tauri 2 only copies the single binary in `externalBin` into `Contents/MacOS/llama-server` (or `target/debug/llama-server`).
+  * Because `llama-server` is dynamically linked against `.dylib` files (`libllama-server-impl.dylib`, `libllama.dylib`, `libggml.dylib`, `libllama-common.dylib`, `libmtmd.dylib`, etc.) resolving via `@rpath` / `@loader_path`, all `.dylib` files, metal shaders, and their version symlinks must be synchronized into `Contents/MacOS/` via `scripts/post-bundle.sh` and into `target/debug/` via `src-tauri/build.rs` and `server_manager::ensure_sidecar_dependencies`.
+  * Precompiled GitHub release binaries for `llama.cpp` require macOS 13.3+ Accelerate ILP64 symbols; on macOS 12 (Monterey), `scripts/fetch-sidecar.sh` performs automated verification and compiles natively with `-DCMAKE_INSTALL_RPATH="@loader_path;@executable_path"` and Mach-O `@rpath` tooling (`install_name_tool`).
 
 ---
 
