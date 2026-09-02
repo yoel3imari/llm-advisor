@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "LLM Advisor",
+  "productName": "llm-advisor",
   "version": "0.1.0",
   "identifier": "dev.yoel3imari.llm-advisor",
   "build": {
