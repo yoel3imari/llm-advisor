@@ -345,14 +345,51 @@ impl ServerManager {
                 if let Some(p) = exe.parent() {
                     search_paths.push(p.to_path_buf());
                     search_paths.push(p.join("binaries"));
+                    search_paths.push(p.join("resources"));
+                    search_paths.push(p.join("Resources"));
+
+                    // macOS bundle layout: <App>.app/Contents/MacOS -> <App>.app/Contents/Resources
+                    if let Some(contents) = p.parent() {
+                        search_paths.push(contents.join("Resources"));
+                        search_paths.push(contents.join("Frameworks"));
+                    }
+
+                    // Linux package layout: /usr/bin -> /usr/lib/llm-advisor
                     if let Some(root) = p.parent() {
                         search_paths.push(root.join("lib").join("llm-advisor"));
                         search_paths.push(root.join("lib"));
                     }
                 }
             }
+
+            // Linux AppImage mount runtime
+            if let Ok(appdir) = std::env::var("APPDIR") {
+                let appdir_path = std::path::PathBuf::from(appdir);
+                search_paths.push(appdir_path.join("usr").join("lib").join("llm-advisor"));
+                search_paths.push(appdir_path.join("usr").join("lib"));
+                search_paths.push(appdir_path.join("usr").join("bin"));
+            }
+
+            // Linux system-wide paths
             search_paths.push(std::path::PathBuf::from("/usr/lib/llm-advisor"));
             search_paths.push(std::path::PathBuf::from("/usr/local/lib/llm-advisor"));
+
+            // macOS Homebrew & system paths
+            search_paths.push(std::path::PathBuf::from("/opt/homebrew/lib"));
+            search_paths.push(std::path::PathBuf::from("/usr/local/lib"));
+
+            // Windows standard program locations
+            #[cfg(target_os = "windows")]
+            {
+                if let Ok(prog_files) = std::env::var("ProgramFiles") {
+                    search_paths.push(std::path::PathBuf::from(&prog_files).join("llm-advisor").join("resources"));
+                    search_paths.push(std::path::PathBuf::from(&prog_files).join("llm-advisor"));
+                }
+                if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+                    search_paths.push(std::path::PathBuf::from(&local_appdata).join("llm-advisor").join("resources"));
+                    search_paths.push(std::path::PathBuf::from(&local_appdata).join("llm-advisor"));
+                }
+            }
 
             let path_entries: Vec<String> = search_paths
                 .iter()
@@ -667,9 +704,19 @@ pub fn ensure_sidecar_dependencies(sidecar_path: &std::path::Path) {
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
             candidate_source_dirs.push(exe_dir.join("binaries"));
+            candidate_source_dirs.push(exe_dir.join("resources"));
+            candidate_source_dirs.push(exe_dir.join("Resources"));
             candidate_source_dirs.push(exe_dir.to_path_buf());
+            if let Some(contents) = exe_dir.parent() {
+                candidate_source_dirs.push(contents.join("Resources"));
+                candidate_source_dirs.push(contents.join("Frameworks"));
+            }
+            if let Some(root) = exe_dir.parent() {
+                candidate_source_dirs.push(root.join("lib").join("llm-advisor"));
+            }
         }
     }
+    candidate_source_dirs.push(std::path::PathBuf::from("/usr/lib/llm-advisor"));
 
     let lib_extensions = ["dylib", "so", "dll", "metal", "metallib"];
 

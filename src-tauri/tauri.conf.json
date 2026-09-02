@@ -46,6 +46,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "resources": [
+      "binaries/*"
+    ],
     "externalBin": [
       "binaries/llama-server"
     ],
@@ -63,6 +66,9 @@
         ]
       },
       "rpm": {
+        "files": {
+          "/usr/lib/llm-advisor": "binaries"
+        },
         "depends": [
           "webkit2gtk4.1",
           "gtk3",
