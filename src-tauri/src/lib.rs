@@ -615,9 +615,13 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
         candidate_paths.push(resource_dir.join("llama-server.exe"));
     }
 
-    // 2. Next to executable
+    // 2. Next to executable and sibling lib directories
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
+            if let Some(root) = exe_dir.parent() {
+                candidate_paths.push(root.join("lib").join("llm-advisor").join(sidecar_name));
+                candidate_paths.push(root.join("lib").join("llm-advisor").join("llama-server"));
+            }
             candidate_paths.push(exe_dir.join("binaries").join(sidecar_name));
             candidate_paths.push(exe_dir.join(sidecar_name));
             candidate_paths.push(exe_dir.join("llama-server"));
@@ -625,7 +629,12 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
         }
     }
 
-    // 3. Project dev directories
+    // 3. System installed locations
+    candidate_paths.push(PathBuf::from("/usr/lib/llm-advisor").join(sidecar_name));
+    candidate_paths.push(PathBuf::from("/usr/lib/llm-advisor").join("llama-server"));
+    candidate_paths.push(PathBuf::from("/usr/local/lib/llm-advisor").join(sidecar_name));
+
+    // 4. Project dev directories
     if let Ok(cwd) = std::env::current_dir() {
         candidate_paths.push(cwd.join("src-tauri").join("binaries").join(sidecar_name));
         candidate_paths.push(cwd.join("sidecars").join("binaries").join("llama-server"));

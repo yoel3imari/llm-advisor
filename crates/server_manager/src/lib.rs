@@ -345,8 +345,14 @@ impl ServerManager {
                 if let Some(p) = exe.parent() {
                     search_paths.push(p.to_path_buf());
                     search_paths.push(p.join("binaries"));
+                    if let Some(root) = p.parent() {
+                        search_paths.push(root.join("lib").join("llm-advisor"));
+                        search_paths.push(root.join("lib"));
+                    }
                 }
             }
+            search_paths.push(std::path::PathBuf::from("/usr/lib/llm-advisor"));
+            search_paths.push(std::path::PathBuf::from("/usr/local/lib/llm-advisor"));
 
             let path_entries: Vec<String> = search_paths
                 .iter()
