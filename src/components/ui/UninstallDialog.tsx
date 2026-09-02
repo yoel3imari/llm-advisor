@@ -343,7 +343,7 @@ export function UninstallDialog({
                   <span>Next Step for Final Application Removal</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-zinc-400">
-                  Your system storage is now 100% clean of all weights and data. You can safely drag Local LLM Advisor to Trash or delete its executable from your Applications folder.
+                  Your system storage is now 100% clean of all weights and data. You can safely drag LLM Advisor to Trash or delete its executable from your Applications folder.
                 </p>
               </div>
 

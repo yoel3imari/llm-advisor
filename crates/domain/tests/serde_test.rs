@@ -21,6 +21,32 @@ fn test_catalog_entry_serde_roundtrip() {
 }
 
 #[test]
+fn test_catalog_entry_with_benchmarks_serde_roundtrip() {
+    let mut entry: CatalogEntry =
+        serde_json::from_str(include_str!("fixtures/catalog_entry.json")).unwrap();
+
+    entry.benchmarks = Some(ModelBenchmarks {
+        mmlu_pro: Some(68.4),
+        livecodebench: Some(42.5),
+        swe_bench: Some(38.8),
+        arena_elo: Some(1310),
+        human_eval: Some(85.2),
+    });
+
+    let serialized = serde_json::to_string(&entry).expect("serialize with benchmarks");
+    let roundtrip: CatalogEntry =
+        serde_json::from_str(&serialized).expect("deserialize with benchmarks");
+
+    assert_eq!(entry, roundtrip);
+    let bm = roundtrip.benchmarks.unwrap();
+    assert_eq!(bm.mmlu_pro, Some(68.4));
+    assert_eq!(bm.livecodebench, Some(42.5));
+    assert_eq!(bm.swe_bench, Some(38.8));
+    assert_eq!(bm.arena_elo, Some(1310));
+    assert_eq!(bm.human_eval, Some(85.2));
+}
+
+#[test]
 fn test_hardware_profile_serde_roundtrip() {
     let profile = HardwareProfile {
         cpu_name: "Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz".to_string(),

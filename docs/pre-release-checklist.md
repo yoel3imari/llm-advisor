@@ -1,6 +1,6 @@
-# Local LLM Advisor — Pre-Release Manual QA Checklist
+# LLM Advisor — Pre-Release Manual QA Checklist
 
-This document details all verification procedures and acceptance criteria that must be validated manually before cutting a production release of Local LLM Advisor.
+This document details all verification procedures and acceptance criteria that must be validated manually before cutting a production release of LLM Advisor.
 
 ---
 
@@ -121,7 +121,7 @@ This document details all verification procedures and acceptance criteria that m
   - [ ] Run an inline code completion and chat query to verify end-to-end routing.
 - [ ] **Port Collision Handling**:
   - [ ] Run a dummy process on port 13370 (`nc -l 13370` or `python3 -m http.server 13370`).
-  - [ ] Launch Local LLM Advisor $\rightarrow$ verify it surfaces an actionable error dialog explaining port 13370 is in use.
+  - [ ] Launch LLM Advisor $\rightarrow$ verify it surfaces an actionable error dialog explaining port 13370 is in use.
 
 ---
 

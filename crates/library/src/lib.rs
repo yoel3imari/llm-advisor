@@ -1,4 +1,4 @@
-//! Local model library store and disk reconciliation for Local LLM Advisor.
+//! Local model library store and disk reconciliation for LLM Advisor.
 
 use domain::{AppError, ModelRecord};
 use serde::{Deserialize, Serialize};

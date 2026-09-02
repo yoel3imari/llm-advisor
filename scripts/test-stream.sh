@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real-time SSE streaming test for Local LLM Advisor gateway (:13370)
+# Real-time SSE streaming test for LLM Advisor gateway (:13370)
 
 PROMPT="${*:-Write a short poem about coding in Rust.}"
 PORT="${GATEWAY_PORT:-13370}"

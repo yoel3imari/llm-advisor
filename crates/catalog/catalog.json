@@ -41,7 +41,12 @@
       "0.5b",
       "ultra-light",
       "general"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 32.0,
+      "mmlu_pro": 19.5,
+      "arena_elo": 1050
+    }
   },
   {
     "id": "qwen2.5-0.5b-instruct-q8_0",
@@ -63,7 +68,12 @@
       "0.5b",
       "ultra-light",
       "high-precision"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 32.0,
+      "mmlu_pro": 19.5,
+      "arena_elo": 1050
+    }
   },
   {
     "id": "tinyllama-1.1b-chat-q4_k_m",
@@ -85,7 +95,11 @@
       "1.1b",
       "lightweight",
       "chat"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 26.0,
+      "mmlu_pro": 16.0
+    }
   },
   {
     "id": "tinyllama-1.1b-chat-q8_0",
@@ -107,7 +121,11 @@
       "1.1b",
       "lightweight",
       "high-precision"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 26.0,
+      "mmlu_pro": 16.0
+    }
   },
   {
     "id": "llama-3.2-1b-instruct-q4_k_m",
@@ -129,7 +147,12 @@
       "1b",
       "instruct",
       "long-context"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 42.0,
+      "mmlu_pro": 24.5,
+      "arena_elo": 1100
+    }
   },
   {
     "id": "llama-3.2-1b-instruct-q8_0",
@@ -151,7 +174,12 @@
       "1b",
       "instruct",
       "high-precision"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 42.0,
+      "mmlu_pro": 24.5,
+      "arena_elo": 1100
+    }
   },
   {
     "id": "qwen2.5-1.5b-instruct-q4_k_m",
@@ -173,7 +201,12 @@
       "1.5b",
       "coding",
       "general"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 55.0,
+      "mmlu_pro": 31.0,
+      "arena_elo": 1130
+    }
   },
   {
     "id": "deepseek-r1-distill-qwen-1.5b-q4_k_m",
@@ -195,7 +228,12 @@
       "reasoning",
       "1.5b",
       "math"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 28.5,
+      "mmlu_pro": 45.2,
+      "arena_elo": 1180
+    }
   },
   {
     "id": "gemma-2-2b-it-q4_k_m",
@@ -217,7 +255,12 @@
       "2b",
       "google",
       "instruct"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 52.0,
+      "mmlu_pro": 34.0,
+      "arena_elo": 1150
+    }
   },
   {
     "id": "gemma-2-2b-it-q8_0",
@@ -239,7 +282,12 @@
       "2b",
       "google",
       "high-precision"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 52.0,
+      "mmlu_pro": 34.0,
+      "arena_elo": 1150
+    }
   },
   {
     "id": "llama-3.2-3b-instruct-q4_k_m",
@@ -261,7 +309,12 @@
       "3b",
       "instruct",
       "general"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 61.0,
+      "mmlu_pro": 36.2,
+      "arena_elo": 1160
+    }
   },
   {
     "id": "llama-3.2-3b-instruct-q8_0",
@@ -283,7 +336,12 @@
       "3b",
       "instruct",
       "high-precision"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 61.0,
+      "mmlu_pro": 36.2,
+      "arena_elo": 1160
+    }
   },
   {
     "id": "qwen2.5-3b-instruct-q4_k_m",
@@ -305,7 +363,12 @@
       "3b",
       "multilingual",
       "general"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 68.0,
+      "mmlu_pro": 42.0,
+      "arena_elo": 1190
+    }
   },
   {
     "id": "phi-3.5-mini-instruct-q4_k_m",
@@ -327,7 +390,12 @@
       "3.8b",
       "microsoft",
       "reasoning"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 70.0,
+      "mmlu_pro": 42.0,
+      "arena_elo": 1200
+    }
   },
   {
     "id": "llama-3.1-8b-instruct-q4_k_m",
@@ -349,7 +417,13 @@
       "8b",
       "general",
       "flagship"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 32.5,
+      "human_eval": 72.6,
+      "mmlu_pro": 44.2,
+      "arena_elo": 1215
+    }
   },
   {
     "id": "llama-3.1-8b-instruct-q5_k_m",
@@ -371,7 +445,13 @@
       "8b",
       "balanced-high",
       "flagship"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 32.5,
+      "human_eval": 72.6,
+      "mmlu_pro": 44.2,
+      "arena_elo": 1215
+    }
   },
   {
     "id": "llama-3.1-8b-instruct-q8_0",
@@ -392,7 +472,13 @@
       "llama",
       "8b",
       "high-precision"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 32.5,
+      "human_eval": 72.6,
+      "mmlu_pro": 44.2,
+      "arena_elo": 1215
+    }
   },
   {
     "id": "llama-3.1-8b-instruct-q3_k_m",
@@ -414,7 +500,13 @@
       "8b",
       "budget",
       "compact"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 32.5,
+      "human_eval": 72.6,
+      "mmlu_pro": 44.2,
+      "arena_elo": 1215
+    }
   },
   {
     "id": "qwen2.5-7b-instruct-q4_k_m",
@@ -436,7 +528,13 @@
       "7b",
       "coding",
       "multilingual"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 34.0,
+      "human_eval": 84.0,
+      "mmlu_pro": 56.4,
+      "arena_elo": 1245
+    }
   },
   {
     "id": "qwen2.5-7b-instruct-q5_k_m",
@@ -457,7 +555,13 @@
       "qwen",
       "7b",
       "balanced-high"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 34.0,
+      "human_eval": 84.0,
+      "mmlu_pro": 56.4,
+      "arena_elo": 1245
+    }
   },
   {
     "id": "mistral-7b-instruct-v0.3-q4_k_m",
@@ -479,7 +583,12 @@
       "7b",
       "fast",
       "general"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 58.0,
+      "mmlu_pro": 38.0,
+      "arena_elo": 1180
+    }
   },
   {
     "id": "gemma-2-9b-it-q4_k_m",
@@ -501,7 +610,13 @@
       "9b",
       "google",
       "reasoning"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 35.2,
+      "human_eval": 76.5,
+      "mmlu_pro": 52.8,
+      "arena_elo": 1250
+    }
   },
   {
     "id": "deepseek-r1-distill-qwen-7b-q4_k_m",
@@ -523,7 +638,12 @@
       "7b",
       "reasoning",
       "math"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 43.1,
+      "mmlu_pro": 65.2,
+      "arena_elo": 1290
+    }
   },
   {
     "id": "deepseek-r1-distill-llama-8b-q4_k_m",
@@ -545,7 +665,12 @@
       "8b",
       "llama",
       "reasoning"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 42.8,
+      "mmlu_pro": 64.5,
+      "arena_elo": 1285
+    }
   },
   {
     "id": "mistral-nemo-instruct-2407-q4_k_m",
@@ -567,7 +692,12 @@
       "12b",
       "nemo",
       "long-context"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 33.5,
+      "mmlu_pro": 48.6,
+      "arena_elo": 1225
+    }
   },
   {
     "id": "qwen2.5-14b-instruct-q4_k_m",
@@ -589,7 +719,13 @@
       "14b",
       "coding",
       "flagship"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 39.5,
+      "human_eval": 87.0,
+      "mmlu_pro": 64.2,
+      "arena_elo": 1280
+    }
   },
   {
     "id": "qwen2.5-14b-instruct-q5_k_m",
@@ -610,7 +746,13 @@
       "qwen",
       "14b",
       "balanced-high"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 39.5,
+      "human_eval": 87.0,
+      "mmlu_pro": 64.2,
+      "arena_elo": 1280
+    }
   },
   {
     "id": "deepseek-r1-distill-qwen-14b-q4_k_m",
@@ -632,7 +774,12 @@
       "14b",
       "reasoning",
       "math"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 48.5,
+      "mmlu_pro": 70.8,
+      "arena_elo": 1330
+    }
   },
   {
     "id": "gemma-2-27b-it-q4_k_m",
@@ -654,7 +801,13 @@
       "27b",
       "heavy",
       "reasoning"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 41.0,
+      "human_eval": 84.0,
+      "mmlu_pro": 64.0,
+      "arena_elo": 1305
+    }
   },
   {
     "id": "qwen2.5-32b-instruct-q4_k_m",
@@ -676,7 +829,13 @@
       "32b",
       "heavy",
       "coding"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 44.0,
+      "human_eval": 90.2,
+      "mmlu_pro": 71.6,
+      "arena_elo": 1320
+    }
   },
   {
     "id": "deepseek-r1-distill-qwen-32b-q4_k_m",
@@ -697,7 +856,12 @@
       "deepseek",
       "32b",
       "heavy-reasoning"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 53.2,
+      "mmlu_pro": 74.5,
+      "arena_elo": 1360
+    }
   },
   {
     "id": "mixtral-8x7b-instruct-v0.1-q4_k_m",
@@ -720,7 +884,12 @@
       "mixtral",
       "8x7b",
       "expert-routing"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 72.0,
+      "mmlu_pro": 52.0,
+      "arena_elo": 1240
+    }
   },
   {
     "id": "mixtral-8x7b-instruct-v0.1-q3_k_m",
@@ -743,7 +912,12 @@
       "mixtral",
       "8x7b",
       "compact"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 72.0,
+      "mmlu_pro": 52.0,
+      "arena_elo": 1240
+    }
   },
   {
     "id": "llama-3.1-70b-instruct-q4_k_m",
@@ -765,7 +939,13 @@
       "70b",
       "workstation",
       "maximum-capability"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 42.0,
+      "human_eval": 86.0,
+      "mmlu_pro": 66.8,
+      "arena_elo": 1330
+    }
   },
   {
     "id": "deepseek-r1-distill-llama-70b-q4_k_m",
@@ -787,7 +967,13 @@
       "70b",
       "workstation",
       "reasoning-flagship"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 57.5,
+      "swe_bench": 49.2,
+      "mmlu_pro": 77.2,
+      "arena_elo": 1380
+    }
   },
   {
     "id": "qwen2.5-coder-0.5b-instruct-q4_k_m",
@@ -809,7 +995,11 @@
       "coder",
       "ultra-light",
       "autocomplete"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 52.0,
+      "livecodebench": 18.5
+    }
   },
   {
     "id": "qwen2.5-coder-1.5b-instruct-q4_k_m",
@@ -831,7 +1021,11 @@
       "coder",
       "lightweight",
       "fast"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 71.0,
+      "livecodebench": 27.5
+    }
   },
   {
     "id": "qwen2.5-coder-3b-instruct-q4_k_m",
@@ -853,7 +1047,11 @@
       "coder",
       "medium",
       "efficient"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 81.0,
+      "livecodebench": 32.0
+    }
   },
   {
     "id": "qwen2.5-coder-7b-instruct-q4_k_m",
@@ -875,7 +1073,14 @@
       "coder",
       "programming",
       "popular"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 37.6,
+      "swe_bench": 39.8,
+      "human_eval": 88.4,
+      "mmlu_pro": 56.4,
+      "arena_elo": 1260
+    }
   },
   {
     "id": "qwen2.5-coder-14b-instruct-q4_k_m",
@@ -897,7 +1102,14 @@
       "coder",
       "advanced",
       "14b"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 41.2,
+      "swe_bench": 42.4,
+      "human_eval": 91.5,
+      "mmlu_pro": 62.5,
+      "arena_elo": 1285
+    }
   },
   {
     "id": "qwen2.5-coder-32b-instruct-q4_k_m",
@@ -919,7 +1131,14 @@
       "coder",
       "state-of-the-art",
       "32b"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 44.8,
+      "swe_bench": 48.0,
+      "human_eval": 92.7,
+      "mmlu_pro": 67.8,
+      "arena_elo": 1315
+    }
   },
   {
     "id": "llama-3.3-70b-instruct-q4_k_m",
@@ -941,7 +1160,13 @@
       "70b",
       "frontier",
       "flagship"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 46.2,
+      "human_eval": 88.5,
+      "mmlu_pro": 71.0,
+      "arena_elo": 1355
+    }
   },
   {
     "id": "phi-4-14b-instruct-q4_k_m",
@@ -964,7 +1189,13 @@
       "reasoning",
       "math",
       "14b"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 45.8,
+      "human_eval": 88.0,
+      "mmlu_pro": 67.5,
+      "arena_elo": 1300
+    }
   },
   {
     "id": "smollm2-135m-instruct-q8_0",
@@ -1030,7 +1261,11 @@
       "huggingface",
       "assistant",
       "mobile"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 45.0,
+      "mmlu_pro": 28.0
+    }
   },
   {
     "id": "mistral-nemo-12b-instruct-q4_k_m",
@@ -1053,7 +1288,12 @@
       "12b",
       "multilingual",
       "128k"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 33.5,
+      "mmlu_pro": 48.6,
+      "arena_elo": 1225
+    }
   },
   {
     "id": "mistral-small-24b-instruct-q4_k_m",
@@ -1075,7 +1315,13 @@
       "small-24b",
       "reasoning",
       "coding"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 40.5,
+      "human_eval": 85.0,
+      "mmlu_pro": 62.0,
+      "arena_elo": 1290
+    }
   },
   {
     "id": "qwq-32b-preview-q4_k_m",
@@ -1098,7 +1344,12 @@
       "reasoning",
       "preview",
       "32b"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 54.0,
+      "mmlu_pro": 75.0,
+      "arena_elo": 1365
+    }
   },
   {
     "id": "deepseek-coder-v2-lite-instruct-q4_k_m",
@@ -1121,7 +1372,13 @@
       "coder",
       "moe",
       "programming"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 41.5,
+      "swe_bench": 43.5,
+      "human_eval": 90.2,
+      "arena_elo": 1280
+    }
   },
   {
     "id": "hermes-3-llama-3.1-8b-q4_k_m",
@@ -1144,7 +1401,13 @@
       "agentic",
       "tool-use",
       "8b"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 32.8,
+      "human_eval": 74.0,
+      "mmlu_pro": 45.5,
+      "arena_elo": 1220
+    }
   },
   {
     "id": "starcoder2-7b-q4_k_m",
@@ -1167,7 +1430,11 @@
       "coding",
       "python",
       "7b"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 72.0,
+      "livecodebench": 31.0
+    }
   },
   {
     "id": "starcoder2-15b-q4_k_m",
@@ -1190,6 +1457,10 @@
       "coding",
       "multi-language",
       "15b"
-    ]
+    ],
+    "benchmarks": {
+      "human_eval": 78.0,
+      "livecodebench": 36.0
+    }
   }
 ]

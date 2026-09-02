@@ -1,4 +1,4 @@
-//! Mathematical RAM/VRAM memory-fit estimation engine for Local LLM Advisor.
+//! Mathematical RAM/VRAM memory-fit estimation engine for LLM Advisor.
 //!
 //! Ground-truth formulas:
 //! - Weights = entry.file_size_bytes

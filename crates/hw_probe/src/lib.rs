@@ -1,4 +1,4 @@
-//! Hardware probe and GPU/memory inspection module for Local LLM Advisor.
+//! Hardware probe and GPU/memory inspection module for LLM Advisor.
 
 use chrono::Utc;
 use domain::{AppError, HardwareProfile};

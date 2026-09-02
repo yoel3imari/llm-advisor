@@ -1,4 +1,4 @@
-# Local LLM Advisor — MVP Implementation Plan
+# LLM Advisor — MVP Implementation Plan
 
 ## TL;DR
 
@@ -44,7 +44,7 @@ Distribution/signing excluded (local-build only); one-model-at-a-time locked; ga
 ## Work Objectives
 
 ### Core Objective
-Ship a demonstrable self-contained local LLM advisor + server where every recommendation number is explainable and every downloaded model verifiably matches its source.
+Ship a demonstrable self-contained LLM Advisor + server where every recommendation number is explainable and every downloaded model verifiably matches its source.
 
 ### Concrete Deliverables
 - Repo: Tauri workspace `src-tauri/` (Rust) + `src/` (React UI) + `docs/architecture.md` (materialized from the design doc) + pinned `sidecars/` provisioning script
@@ -190,7 +190,7 @@ Parallel Speedup: ~55% vs sequential (17 tasks, max concurrency 4)
   **Acceptance Criteria**:
   - [x] `cargo test --workspace` passes (stub tests)
   - [x] `npx vitest run` passes
-  - [x] `npm run tauri dev` opens a window titled "Local LLM Advisor" (evidence via screencapture)
+  - [x] `npm run tauri dev` opens a window titled "LLM Advisor" (evidence via screencapture)
 
   **QA Scenarios**:
   ```

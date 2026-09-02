@@ -8,7 +8,7 @@ RED="\033[0;31m"
 CYAN="\033[0;36m"
 RESET="\033[0m"
 
-echo -e "${BOLD}${CYAN}=== Local LLM Advisor: System Dependency Preflight (Doctor) ===${RESET}\n"
+echo -e "${BOLD}${CYAN}=== LLM Advisor: System Dependency Preflight (Doctor) ===${RESET}\n"
 
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"

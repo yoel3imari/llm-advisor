@@ -2,10 +2,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import App from './App';
 
-describe('Local LLM Advisor App UI', () => {
+describe('LLM Advisor App UI', () => {
   it('renders app shell with navigation sidebar and unified dashboard', async () => {
     render(<App />);
-    expect(screen.getByText('Local LLM Advisor')).toBeDefined();
+    expect(screen.getByText('LLM Advisor')).toBeDefined();
     expect(screen.getByText('Dashboard')).toBeDefined();
     expect(screen.getByText('Library')).toBeDefined();
     expect(screen.getByText('Server Control')).toBeDefined();

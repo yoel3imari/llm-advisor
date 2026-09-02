@@ -41,7 +41,7 @@ export function Sidebar({
             <Cpu className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-sm tracking-tight text-white leading-none">Local LLM Advisor</h1>
+            <h1 className="font-bold text-sm tracking-tight text-white leading-none">LLM Advisor</h1>
             <p className="text-[11px] text-zinc-400 mt-1">Hardware Fit & Inference</p>
           </div>
         </div>

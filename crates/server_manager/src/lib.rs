@@ -1,4 +1,4 @@
-//! Supervised multi-instance llama-server sidecar process manager for Local LLM Advisor.
+//! Supervised multi-instance llama-server sidecar process manager for LLM Advisor.
 
 use chrono::{DateTime, Utc};
 use domain::{AppError, FitResult, KvType, RunningInstanceInfo, ServeConfig};

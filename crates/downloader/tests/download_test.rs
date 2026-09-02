@@ -53,6 +53,7 @@ async fn test_happy_path_download_and_verify() {
         gated: false,
         quality_tier: 4,
         tags: vec![],
+        benchmarks: None,
     };
 
     let progress_recorded = Arc::new(AtomicU64::new(0));
@@ -124,6 +125,7 @@ async fn test_resumable_range_download() {
         gated: false,
         quality_tier: 4,
         tags: vec![],
+        benchmarks: None,
     };
 
     let options = DownloadOptions {
@@ -178,6 +180,7 @@ async fn test_checksum_mismatch_deletes_corrupted_file() {
         gated: false,
         quality_tier: 4,
         tags: vec![],
+        benchmarks: None,
     };
 
     let options = DownloadOptions {
@@ -234,6 +237,7 @@ async fn test_gated_model_without_token_error() {
         gated: true,
         quality_tier: 4,
         tags: vec![],
+        benchmarks: None,
     };
 
     let options = DownloadOptions {
@@ -334,6 +338,7 @@ fn test_gguf_header_parsing_and_cross_verification() {
         gated: false,
         quality_tier: 4,
         tags: vec![],
+        benchmarks: None,
     };
 
     assert!(gguf::verify_gguf_against_catalog(&header, &matching_entry).is_ok());

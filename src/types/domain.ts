@@ -30,6 +30,14 @@ export interface HardwareProfile {
   power_source?: string | null;
 }
 
+export interface ModelBenchmarks {
+  mmlu_pro?: number;
+  livecodebench?: number;
+  swe_bench?: number;
+  arena_elo?: number;
+  human_eval?: number;
+}
+
 export interface CatalogEntry {
   id: string;
   repo_id: string;
@@ -47,6 +55,7 @@ export interface CatalogEntry {
   gated: boolean;
   quality_tier: number;
   tags: string[];
+  benchmarks?: ModelBenchmarks;
 }
 
 export type KvType = 'f16' | 'q8_0' | 'q4_0';
@@ -134,6 +143,17 @@ export interface AppSettings {
   default_kv_type: KvType;
   models_dir: string;
   run_in_background?: boolean;
+  auto_update_catalog?: boolean;
+  catalog_endpoint?: string;
+}
+
+export type CatalogSyncResult =
+  | { status: 'Updated'; details: { count: number; etag?: string } }
+  | { status: 'NotModified' };
+
+export interface CatalogUpdatedPayload {
+  count: number;
+  etag?: string;
 }
 
 export interface CleanUninstallOptions {
@@ -149,5 +169,13 @@ export interface UninstallResult {
   cache_purged: boolean;
   app_data_dir?: string;
   success: boolean;
+}
+
+export interface AppUpdateInfo {
+  current_version: string;
+  latest_version: string;
+  update_available: boolean;
+  release_notes?: string;
+  pub_date?: string;
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Local LLM Advisor — Linux Clean Uninstallation Script
+# LLM Advisor — Linux Clean Uninstallation Script
 # Completely removes application data, multi-GB GGUF models, and config.
 # ==============================================================================
 
@@ -14,13 +14,13 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 echo -e "${BOLD}${CYAN}=====================================================${NC}"
-echo -e "${BOLD}${CYAN}  Local LLM Advisor — Linux Clean Uninstaller        ${NC}"
+echo -e "${BOLD}${CYAN}  LLM Advisor — Linux Clean Uninstaller        ${NC}"
 echo -e "${BOLD}${CYAN}=====================================================${NC}\n"
 
 # 1. Terminate running processes
 echo -e "${YELLOW}[1/3] Checking for running instances...${NC}"
 if pgrep -x "llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
-    echo "Stopping running Local LLM Advisor and sidecar processes..."
+    echo "Stopping running LLM Advisor and sidecar processes..."
     pkill -x "llm-advisor" >/dev/null 2>&1 || true
     pkill -f "llama-server" >/dev/null 2>&1 || true
     sleep 1

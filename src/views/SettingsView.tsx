@@ -20,8 +20,11 @@ import {
   RefreshCw,
   Info,
   CheckCircle2,
+  Globe,
+  ArrowUpCircle,
+  ArrowDownToLine,
 } from 'lucide-react';
-import type { AppSettings, ModelRecord, KvType, HardwareProfile } from '../types/domain';
+import type { AppSettings, ModelRecord, KvType, HardwareProfile, AppUpdateInfo } from '../types/domain';
 import {
   getSettings,
   saveSettings,
@@ -31,6 +34,9 @@ import {
   getHardwareProfile,
   reconcileLibrary,
   pruneOrphans,
+  syncCatalog,
+  checkAppUpdate,
+  installAppUpdate,
 } from '../ipc/commands';
 import { CheckboxField } from '../components/ui/Checkbox';
 import {
@@ -65,6 +71,8 @@ export function SettingsView({ onSettingsChanged }: Props) {
     default_kv_type: 'f16',
     models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
     run_in_background: true,
+    auto_update_catalog: true,
+    catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
   });
   const [records, setRecords] = useState<ModelRecord[]>([]);
   const [profile, setProfile] = useState<HardwareProfile | null>(null);
@@ -76,6 +84,14 @@ export function SettingsView({ onSettingsChanged }: Props) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [reconciling, setReconciling] = useState(false);
+  const [syncingCatalog, setSyncingCatalog] = useState(false);
+  const [checkingAppUpdate, setCheckingAppUpdate] = useState(false);
+  const [installingAppUpdate, setInstallingAppUpdate] = useState(false);
+  const [appUpdateInfo, setAppUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [appUpdateNotice, setAppUpdateNotice] = useState<{
+    text: string;
+    type: 'success' | 'info' | 'error';
+  } | null>(null);
 
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -96,6 +112,8 @@ export function SettingsView({ onSettingsChanged }: Props) {
           default_kv_type: 'f16' as KvType,
           models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
           run_in_background: true,
+          auto_update_catalog: true,
+          catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
         })),
         listLibraryModels().catch(() => []),
         getHardwareProfile().catch(() => null),
@@ -105,6 +123,78 @@ export function SettingsView({ onSettingsChanged }: Props) {
       setProfile(p);
     } catch (err) {
       console.error('Failed to load settings data', err);
+    }
+  };
+
+  const handleManualSyncCatalog = async () => {
+    try {
+      setSyncingCatalog(true);
+      const res = await syncCatalog();
+      if (res.status === 'Updated') {
+        setActionNotice({
+          type: 'success',
+          text: `Model catalog updated! ${res.details.count} open-source models available.`,
+        });
+      } else {
+        setActionNotice({
+          type: 'info',
+          text: 'Catalog is already up to date with the latest models.',
+        });
+      }
+    } catch (err: unknown) {
+      setActionNotice({
+        type: 'info',
+        text: `Catalog sync failed: ${String(err)}`,
+      });
+    } finally {
+      setSyncingCatalog(false);
+    }
+  };
+
+  const handleCheckAppUpdate = async () => {
+    try {
+      setCheckingAppUpdate(true);
+      setAppUpdateNotice(null);
+      const info = await checkAppUpdate();
+      setAppUpdateInfo(info);
+      if (info.update_available) {
+        setAppUpdateNotice({
+          type: 'success',
+          text: `Update v${info.latest_version} is available!`,
+        });
+      } else {
+        setAppUpdateNotice({
+          type: 'info',
+          text: `LLM Advisor is up to date (v${info.current_version}).`,
+        });
+      }
+    } catch (err: unknown) {
+      setAppUpdateNotice({
+        type: 'error',
+        text: `Update check failed: ${String(err)}`,
+      });
+    } finally {
+      setCheckingAppUpdate(false);
+    }
+  };
+
+  const handleInstallAppUpdate = async () => {
+    try {
+      setInstallingAppUpdate(true);
+      const success = await installAppUpdate();
+      if (success) {
+        setAppUpdateNotice({
+          type: 'success',
+          text: 'Update installed! Restarting application to apply changes...',
+        });
+      }
+    } catch (err: unknown) {
+      setAppUpdateNotice({
+        type: 'error',
+        text: `Update installation failed: ${String(err)}`,
+      });
+    } finally {
+      setInstallingAppUpdate(false);
     }
   };
 
@@ -496,7 +586,141 @@ export function SettingsView({ onSettingsChanged }: Props) {
           </div>
         </div>
 
-        {/* Section 5: Model Storage Location & Reclaim */}
+        {/* Section 5: Open-Source Catalog & CDN Sync */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-sky-400 font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-sky-950/80 border border-sky-800/80 flex items-center justify-center">
+                <Globe className="w-4 h-4 text-sky-400" />
+              </div>
+              <div>
+                <h3 className="text-white text-sm font-semibold">Open-Source Catalog & CDN Updates</h3>
+                <p className="text-[11px] text-zinc-400 font-normal">
+                  Automatically discover and verify newly released open-source models on startup
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleManualSyncCatalog}
+              disabled={syncingCatalog}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingCatalog ? 'animate-spin text-sky-400' : ''}`} />
+              <span>{syncingCatalog ? 'Checking...' : 'Check for Updates Now'}</span>
+            </button>
+          </div>
+
+          <div className="space-y-4 pt-1 border-t border-zinc-800/60">
+            {/* Auto-update Toggle */}
+            <div className="pt-1">
+              <CheckboxField
+                id="auto-update-catalog-checkbox"
+                checked={settings.auto_update_catalog ?? true}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, auto_update_catalog: Boolean(checked) })
+                }
+                label="Check for new models automatically on application startup"
+                description="Performs a lightweight, non-blocking conditional check against the CDN endpoint so new models appear in the catalog seamlessly."
+              />
+            </div>
+
+            {/* Catalog Endpoint URL Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-300">Catalog CDN Endpoint URL</label>
+              <input
+                type="text"
+                value={settings.catalog_endpoint || ''}
+                onChange={(e) => setSettings({ ...settings, catalog_endpoint: e.target.value })}
+                placeholder="https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 font-mono text-xs text-zinc-100 focus:outline-none focus:border-sky-500"
+              />
+              <p className="text-[11px] text-zinc-500">
+                Custom endpoint or raw GitHub/CDN URL hosting verified GGUF catalog metadata.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 6: Application Updates & Version Lifecycle */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-violet-400 font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-violet-950/80 border border-violet-800/80 flex items-center justify-center">
+                <ArrowUpCircle className="w-4 h-4 text-violet-400" />
+              </div>
+              <div>
+                <h3 className="text-white text-sm font-semibold">Application Updates & Version</h3>
+                <p className="text-[11px] text-zinc-400 font-normal">
+                  Manage native application releases, sidecar updates, and engine improvements
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleCheckAppUpdate}
+              disabled={checkingAppUpdate || installingAppUpdate}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${checkingAppUpdate ? 'animate-spin text-violet-400' : ''}`} />
+              <span>{checkingAppUpdate ? 'Checking...' : 'Check for App Updates'}</span>
+            </button>
+          </div>
+
+          <div className="space-y-3 pt-1 border-t border-zinc-800/60">
+            <div className="flex items-center justify-between text-xs py-1">
+              <span className="text-zinc-400">Current Installed Version:</span>
+              <span className="font-mono text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded text-[11px] border border-zinc-700">
+                v0.1.0
+              </span>
+            </div>
+
+            {appUpdateNotice && (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  appUpdateNotice.type === 'success'
+                    ? 'bg-emerald-950/60 border border-emerald-800/80 text-emerald-300'
+                    : appUpdateNotice.type === 'error'
+                    ? 'bg-rose-950/60 border border-rose-800/80 text-rose-300'
+                    : 'bg-zinc-800/80 border border-zinc-700/80 text-zinc-300'
+                }`}
+              >
+                <Info className="w-4 h-4 shrink-0" />
+                <span>{appUpdateNotice.text}</span>
+              </div>
+            )}
+
+            {appUpdateInfo?.update_available && (
+              <div className="bg-violet-950/30 border border-violet-800/50 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-violet-200">
+                      Version {appUpdateInfo.latest_version} Ready
+                    </div>
+                    {appUpdateInfo.pub_date && (
+                      <div className="text-[10px] text-zinc-400">
+                        Released: {new Date(appUpdateInfo.pub_date).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleInstallAppUpdate}
+                    disabled={installingAppUpdate}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white transition-colors disabled:opacity-50"
+                  >
+                    <ArrowDownToLine className={`w-3.5 h-3.5 ${installingAppUpdate ? 'animate-bounce' : ''}`} />
+                    <span>{installingAppUpdate ? 'Installing & Relaunching...' : 'Update & Restart'}</span>
+                  </button>
+                </div>
+                {appUpdateInfo.release_notes && (
+                  <div className="bg-zinc-950/80 border border-zinc-800/80 rounded-lg p-2.5 text-[11px] text-zinc-300 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
+                    {appUpdateInfo.release_notes}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Section 7: Model Storage Location & Reclaim */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-emerald-400 font-semibold">

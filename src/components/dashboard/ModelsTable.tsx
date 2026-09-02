@@ -24,6 +24,7 @@ import {
   ExternalLink,
   MoreVerticalIcon,
   LoaderIcon,
+  Award,
 } from 'lucide-react';
 import { VerdictBadge } from '../common/VerdictBadge';
 import {
@@ -256,6 +257,106 @@ export function ModelsTable({
             {row.original.entry.quant}
           </span>
         ),
+      },
+      {
+        id: 'benchmarks',
+        accessorFn: (row) => {
+          const b = row.entry.benchmarks;
+          if (!b) return 0;
+          return (
+            (b.swe_bench ?? 0) * 100 +
+            (b.livecodebench ?? 0) * 50 +
+            (b.mmlu_pro ?? 0) * 10 +
+            (b.arena_elo ?? 0)
+          );
+        },
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+          >
+            <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            Benchmarks
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+            ) : (
+              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const b = row.original.entry.benchmarks;
+          if (
+            !b ||
+            (!b.swe_bench && !b.livecodebench && !b.mmlu_pro && !b.arena_elo && !b.human_eval)
+          ) {
+            return <span className="text-zinc-600 text-xs font-mono">—</span>;
+          }
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex flex-wrap items-center gap-1 cursor-help max-w-[210px]">
+                  {b.swe_bench !== undefined && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 whitespace-nowrap">
+                      SWE {b.swe_bench}%
+                    </span>
+                  )}
+                  {b.livecodebench !== undefined && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 whitespace-nowrap">
+                      LCB {b.livecodebench}
+                    </span>
+                  )}
+                  {b.mmlu_pro !== undefined && !b.swe_bench && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-violet-950/80 text-violet-300 border border-violet-800/60 whitespace-nowrap">
+                      MMLU {b.mmlu_pro}%
+                    </span>
+                  )}
+                  {b.arena_elo !== undefined && !b.swe_bench && !b.livecodebench && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-950/80 text-amber-300 border border-amber-800/60 whitespace-nowrap">
+                      Elo {b.arena_elo}
+                    </span>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="space-y-1.5 font-mono text-[11px] p-3 max-w-xs shadow-xl">
+                <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1 flex items-center justify-between">
+                  <span>Verified Benchmarks</span>
+                  {b.arena_elo && <span className="text-amber-400">Elo {b.arena_elo}</span>}
+                </div>
+                {b.swe_bench !== undefined && (
+                  <div className="flex justify-between gap-4 text-zinc-300">
+                    <span className="text-emerald-400">SWE-bench Verified:</span>
+                    <span className="font-bold text-zinc-100">{b.swe_bench}% resolved</span>
+                  </div>
+                )}
+                {b.livecodebench !== undefined && (
+                  <div className="flex justify-between gap-4 text-zinc-300">
+                    <span className="text-cyan-400">LiveCodeBench:</span>
+                    <span className="font-bold text-zinc-100">{b.livecodebench} pass@1</span>
+                  </div>
+                )}
+                {b.mmlu_pro !== undefined && (
+                  <div className="flex justify-between gap-4 text-zinc-300">
+                    <span className="text-violet-400">MMLU-Pro:</span>
+                    <span className="font-bold text-zinc-100">{b.mmlu_pro}%</span>
+                  </div>
+                )}
+                {b.human_eval !== undefined && (
+                  <div className="flex justify-between gap-4 text-zinc-300">
+                    <span className="text-indigo-400">HumanEval:</span>
+                    <span className="font-bold text-zinc-100">{b.human_eval}% pass@1</span>
+                  </div>
+                )}
+                <div className="text-[10px] text-zinc-500 pt-1 border-t border-zinc-800/60">
+                  Real-world benchmarks (SWE-bench, LiveCodeBench, LMSYS Arena).
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       },
       {
         id: 'file_size',

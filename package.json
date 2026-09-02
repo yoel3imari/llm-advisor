@@ -10,7 +10,7 @@
     "build:deb": "tauri build -b deb",
     "build:appimage": "LD_LIBRARY_PATH=\"$(pwd)/src-tauri/binaries:${LD_LIBRARY_PATH:-}\" tauri build -b appimage",
     "preview": "vite preview",
-    "tauri": "tauri",
+    "tauri": "LD_LIBRARY_PATH=\"$(pwd)/src-tauri/binaries:${LD_LIBRARY_PATH:-}\" tauri",
     "doctor": "bash ./scripts/doctor.sh",
     "sidecar:fetch": "bash ./scripts/fetch-sidecar.sh",
     "test": "vitest run",

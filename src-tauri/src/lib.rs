@@ -1,6 +1,4 @@
-//! Main application library and Tauri IPC command handlers for Local LLM Advisor.
-
-use catalog::load_bundled_catalog;
+use catalog::{load_active_catalog, SyncResult};
 use domain::{
     CatalogEntry, DownloadState, DownloadTask, FitResult, HardwareProfile, ModelRecord,
     RunningInstanceInfo, ServeConfig,
@@ -16,7 +14,25 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, Manager, State};
+use tauri_plugin_updater::UpdaterExt;
 use tokio_util::sync::CancellationToken;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppUpdateInfo {
+    pub current_version: String,
+    pub latest_version: String,
+    pub update_available: bool,
+    pub release_notes: Option<String>,
+    pub pub_date: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_catalog_endpoint() -> String {
+    catalog::DEFAULT_CATALOG_CDN_URL.to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -26,6 +42,10 @@ pub struct AppSettings {
     pub default_kv_type: domain::KvType,
     pub models_dir: String,
     pub run_in_background: bool,
+    #[serde(default = "default_true")]
+    pub auto_update_catalog: bool,
+    #[serde(default = "default_catalog_endpoint")]
+    pub catalog_endpoint: String,
 }
 
 impl Default for AppSettings {
@@ -37,6 +57,8 @@ impl Default for AppSettings {
             default_kv_type: domain::KvType::F16,
             models_dir: String::new(),
             run_in_background: true,
+            auto_update_catalog: true,
+            catalog_endpoint: default_catalog_endpoint(),
         }
     }
 }
@@ -64,6 +86,7 @@ pub struct AppState {
     pub library_store: Arc<LibraryStore>,
     pub settings: Arc<RwLock<AppSettings>>,
     pub settings_path: PathBuf,
+    pub app_data_dir: PathBuf,
     pub active_downloads: Arc<Mutex<HashMap<String, (DownloadTask, CancellationToken)>>>,
 }
 
@@ -110,14 +133,17 @@ async fn refresh_hardware_profile() -> Result<HardwareProfile, String> {
 }
 
 #[tauri::command]
-async fn get_catalog() -> Result<Vec<CatalogEntry>, String> {
-    load_bundled_catalog().map_err(|e| e.to_string())
+async fn get_catalog(state: State<'_, AppState>) -> Result<Vec<CatalogEntry>, String> {
+    load_active_catalog(Some(&state.app_data_dir)).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn recommend_models(cfg: ServeConfig) -> Result<Vec<FitResult>, String> {
+async fn recommend_models(
+    state: State<'_, AppState>,
+    cfg: ServeConfig,
+) -> Result<Vec<FitResult>, String> {
     let profile = get_or_detect_profile().map_err(|e| e.to_string())?;
-    let catalog = load_bundled_catalog().map_err(|e| e.to_string())?;
+    let catalog = load_active_catalog(Some(&state.app_data_dir)).map_err(|e| e.to_string())?;
     Ok(rank_recommendations(&profile, &catalog, &cfg))
 }
 
@@ -247,6 +273,14 @@ async fn clean_uninstall(
         }
     }
 
+    // 6. Clear cache if requested
+    if clear_cache {
+        let cat_cache = state.app_data_dir.join("catalog");
+        if cat_cache.exists() {
+            let _ = std::fs::remove_dir_all(&cat_cache);
+        }
+    }
+
     let app_data_dir = state
         .library_store
         .base_dir()
@@ -270,8 +304,7 @@ async fn prune_orphans(state: State<'_, AppState>, orphans: Vec<String>) -> Resu
 }
 
 #[tauri::command]
-async fn reconcile_library(state: State<'_, AppState>) -> Result<LibraryReconciliation, String> {
-
+async fn reconcile_library(state: State<'_, AppState>, ) -> Result<LibraryReconciliation, String> {
     state.library_store.reconcile().map_err(|e| e.to_string())
 }
 
@@ -281,7 +314,7 @@ async fn start_download(
     state: State<'_, AppState>,
     entry_id: String,
 ) -> Result<String, String> {
-    let catalog = load_bundled_catalog().map_err(|e| e.to_string())?;
+    let catalog = load_active_catalog(Some(&state.app_data_dir)).map_err(|e| e.to_string())?;
     let entry = catalog
         .into_iter()
         .find(|e| e.id == entry_id)
@@ -448,7 +481,7 @@ async fn start_server(
         .ok_or_else(|| format!("Model '{}' is not installed in library", model_id))?;
 
     let profile = get_or_detect_profile().map_err(|e| e.to_string())?;
-    let catalog = load_bundled_catalog().map_err(|e| e.to_string())?;
+    let catalog = load_active_catalog(Some(&state.app_data_dir)).map_err(|e| e.to_string())?;
     let entry = catalog.into_iter().find(|e| e.id == model_id);
 
     let fit = entry.map(|e| fit_engine::evaluate(&profile, &e, &cfg));
@@ -507,6 +540,26 @@ async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Res
     save_settings_to_file(&state.settings_path, &settings)?;
     *state.settings.write().unwrap() = settings;
     Ok(())
+}
+
+#[tauri::command]
+async fn sync_catalog(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<SyncResult, String> {
+    let endpoint = state.settings.read().unwrap().catalog_endpoint.clone();
+    let res = catalog::sync_catalog_from_remote(&state.app_data_dir, &endpoint)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if let SyncResult::Updated { count, ref etag } = res {
+        let _ = app.emit(
+            "catalog:updated",
+            serde_json::json!({ "count": count, "etag": etag }),
+        );
+    }
+
+    Ok(res)
 }
 
 fn is_valid_executable(path: &Path) -> bool {
@@ -611,6 +664,64 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     fallback
 }
 
+#[tauri::command]
+async fn check_app_update(app: tauri::AppHandle) -> Result<AppUpdateInfo, String> {
+    let current_version = app.package_info().version.to_string();
+    let updater = match app.updater() {
+        Ok(u) => u,
+        Err(e) => {
+            tracing::info!("Updater not active or running in development: {}", e);
+            return Ok(AppUpdateInfo {
+                latest_version: current_version.clone(),
+                current_version,
+                update_available: false,
+                release_notes: None,
+                pub_date: None,
+            });
+        }
+    };
+
+    match updater.check().await {
+        Ok(Some(update)) => {
+            let latest = update.version.clone();
+            let notes = update.body.clone();
+            let date = update.date.map(|d| d.to_string());
+            Ok(AppUpdateInfo {
+                current_version,
+                latest_version: latest,
+                update_available: true,
+                release_notes: notes,
+                pub_date: date,
+            })
+        }
+        Ok(None) => Ok(AppUpdateInfo {
+            latest_version: current_version.clone(),
+            current_version,
+            update_available: false,
+            release_notes: None,
+            pub_date: None,
+        }),
+        Err(e) => {
+            tracing::warn!("Failed to check for app updates: {}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+async fn install_app_update(app: tauri::AppHandle) -> Result<bool, String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        update
+            .download_and_install(|_chunk, _total| {}, || {})
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
@@ -618,6 +729,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -635,7 +747,7 @@ pub fn run() {
             let server_manager = Arc::new(ServerManager::new(sidecar_path));
             let (settings_val, settings_path) =
                 load_or_init_settings(&app_data_dir, &library_store);
-            let settings = Arc::new(RwLock::new(settings_val));
+            let settings = Arc::new(RwLock::new(settings_val.clone()));
 
             // Launch Axum gateway in background
             let sm_clone = server_manager.clone();
@@ -656,7 +768,7 @@ pub fn run() {
                 .build()?;
 
             let tray_builder = TrayIconBuilder::with_id("main-tray")
-                .tooltip("Local LLM Advisor (:13370)")
+                .tooltip("LLM Advisor (:13370)")
                 .menu(&tray_menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id().as_ref() {
@@ -707,11 +819,39 @@ pub fn run() {
                 let _ = tray_builder.build(app);
             }
 
+            let bg_app_handle = app.handle().clone();
+            let bg_app_data = app_data_dir.clone();
+            let auto_update_catalog = settings_val.auto_update_catalog;
+            let catalog_endpoint = settings_val.catalog_endpoint.clone();
+
+            if auto_update_catalog {
+                tauri::async_runtime::spawn(async move {
+                    // Non-blocking yield to allow UI to mount and render first
+                    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                    match catalog::sync_catalog_from_remote(&bg_app_data, &catalog_endpoint).await {
+                        Ok(SyncResult::Updated { count, etag }) => {
+                            tracing::info!("Background catalog sync updated: {} models", count);
+                            let _ = bg_app_handle.emit(
+                                "catalog:updated",
+                                serde_json::json!({ "count": count, "etag": etag }),
+                            );
+                        }
+                        Ok(SyncResult::NotModified) => {
+                            tracing::debug!("Background catalog sync: up to date");
+                        }
+                        Err(e) => {
+                            tracing::warn!("Background catalog sync notice: {}", e);
+                        }
+                    }
+                });
+            }
+
             app.manage(AppState {
                 server_manager,
                 library_store,
                 settings,
                 settings_path,
+                app_data_dir,
                 active_downloads: Arc::new(Mutex::new(HashMap::new())),
             });
 
@@ -760,7 +900,10 @@ pub fn run() {
             get_settings,
             save_settings,
             clean_uninstall,
-            prune_orphans
+            prune_orphans,
+            sync_catalog,
+            check_app_update,
+            install_app_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

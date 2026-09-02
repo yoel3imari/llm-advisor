@@ -24,6 +24,7 @@ import urllib.request
 import urllib.error
 import ssl
 from pathlib import Path
+from fetch_benchmarks import get_model_benchmarks
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CATALOG_PATH = ROOT_DIR / "crates" / "catalog" / "catalog.json"
@@ -305,6 +306,19 @@ def main():
         else:
             print("OK (cached)")
             
+        # Enrich model with benchmark scores (SWE-bench, LiveCodeBench, MMLU-Pro, Arena Elo)
+        if online_check or not entry.get("benchmarks"):
+            base_repo = BASE_MODEL_MAP.get(repo_id, repo_id)
+            bm = get_model_benchmarks(
+                entry_id,
+                base_repo_id=base_repo,
+                live=online_check,
+                token=token,
+                existing=entry.get("benchmarks")
+            )
+            if bm:
+                entry["benchmarks"] = bm
+
         errs = validate_entry(entry)
         if errs:
             all_errors.extend(errs)

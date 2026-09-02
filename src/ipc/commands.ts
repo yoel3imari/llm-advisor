@@ -12,6 +12,8 @@ import type {
   AppSettings,
   CleanUninstallOptions,
   UninstallResult,
+  CatalogSyncResult,
+  AppUpdateInfo,
 } from '../types/domain';
 import * as mock from './mock';
 
@@ -33,6 +35,11 @@ export async function refreshHardwareProfile(): Promise<HardwareProfile> {
 export async function getCatalog(): Promise<CatalogEntry[]> {
   if (useMock) return mock.mockGetCatalog();
   return invoke<CatalogEntry[]>('get_catalog');
+}
+
+export async function syncCatalog(): Promise<CatalogSyncResult> {
+  if (useMock) return mock.mockSyncCatalog();
+  return invoke<CatalogSyncResult>('sync_catalog');
 }
 
 export async function recommendModels(cfg: ServeConfig): Promise<FitResult[]> {
@@ -128,5 +135,15 @@ export async function cleanUninstall(options?: CleanUninstallOptions): Promise<U
 export async function pruneOrphans(orphans: string[]): Promise<number> {
   if (useMock) return mock.mockPruneOrphans(orphans);
   return invoke<number>('prune_orphans', { orphans });
+}
+
+export async function checkAppUpdate(): Promise<AppUpdateInfo> {
+  if (useMock) return mock.mockCheckAppUpdate();
+  return invoke<AppUpdateInfo>('check_app_update');
+}
+
+export async function installAppUpdate(): Promise<boolean> {
+  if (useMock) return mock.mockInstallAppUpdate();
+  return invoke<boolean>('install_app_update');
 }
 

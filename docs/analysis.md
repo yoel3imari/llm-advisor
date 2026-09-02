@@ -401,4 +401,4 @@ Your feedback is **exactly the kind of review this document needed** — it's no
 
 Everything else is good engineering judgment that will surface naturally during implementation.
 
-**Shall I prepare a revised `Local LLM Advisor — System Design Document` incorporating these changes?**
+**Shall I prepare a revised `LLM Advisor — System Design Document` incorporating these changes?**

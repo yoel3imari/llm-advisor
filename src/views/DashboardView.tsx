@@ -16,8 +16,11 @@ import {
   recommendModels,
   startDownload,
   deleteLibraryModel,
+  syncCatalog,
 } from '../ipc/commands';
 import { ModelsTable } from '../components/dashboard/ModelsTable';
+import { useToast } from '../components/ui/Toast';
+import { listen } from '@tauri-apps/api/event';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -64,6 +67,9 @@ export function DashboardView({
   const [results, setResults] = useState<FitResult[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [syncingCatalog, setSyncingCatalog] = useState(false);
+
+  const { showToast } = useToast();
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,6 +100,32 @@ export function DashboardView({
     };
   }, [config]);
 
+  // Listen for background catalog update events on startup or manual sync
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return;
+
+    let unlisten: (() => void) | undefined;
+    (async () => {
+      try {
+        unlisten = await listen<{ count: number; etag?: string }>('catalog:updated', async (event) => {
+          showToast({
+            type: 'info',
+            title: 'Catalog Synced',
+            description: `Refreshed recommendations with ${event.payload.count} open-source models available.`,
+          });
+          const data = await recommendModels(config);
+          setResults(data);
+        });
+      } catch (err) {
+        console.error('Failed to register catalog:updated listener', err);
+      }
+    })();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [config, showToast]);
+
   const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
@@ -107,6 +139,37 @@ export function DashboardView({
       setRefreshing(false);
     }
   }, [config, onProfileUpdated]);
+
+  const handleSyncCatalog = useCallback(async () => {
+    try {
+      setSyncingCatalog(true);
+      const res = await syncCatalog();
+      if (res.status === 'Updated') {
+        showToast({
+          type: 'success',
+          title: 'Catalog Updated',
+          description: `Discovered latest open-source models (${res.details.count} models available).`,
+        });
+        const data = await recommendModels(config);
+        setResults(data);
+      } else {
+        showToast({
+          type: 'info',
+          title: 'Catalog Up to Date',
+          description: 'No new models found on CDN. You have the latest catalog.',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to sync catalog', err);
+      showToast({
+        type: 'error',
+        title: 'Catalog Sync Failed',
+        description: String(err),
+      });
+    } finally {
+      setSyncingCatalog(false);
+    }
+  }, [config, showToast]);
 
   const handleDownload = useCallback(async (entryId: string) => {
     try {
@@ -379,6 +442,26 @@ export function DashboardView({
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Sync Catalog Button */}
+            <button
+              onClick={handleSyncCatalog}
+              disabled={syncingCatalog}
+              title="Check remote CDN for newly released open-source models"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300 shadow-sm hover:border-zinc-700 hover:text-white transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${
+                  syncingCatalog ? 'animate-spin text-indigo-400' : 'text-zinc-400'
+                }`}
+              />
+              <span className="hidden sm:inline">
+                {syncingCatalog ? 'Syncing...' : 'Sync Catalog'}
+              </span>
+              <span className="sm:hidden">
+                {syncingCatalog ? 'Syncing' : 'Sync'}
+              </span>
+            </button>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BINARIES_DIR="${ROOT_DIR}/src-tauri/binaries"
-MACOS_APP_DIR="${ROOT_DIR}/target/release/bundle/macos/Local LLM Advisor.app/Contents/MacOS"
+MACOS_APP_DIR="${ROOT_DIR}/target/release/bundle/macos/LLM Advisor.app/Contents/MacOS"
 
 if [ -d "${MACOS_APP_DIR}" ]; then
     echo "==> Post-bundle: Copying shared libraries, shaders, and symlinks into ${MACOS_APP_DIR}..."
@@ -14,7 +14,7 @@ if [ -d "${MACOS_APP_DIR}" ]; then
 
     if command -v install_name_tool &>/dev/null; then
         echo "==> Post-bundle: Configuring @loader_path and @executable_path RPATHs in macOS bundle..."
-        for bin in "${MACOS_APP_DIR}/llama-server" "${MACOS_APP_DIR}/Local LLM Advisor"; do
+        for bin in "${MACOS_APP_DIR}/llama-server" "${MACOS_APP_DIR}/LLM Advisor"; do
             [ -f "$bin" ] || continue
             install_name_tool -add_rpath "@loader_path" "$bin" 2>/dev/null || true
             install_name_tool -add_rpath "@executable_path" "$bin" 2>/dev/null || true

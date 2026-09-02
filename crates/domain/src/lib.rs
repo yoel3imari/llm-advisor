@@ -1,4 +1,4 @@
-//! Core domain types and error taxonomy for Local LLM Advisor.
+//! Core domain types and error taxonomy for LLM Advisor.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -94,8 +94,28 @@ fn default_host_bandwidth_gbps() -> f32 {
     40.0
 }
 
+/// Real-world benchmark evaluation metrics for the model.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ModelBenchmarks {
+    /// MMLU-Pro percentage score (advanced reasoning across disciplines).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mmlu_pro: Option<f32>,
+    /// LiveCodeBench contamination-free coding score (Pass@1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub livecodebench: Option<f32>,
+    /// SWE-bench Verified percentage of real-world GitHub issues resolved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub swe_bench: Option<f32>,
+    /// LMSYS Chatbot Arena human preference Elo rating.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arena_elo: Option<u32>,
+    /// HumanEval standard coding pass@1 score.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub human_eval: Option<f32>,
+}
+
 /// Curated catalog entry describing a GGUF model and its architecture parameters.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct CatalogEntry {
     pub id: String,
     pub repo_id: String,
@@ -117,6 +137,8 @@ pub struct CatalogEntry {
     pub quality_tier: u8,
     #[serde(default)]
     pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub benchmarks: Option<ModelBenchmarks>,
 }
 
 /// KV cache quantization type.

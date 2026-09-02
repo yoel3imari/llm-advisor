@@ -11,6 +11,8 @@ import type {
   AppSettings,
   CleanUninstallOptions,
   UninstallResult,
+  CatalogSyncResult,
+  AppUpdateInfo,
 } from '../types/domain';
 
 export const MOCK_PROFILE: HardwareProfile = {
@@ -132,6 +134,12 @@ export const MOCK_CATALOG: CatalogEntry[] = [
     gated: false,
     quality_tier: 4,
     tags: ['llama', '8b', 'flagship'],
+    benchmarks: {
+      mmlu_pro: 44.2,
+      livecodebench: 32.5,
+      human_eval: 72.6,
+      arena_elo: 1215,
+    },
   },
   {
     id: 'qwen2.5-7b-instruct-q4_k_m',
@@ -149,6 +157,13 @@ export const MOCK_CATALOG: CatalogEntry[] = [
     gated: false,
     quality_tier: 4,
     tags: ['qwen', '7b', 'coding'],
+    benchmarks: {
+      mmlu_pro: 56.4,
+      livecodebench: 34.0,
+      swe_bench: 39.8,
+      human_eval: 84.0,
+      arena_elo: 1245,
+    },
   },
   {
     id: 'mixtral-8x7b-instruct-v0.1-q4_k_m',
@@ -415,11 +430,24 @@ export async function mockGetSettings(): Promise<AppSettings> {
     default_kv_type: 'f16',
     models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
     run_in_background: true,
+    auto_update_catalog: true,
+    catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
   };
 }
 
 export async function mockSaveSettings(_settings: AppSettings): Promise<void> {
   // no-op in mock
+}
+
+export async function mockSyncCatalog(): Promise<CatalogSyncResult> {
+  await new Promise((r) => setTimeout(r, 100));
+  return {
+    status: 'Updated',
+    details: {
+      count: MOCK_CATALOG.length,
+      etag: 'mock-etag-v1',
+    },
+  };
 }
 
 export async function mockPurgeAllModels(): Promise<number> {
@@ -464,5 +492,21 @@ export async function mockCleanUninstall(options?: CleanUninstallOptions): Promi
 
 export async function mockPruneOrphans(orphans: string[]): Promise<number> {
   return orphans.length;
+}
+
+export async function mockCheckAppUpdate(): Promise<AppUpdateInfo> {
+  await new Promise((r) => setTimeout(r, 150));
+  return {
+    current_version: '0.1.0',
+    latest_version: '0.1.0',
+    update_available: false,
+    release_notes: undefined,
+    pub_date: undefined,
+  };
+}
+
+export async function mockInstallAppUpdate(): Promise<boolean> {
+  await new Promise((r) => setTimeout(r, 200));
+  return true;
 }
 

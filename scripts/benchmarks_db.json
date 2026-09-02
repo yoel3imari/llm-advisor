@@ -1,0 +1,196 @@
+{
+  "qwen2.5-coder-7b": {
+    "livecodebench": 37.6,
+    "swe_bench": 39.8,
+    "human_eval": 88.4,
+    "mmlu_pro": 56.4,
+    "arena_elo": 1260
+  },
+  "qwen2.5-coder-14b": {
+    "livecodebench": 41.2,
+    "swe_bench": 42.4,
+    "human_eval": 91.5,
+    "mmlu_pro": 62.5,
+    "arena_elo": 1285
+  },
+  "qwen2.5-coder-32b": {
+    "livecodebench": 44.8,
+    "swe_bench": 48.0,
+    "human_eval": 92.7,
+    "mmlu_pro": 67.8,
+    "arena_elo": 1315
+  },
+  "deepseek-r1-distill-qwen-1.5b": {
+    "livecodebench": 28.5,
+    "mmlu_pro": 45.2,
+    "arena_elo": 1180
+  },
+  "deepseek-r1-distill-qwen-7b": {
+    "livecodebench": 43.1,
+    "mmlu_pro": 65.2,
+    "arena_elo": 1290
+  },
+  "deepseek-r1-distill-llama-8b": {
+    "livecodebench": 42.8,
+    "mmlu_pro": 64.5,
+    "arena_elo": 1285
+  },
+  "deepseek-r1-distill-qwen-14b": {
+    "livecodebench": 48.5,
+    "mmlu_pro": 70.8,
+    "arena_elo": 1330
+  },
+  "deepseek-r1-distill-qwen-32b": {
+    "livecodebench": 53.2,
+    "mmlu_pro": 74.5,
+    "arena_elo": 1360
+  },
+  "deepseek-r1-distill-llama-70b": {
+    "livecodebench": 57.5,
+    "swe_bench": 49.2,
+    "mmlu_pro": 77.2,
+    "arena_elo": 1380
+  },
+  "llama-3.2-1b": {
+    "human_eval": 42.0,
+    "mmlu_pro": 24.5,
+    "arena_elo": 1100
+  },
+  "llama-3.2-3b": {
+    "human_eval": 61.0,
+    "mmlu_pro": 36.2,
+    "arena_elo": 1160
+  },
+  "llama-3.1-8b": {
+    "livecodebench": 32.5,
+    "human_eval": 72.6,
+    "mmlu_pro": 44.2,
+    "arena_elo": 1215
+  },
+  "llama-3.1-70b": {
+    "livecodebench": 42.0,
+    "human_eval": 86.0,
+    "mmlu_pro": 66.8,
+    "arena_elo": 1330
+  },
+  "llama-3.3-70b": {
+    "livecodebench": 46.2,
+    "human_eval": 88.5,
+    "mmlu_pro": 71.0,
+    "arena_elo": 1355
+  },
+  "qwen2.5-0.5b": {
+    "human_eval": 32.0,
+    "mmlu_pro": 19.5,
+    "arena_elo": 1050
+  },
+  "qwen2.5-1.5b": {
+    "human_eval": 55.0,
+    "mmlu_pro": 31.0,
+    "arena_elo": 1130
+  },
+  "qwen2.5-3b": {
+    "human_eval": 68.0,
+    "mmlu_pro": 42.0,
+    "arena_elo": 1190
+  },
+  "qwen2.5-7b": {
+    "livecodebench": 34.0,
+    "human_eval": 84.0,
+    "mmlu_pro": 56.4,
+    "arena_elo": 1245
+  },
+  "qwen2.5-14b": {
+    "livecodebench": 39.5,
+    "human_eval": 87.0,
+    "mmlu_pro": 64.2,
+    "arena_elo": 1280
+  },
+  "qwen2.5-32b": {
+    "livecodebench": 44.0,
+    "human_eval": 90.2,
+    "mmlu_pro": 71.6,
+    "arena_elo": 1320
+  },
+  "gemma-2-2b": {
+    "human_eval": 52.0,
+    "mmlu_pro": 34.0,
+    "arena_elo": 1150
+  },
+  "gemma-2-9b": {
+    "livecodebench": 35.2,
+    "human_eval": 76.5,
+    "mmlu_pro": 52.8,
+    "arena_elo": 1250
+  },
+  "gemma-2-27b": {
+    "livecodebench": 41.0,
+    "human_eval": 84.0,
+    "mmlu_pro": 64.0,
+    "arena_elo": 1305
+  },
+  "mistral-7b": {
+    "human_eval": 58.0,
+    "mmlu_pro": 38.0,
+    "arena_elo": 1180
+  },
+  "mistral-nemo-instruct-2407": {
+    "livecodebench": 33.5,
+    "mmlu_pro": 48.6,
+    "arena_elo": 1225
+  },
+  "mistral-nemo-12b": {
+    "livecodebench": 33.5,
+    "mmlu_pro": 48.6,
+    "arena_elo": 1225
+  },
+  "mistral-small-24b": {
+    "livecodebench": 40.5,
+    "human_eval": 85.0,
+    "mmlu_pro": 62.0,
+    "arena_elo": 1290
+  },
+  "mixtral-8x7b": {
+    "human_eval": 72.0,
+    "mmlu_pro": 52.0,
+    "arena_elo": 1240
+  },
+  "phi-3.5-mini": {
+    "human_eval": 70.0,
+    "mmlu_pro": 42.0,
+    "arena_elo": 1200
+  },
+  "phi-4": {
+    "livecodebench": 45.8,
+    "human_eval": 88.0,
+    "mmlu_pro": 67.5,
+    "arena_elo": 1300
+  },
+  "qwq-32b": {
+    "livecodebench": 54.0,
+    "mmlu_pro": 75.0,
+    "arena_elo": 1365
+  },
+  "deepseek-coder-v2-lite": {
+    "livecodebench": 41.5,
+    "swe_bench": 43.5,
+    "human_eval": 90.2,
+    "arena_elo": 1280
+  },
+  "starcoder2-7b": {
+    "human_eval": 72.0,
+    "livecodebench": 31.0
+  },
+  "starcoder2-15b": {
+    "human_eval": 78.0,
+    "livecodebench": 36.0
+  },
+  "smollm2-1.7b": {
+    "human_eval": 45.0,
+    "mmlu_pro": 28.0
+  },
+  "tinyllama-1.1b": {
+    "human_eval": 26.0,
+    "mmlu_pro": 16.0
+  }
+}

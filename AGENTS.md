@@ -1,4 +1,4 @@
-# Local LLM Advisor — Development Guidelines & Lessons Learned
+# LLM Advisor — Development Guidelines & Lessons Learned
 
 This document records architectural conventions, project lessons learned, and guardrails to prevent regressions in future sessions.
 

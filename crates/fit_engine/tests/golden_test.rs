@@ -20,6 +20,7 @@ fn sample_llama31_8b_entry() -> CatalogEntry {
         gated: false,
         quality_tier: 4,
         tags: vec!["llama".to_string()],
+        benchmarks: None,
     }
 }
 
@@ -134,6 +135,7 @@ fn test_golden_moe_mixtral_active_params_speed() {
         gated: false,
         quality_tier: 4,
         tags: vec!["moe".to_string()],
+        benchmarks: None,
     };
 
     let profile_128gb = HardwareProfile {
@@ -279,6 +281,7 @@ fn test_llama_3_1_70b_q2_k_on_16gb_ram_fails() {
         gated: false,
         quality_tier: 5,
         tags: vec![],
+        benchmarks: None,
     };
 
     let cfg = ServeConfig::default();
@@ -308,6 +311,7 @@ fn test_gemma_2_9b_head_dim_deviation() {
         gated: false,
         quality_tier: 4,
         tags: vec![],
+        benchmarks: None,
     };
 
     let cfg = ServeConfig {

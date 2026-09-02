@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Local LLM Advisor — macOS Clean Uninstallation Script
+# LLM Advisor — macOS Clean Uninstallation Script
 # Completely removes app bundle, multi-GB GGUF models, cache, and Keychain tokens.
 # ==============================================================================
 
@@ -14,13 +14,13 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 echo -e "${BOLD}${CYAN}=====================================================${NC}"
-echo -e "${BOLD}${CYAN}  Local LLM Advisor — macOS Clean Uninstaller        ${NC}"
+echo -e "${BOLD}${CYAN}  LLM Advisor — macOS Clean Uninstaller        ${NC}"
 echo -e "${BOLD}${CYAN}=====================================================${NC}\n"
 
 # 1. Terminate running processes
 echo -e "${YELLOW}[1/4] Checking for running instances...${NC}"
 if pgrep -x "llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
-    echo "Stopping running Local LLM Advisor and sidecar processes..."
+    echo "Stopping running LLM Advisor and sidecar processes..."
     pkill -x "llm-advisor" >/dev/null 2>&1 || true
     pkill -f "llama-server" >/dev/null 2>&1 || true
     sleep 1
@@ -33,7 +33,7 @@ fi
 DATA_DIR="$HOME/Library/Application Support/dev.yoel3imari.llm-advisor"
 CACHE_DIR="$HOME/Library/Caches/dev.yoel3imari.llm-advisor"
 SAVED_STATE="$HOME/Library/Saved Application State/dev.yoel3imari.llm-advisor.savedState"
-APP_BUNDLE="/Applications/Local LLM Advisor.app"
+APP_BUNDLE="/Applications/LLM Advisor.app"
 
 # Calculate space to be reclaimed
 RECLAIM_SIZE="0 MB"

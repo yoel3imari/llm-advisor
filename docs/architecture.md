@@ -1,4 +1,4 @@
-# Local LLM Advisor — System Design Document
+# LLM Advisor — System Design Document
 
 ## TL;DR
 
@@ -85,7 +85,7 @@ flowchart LR
     Client(["🔌 External AI Client<br/>(OpenAI SDK / curl / IDE)"])
     HF(["☁️ HuggingFace Hub"])
 
-    subgraph system["Local LLM Advisor (macOS desktop app)"]
+    subgraph system["LLM Advisor (macOS desktop app)"]
         UC1(["UC1 · View Hardware Profile"])
         UC2(["UC2 · Detect / Refresh Machine Specs"])
         UC3(["UC3 · Get Model Recommendations"])
@@ -565,7 +565,7 @@ Each phase is independently demonstrable — Phase 1 alone is already a useful p
 
 ## 12. Multi-Platform Architecture Strategy (Scaling Beyond v1)
 
-Local LLM Advisor is structured so that **~85% of the codebase** (gateway, downloader, library store, catalog, pure fit engine math, IPC contracts, and React UI) is 100% platform-agnostic. Expanding to Apple Silicon, Windows, and Linux requires zero changes to core business logic.
+LLM Advisor is structured so that **~85% of the codebase** (gateway, downloader, library store, catalog, pure fit engine math, IPC contracts, and React UI) is 100% platform-agnostic. Expanding to Apple Silicon, Windows, and Linux requires zero changes to core business logic.
 
 ```mermaid
 flowchart TB
@@ -642,7 +642,7 @@ To ensure safety during updates and allow storing weights on external drives:
 
 | Data Type | Purpose | macOS Path | Windows Path | Linux Path |
 |---|---|---|---|---|
-| **App Binaries** | Read-only app code | `/Applications/Local LLM Advisor.app` | `C:\Program Files\Local LLM Advisor\` | `/usr/bin/` or AppImage mount |
+| **App Binaries** | Read-only app code | `/Applications/LLM Advisor.app` | `C:\Program Files\LLM Advisor\` | `/usr/bin/` or AppImage mount |
 | **App Config & Logs** | Small JSON files (<100KB) | `~/Library/Application Support/dev.yoel3imari.llm-advisor/` | `%APPDATA%\dev.yoel3imari.llm-advisor\` | `~/.config/llm-advisor/` |
 | **Model Store (GGUF)** | Multi-GB weights (1GB–50GB) | `~/Library/Application Support/dev.yoel3imari.llm-advisor/models/` *(Configurable in Settings)* | `%LOCALAPPDATA%\llm-advisor\models\` | `~/.local/share/llm-advisor/models/` |
 | **Secrets** | HF Access Token | macOS Keychain | Windows Credential Manager | Linux Secret Service (libsecret) |

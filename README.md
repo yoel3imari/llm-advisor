@@ -1,4 +1,4 @@
-# Local LLM Advisor (`llm-advisor`)
+# LLM Advisor (`llm-advisor`)
 
 > **Intelligent, explainable local LLM recommendations, verified GGUF downloads, and an embedded high-performance inference engine with an OpenAI-compatible gateway.**
 
@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-**Local LLM Advisor** is a self-contained desktop application built with **Tauri 2**, **Rust**, and **React 19**. It inspects host hardware (CPU, system RAM, discrete/integrated GPU VRAM, Metal working sets), calculates mathematically rigorous model-fit recommendations, manages verified GGUF model downloads directly from HuggingFace, and serves an embedded `llama-server` inference sidecar behind a zero-buffering OpenAI-compatible HTTP proxy on `127.0.0.1:13370`.
+**LLM Advisor** is a self-contained desktop application built with **Tauri 2**, **Rust**, and **React 19**. It inspects host hardware (CPU, system RAM, discrete/integrated GPU VRAM, Metal working sets), calculates mathematically rigorous model-fit recommendations, manages verified GGUF model downloads directly from HuggingFace, and serves an embedded `llama-server` inference sidecar behind a zero-buffering OpenAI-compatible HTTP proxy on `127.0.0.1:13370`.
 
 ---
 

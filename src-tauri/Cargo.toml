@@ -30,4 +30,5 @@ tracing-subscriber.workspace = true
 tauri = { version = "2.2", features = ["tray-icon"] }
 tauri-plugin-opener = "2.5"
 tauri-plugin-notification = "2.4"
+tauri-plugin-updater = "2"
 

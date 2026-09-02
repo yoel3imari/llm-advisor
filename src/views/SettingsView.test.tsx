@@ -12,6 +12,8 @@ describe('SettingsView UI & Automated Uninstaller', () => {
       expect(screen.getByText('Inference & Serving Defaults')).toBeDefined();
       expect(screen.getByText('Hugging Face Access Token')).toBeDefined();
       expect(screen.getByText('OpenAI-Compatible Gateway Network')).toBeDefined();
+      expect(screen.getByText('Open-Source Catalog & CDN Updates')).toBeDefined();
+      expect(screen.getByText('Application Updates & Version')).toBeDefined();
       expect(screen.getByText('Models Storage Directory & Reclaim')).toBeDefined();
       expect(screen.getByText('Automated Application Uninstaller & Cleaner')).toBeDefined();
     });
@@ -26,15 +28,46 @@ describe('SettingsView UI & Automated Uninstaller', () => {
       ).toBeDefined();
     });
 
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).toBeDefined();
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+    const bgCheckbox = checkboxes[0];
 
     // Toggle checkbox
-    fireEvent.click(checkbox);
-    expect(checkbox.getAttribute('data-state')).toBe('unchecked');
+    fireEvent.click(bgCheckbox);
+    expect(bgCheckbox.getAttribute('data-state')).toBe('unchecked');
 
-    fireEvent.click(checkbox);
-    expect(checkbox.getAttribute('data-state')).toBe('checked');
+    fireEvent.click(bgCheckbox);
+    expect(bgCheckbox.getAttribute('data-state')).toBe('checked');
+  });
+
+  it('triggers manual catalog update sync', async () => {
+    render(<SettingsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Check for Updates Now')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByText('Check for Updates Now'));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Model catalog updated!|Catalog is already up to date/)
+      ).toBeDefined();
+    });
+  });
+
+  it('checks for native application updates', async () => {
+    render(<SettingsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Check for App Updates')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByText('Check for App Updates'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/LLM Advisor is up to date/)).toBeDefined();
+    });
   });
 
   it('opens automated uninstaller dialog and completes deep clean', async () => {
