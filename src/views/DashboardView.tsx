@@ -244,9 +244,6 @@ export function DashboardView({
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800/90 flex items-center justify-center p-1.5 shadow-sm shrink-0">
-            <img src={appLogo} alt="LLM Advisor" className="w-full h-full object-contain" />
-          </div>
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
               Dashboard & Recommendations

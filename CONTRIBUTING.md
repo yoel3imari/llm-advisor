@@ -4,7 +4,7 @@ Thank you for your interest in contributing to **LLM Advisor**! 🚀
 
 LLM Advisor is a local-first, privacy-focused open-source project dedicated to providing deterministic hardware recommendations, verified GGUF downloads, and high-performance supervised inference.
 
-We welcome contributions of all types:
+Contributions of all types are happily wlecomed:
 * 🐛 **Bug reports & fixes**
 * ✨ **New features & enhancements**
 * 📐 **Hardware probing improvements** (Apple Silicon, AMD ROCm, Intel Arc, NVIDIA CUDA)
@@ -104,7 +104,7 @@ Please review [`AGENTS.md`](AGENTS.md) for critical architectural rules:
    * `docs/short-description` for documentation improvements
    * `refactor/short-description` for internal cleanups
 2. **Commit Messages**:
-   We follow [Conventional Commits](https://www.conventionalcommits.org/):
+   Follow [Conventional Commits](https://www.conventionalcommits.org/):
    * `feat(scope): add support for Qwen2.5-Coder GQA profiles`
    * `fix(gateway): resolve SSE chunk buffering issue on Firefox`
    * `docs(readme): add Cursor setup instructions`

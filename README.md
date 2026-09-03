@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo.png" alt="LLM Advisor Logo" width="96" height="96" />
+<img src="public/app-icon.png" alt="LLM Advisor Logo" width="96" height="96" />
 
 # LLM Advisor
 
@@ -29,7 +29,7 @@
 
 ## 💡 Why LLM Advisor?
 
-Running open-weight Large Language Models locally is often frustrating:
+Finding the best open-weight Large Language Models (LLM) and running it locally is frustrating:
 * **Guesswork & Out-of-Memory Crashes**: You download a 14 GB model, only to crash when KV cache allocations overflow your VRAM or system RAM.
 * **Bloated Runtimes**: Existing desktop wrappers frequently ship 500 MB – 1 GB+ Electron builds bundling redundant Chromium runtimes.
 * **Complex CLI Flags**: Manually configuring `llama.cpp` arguments (`-ngl`, `-c`, `-fa`, `-ctk`, `-ctv`, port bindings) requires deep familiarity with quantization internals.
@@ -104,7 +104,7 @@ npm run tauri build
 
 When a model is running, LLM Advisor exposes a standard OpenAI-compatible API on **`http://127.0.0.1:13370/v1`**.
 
-### 1. Cursor / Continue / Cline / Aider
+### 1. Coding Agents
 Configure your AI coding assistant to point to LLM Advisor:
 * **Base URL**: `http://127.0.0.1:13370/v1`
 * **API Key**: Any placeholder (e.g. `local` or `not-needed`)
@@ -179,7 +179,7 @@ llm-advisor/
 
 ## 🧪 Testing & Verification
 
-We maintain automated test suites across both the Rust backend and React frontend:
+Automated test suites are maintain across both the Rust backend and React frontend:
 
 ```bash
 # Run all Rust unit and integration tests across member crates
@@ -200,7 +200,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ## 🤝 Contributing
 
-We welcome community contributions! Whether you are adding support for new model architectures, improving hardware probing on BSD/ARM, refining the UI, or fixing bugs, here is how you can get started:
+Community contributions are welcomed! Whether you are adding support for new model architectures, improving hardware probing on BSD/ARM, refining the UI, or fixing bugs, here is how you can get started:
 
 ### Development Workflow
 1. **Fork the repository** on GitHub.
@@ -229,7 +229,7 @@ For more details, see our [Contributing Guide](CONTRIBUTING.md).
 
 ## 🐛 Reporting Issues & Feature Requests
 
-Encountered a bug, hardware detection glitch, or have an idea for a feature? We want to hear from you!
+Encountered a bug, hardware detection glitch, or have an idea for a feature? I want to hear from you!
 
 * **Search Existing Issues**: Please check the [GitHub Issues](https://github.com/yoel3imari/llm-advisor/issues) tracker before creating a new report to avoid duplicates.
 * **Filing a Bug Report**:
