@@ -16,7 +16,7 @@ members = [
 version = "0.1.0"
 edition = "2021"
 authors = ["LLM Advisor Team"]
-license = "MIT"
+license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
 domain = { path = "crates/domain" }

@@ -194,7 +194,7 @@ export function Sidebar({
           <ServerStatusPill state={serverState} />
         </div>
           <div>
-            <span className="text-xs text-zinc-600">copyright@yoel3imari</span>
+            <span className="text-xs text-lime-700">@yoel3imari</span>
           </div>
       </div>
     </aside>

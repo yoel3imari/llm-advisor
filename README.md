@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="public/app-icon.png" alt="LLM Advisor Logo" width="96" height="96" />
+<img src="public/logo.png" alt="LLM Advisor Logo" width="96" height="96" />
 
 # LLM Advisor
 
 **Deterministic Hardware-Fit Calculator, Model Library & Supervised Local LLM Gateway**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Tauri 2.0](https://img.shields.io/badge/Tauri-2.0-24C8D8?logo=tauri&logoColor=white)](https://tauri.app/)
 [![Rust 2021](https://img.shields.io/badge/Rust-1.80%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -248,5 +248,5 @@ Encountered a bug, hardware detection glitch, or have an idea for a feature? I w
 
 ## 📄 License
 
-LLM Advisor is open-source software licensed under the [MIT License](LICENSE).
+LLM Advisor is open-source software licensed under the [GNU General Public License v3.0](LICENSE).
 Inference sidecars utilize upstream binaries from [`llama.cpp`](https://github.com/ggml-org/llama.cpp) (MIT License).
