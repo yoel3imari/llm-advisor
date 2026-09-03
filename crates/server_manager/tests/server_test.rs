@@ -217,3 +217,16 @@ fn test_ensure_sidecar_dependencies_syncs_libs() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_clear_logs() {
+    let dir = tempdir().unwrap();
+    let dummy_server = dir.path().join("dummy");
+    let manager = ServerManager::new(dummy_server);
+
+    assert_eq!(manager.get_logs().len(), 0);
+    manager.clear_logs(None);
+    manager.clear_logs(Some("nonexistent-model"));
+    assert_eq!(manager.get_logs().len(), 0);
+}
+

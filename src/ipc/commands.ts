@@ -107,6 +107,11 @@ export async function getServerLogs(modelId?: string): Promise<string[]> {
   return invoke<string[]>('get_server_logs', { modelId });
 }
 
+export async function clearServerLogs(modelId?: string): Promise<void> {
+  if (useMock) return mock.mockClearServerLogs(modelId);
+  return invoke<void>('clear_server_logs', { modelId });
+}
+
 export async function getSettings(): Promise<AppSettings> {
   if (useMock) return mock.mockGetSettings();
   return invoke<AppSettings>('get_settings');

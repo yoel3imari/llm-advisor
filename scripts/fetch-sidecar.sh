@@ -73,6 +73,13 @@ cp "${SERVER_BIN}" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
 
 # Also copy shared libs (libggml, etc.) into binaries dirs
 find "${TMP_DIR}/extracted" \( -type f -o -type l \) \( -name "*.so*" -o -name "*.dylib*" -o -name "*.dll*" -o -name "*.metal*" -o -name "*.metallib*" \) | while read -r lib; do
+    fname="$(basename "${lib}")"
+    # Skip non-server CLI tool libraries to keep the bundle lean
+    case "${fname}" in
+        *bench*|*cli*|*completion*|*fit-params*|*perplexity*|*quantize*|*rpc*)
+            continue
+            ;;
+    esac
     cp -a "${lib}" "${SIDECAR_DIR}/" 2>/dev/null || true
     cp -a "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
 done

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Advisor — Inference Streaming Studio</title>
+  
+  <!-- Tailwind CSS via CDN with custom theme config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0b0d11',
+            surface: '#12151b',
+            surfaceHover: '#181d26',
+            card: '#181c24',
+            cardHover: '#1f242f',
+            borderSubtle: '#262c38',
+            borderStrong: '#363e4f',
+            emeraldAccent: '#10b981',
+            emeraldGlow: 'rgba(16, 185, 129, 0.15)',
+          },
+          fontFamily: {
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Marked Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Highlight.js for Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-obsidian text-gray-100 h-screen w-screen flex overflow-hidden font-sans antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div id="sidebar-backdrop" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-72 md:w-80 bg-surface border-r border-borderSubtle flex flex-col transition-transform duration-200 ease-in-out -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
+    
+    <!-- Sidebar Header -->
+    <div class="p-4 border-b border-borderSubtle flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-semibold tracking-wide text-gray-100 flex items-center gap-1.5">
+            LLM Advisor
+            <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">Demo</span>
+          </h1>
+          <p class="text-[11px] text-gray-400 font-mono">Inference SSE Tester</p>
+        </div>
+      </div>
+      <button id="close-sidebar-btn" class="md:hidden text-gray-400 hover:text-gray-200 p-1 rounded-md hover:bg-card">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- New Chat Button -->
+    <div class="p-3">
+      <button id="new-chat-btn" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg bg-card hover:bg-cardHover border border-borderSubtle hover:border-borderStrong text-sm font-medium transition shadow-sm group">
+        <i data-lucide="plus" class="w-4 h-4 text-emerald-400 group-hover:rotate-90 transition-transform"></i>
+        <span>New Chat Session</span>
+      </button>
+    </div>
+
+    <!-- Gateway & Model Config Panel -->
+    <div class="px-3 pb-2">
+      <div class="bg-card/70 border border-borderSubtle rounded-lg p-3 space-y-3">
+        <!-- Endpoint config -->
+        <div>
+          <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+            <label for="endpoint-input" class="font-medium flex items-center gap-1">
+              <i data-lucide="globe" class="w-3.5 h-3.5 text-gray-400"></i> Gateway Base URL
+            </label>
+            <div id="connection-pill" class="flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <span id="connection-status-text">Checking...</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <input id="endpoint-input" type="text" value="http://127.0.0.1:13370" class="w-full bg-obsidian border border-borderSubtle focus:border-emerald-500 rounded px-2 py-1 text-xs font-mono text-gray-200 focus:outline-none" />
+            <button id="check-health-btn" title="Ping Server & Refresh Models" class="p-1.5 bg-card hover:bg-cardHover border border-borderSubtle text-gray-300 hover:text-emerald-400 rounded transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <!-- Quick Presets -->
+          <div class="flex gap-1.5 mt-1.5 text-[10px] text-gray-400 font-mono">
+            <span class="text-gray-500">Presets:</span>
+            <button class="preset-btn hover:text-emerald-400 underline decoration-dotted" data-url="http://127.0.0.1:13370">:13370 (Gateway)</button>
+            <button class="preset-btn hover:text-emerald-400 underline decoration-dotted" data-url="http://127.0.0.1:8080">:8080 (llama.cpp)</button>
+            <button class="preset-btn hover:text-emerald-400 underline decoration-dotted" data-url="http://127.0.0.1:11434">:11434 (Ollama)</button>
+          </div>
+        </div>
+
+        <!-- Model Selector -->
+        <div>
+          <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+            <label for="model-select" class="font-medium flex items-center gap-1">
+              <i data-lucide="box" class="w-3.5 h-3.5 text-gray-400"></i> Model
+            </label>
+            <span id="model-count" class="text-[10px] font-mono text-gray-500">0 loaded</span>
+          </div>
+          <select id="model-select" class="w-full bg-obsidian border border-borderSubtle focus:border-emerald-500 rounded px-2 py-1.5 text-xs font-mono text-gray-200 focus:outline-none">
+            <option value="auto">Auto (from Gateway active instance)</option>
+            <option value="custom">-- Enter custom model ID --</option>
+          </select>
+          <input id="custom-model-input" type="text" placeholder="e.g. meta-llama/Llama-3.1-8B-Instruct" class="hidden mt-1.5 w-full bg-obsidian border border-borderSubtle focus:border-emerald-500 rounded px-2 py-1 text-xs font-mono text-gray-200 focus:outline-none" />
+        </div>
+
+        <!-- Mock / Simulation Switch -->
+        <div class="pt-1 border-t border-borderSubtle/60 flex items-center justify-between">
+          <label for="mock-mode-toggle" class="text-xs text-gray-300 flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i> Simulated Stream Mode
+          </label>
+          <input id="mock-mode-toggle" type="checkbox" class="w-4 h-4 rounded border-borderSubtle text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-obsidian cursor-pointer" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsible Advanced Settings -->
+    <div class="px-3 pb-2">
+      <details class="bg-card/40 border border-borderSubtle rounded-lg text-xs group">
+        <summary class="p-2.5 font-medium text-gray-300 cursor-pointer flex items-center justify-between select-none hover:text-white">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-gray-400"></i> Inference Parameters
+          </span>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400 group-open:rotate-180 transition-transform"></i>
+        </summary>
+        <div class="p-3 pt-1 border-t border-borderSubtle/50 space-y-3">
+          <!-- System Prompt -->
+          <div>
+            <label for="system-prompt-input" class="block text-[11px] text-gray-400 mb-1">System Instructions</label>
+            <textarea id="system-prompt-input" rows="2" class="w-full bg-obsidian border border-borderSubtle rounded p-1.5 text-xs text-gray-200 focus:border-emerald-500 focus:outline-none resize-none">You are a helpful, brilliant AI assistant with deep software and engineering expertise.</textarea>
+          </div>
+          <!-- Temperature -->
+          <div>
+            <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+              <span>Temperature</span>
+              <span id="temp-val" class="font-mono text-emerald-400">0.7</span>
+            </div>
+            <input id="temp-slider" type="range" min="0" max="2" step="0.05" value="0.7" class="w-full accent-emerald-500 cursor-pointer" />
+          </div>
+          <!-- Max Tokens -->
+          <div>
+            <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+              <span>Max Tokens</span>
+              <span id="max-tokens-val" class="font-mono text-emerald-400">1024</span>
+            </div>
+            <input id="max-tokens-slider" type="range" min="64" max="4096" step="64" value="1024" class="w-full accent-emerald-500 cursor-pointer" />
+          </div>
+          <!-- Stream Toggle -->
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-[11px] text-gray-300">SSE Streaming</span>
+            <input id="stream-toggle" type="checkbox" checked class="w-4 h-4 rounded border-borderSubtle text-emerald-500 focus:ring-0 bg-obsidian cursor-pointer" />
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Chat History List -->
+    <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+      <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+        <span>Chat History</span>
+        <button id="clear-all-sessions-btn" class="hover:text-red-400 transition" title="Clear all chat history">
+          <i data-lucide="trash-2" class="w-3 h-3"></i>
+        </button>
+      </div>
+      <div id="session-list" class="space-y-1">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 border-t border-borderSubtle text-xs text-gray-400 flex items-center justify-between bg-surface">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="font-mono text-[11px] text-gray-300">Ready</span>
+      </div>
+      <a href="https://github.com/ggerganov/llama.cpp" target="_blank" class="text-[11px] hover:text-emerald-400 flex items-center gap-1">
+        <span>llama.cpp</span>
+        <i data-lucide="external-link" class="w-3 h-3"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Chat Section -->
+  <main class="flex-1 flex flex-col h-full bg-obsidian relative overflow-hidden">
+    
+    <!-- Top Bar -->
+    <header class="h-14 border-b border-borderSubtle bg-surface/80 backdrop-blur-md px-4 flex items-center justify-between z-20">
+      <div class="flex items-center gap-3">
+        <button id="open-sidebar-btn" class="md:hidden text-gray-400 hover:text-gray-100 p-1.5 rounded hover:bg-card">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Current Model Badge -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-borderSubtle text-xs font-mono text-gray-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="active-model-display" class="max-w-[200px] md:max-w-xs truncate font-medium">auto</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Inference Telemetry HUD -->
+      <div class="flex items-center gap-2 sm:gap-3 text-xs font-mono">
+        <div id="stat-speed" class="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <i data-lucide="zap" class="w-3 h-3"></i>
+          <span id="val-speed">0.0 t/s</span>
+        </div>
+        <div id="stat-ttft" class="hidden md:flex items-center gap-1 px-2 py-0.5 rounded bg-card border border-borderSubtle text-gray-300">
+          <span>TTFT:</span>
+          <span id="val-ttft" class="text-gray-100">0ms</span>
+        </div>
+        <div id="stat-tokens" class="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded bg-card border border-borderSubtle text-gray-300">
+          <span>Tokens:</span>
+          <span id="val-tokens" class="text-gray-100">0</span>
+        </div>
+        <button id="clear-chat-btn" title="Clear current chat" class="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-card transition border border-transparent hover:border-borderSubtle">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat Messages Scroll Container -->
+    <div id="messages-container" class="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
+      
+      <!-- Welcome Hero / Empty State -->
+      <div id="empty-state" class="max-w-2xl mx-auto text-center py-12 md:py-16 space-y-6">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-950/30">
+          <i data-lucide="sparkles" class="w-7 h-7"></i>
+        </div>
+        
+        <div class="space-y-2">
+          <h2 class="text-2xl font-bold tracking-tight text-white">Local Inference Streaming Studio</h2>
+          <p class="text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
+            Test Server-Sent Events (SSE) token streaming against your local <code class="text-emerald-400 font-mono">llama-server</code> Axum reverse proxy or any OpenAI-compatible API.
+          </p>
+        </div>
+
+        <!-- Server Status Alert (if offline) -->
+        <div id="server-status-banner" class="hidden max-w-lg mx-auto p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs text-left flex items-start gap-2.5">
+          <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+          <div>
+            <div class="font-semibold" id="banner-title">Gateway Not Reachable</div>
+            <div class="text-amber-300/80 mt-0.5" id="banner-msg">
+              Cannot connect to <code class="font-mono">http://127.0.0.1:13370</code>. Ensure the app or sidecar is running, or toggle <strong class="text-amber-200">Simulated Stream Mode</strong> in the sidebar to test the interface.
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Starter Prompts -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto pt-2 text-left">
+          <button class="starter-card p-3 rounded-xl bg-card/60 hover:bg-card border border-borderSubtle hover:border-emerald-500/40 text-left transition group">
+            <div class="text-xs font-semibold text-gray-200 group-hover:text-emerald-400 flex items-center justify-between">
+              <span>Grouped-Query Attention</span>
+              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1 line-clamp-2">Explain how GQA reduces KV cache VRAM footprint compared to MHA.</p>
+          </button>
+
+          <button class="starter-card p-3 rounded-xl bg-card/60 hover:bg-card border border-borderSubtle hover:border-emerald-500/40 text-left transition group">
+            <div class="text-xs font-semibold text-gray-200 group-hover:text-emerald-400 flex items-center justify-between">
+              <span>Async SSE Proxy in Rust</span>
+              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1 line-clamp-2">Write an Axum endpoint that streams bytes zero-copy using Body::from_stream.</p>
+          </button>
+
+          <button class="starter-card p-3 rounded-xl bg-card/60 hover:bg-card border border-borderSubtle hover:border-emerald-500/40 text-left transition group">
+            <div class="text-xs font-semibold text-gray-200 group-hover:text-emerald-400 flex items-center justify-between">
+              <span>GGUF Quantization Comparison</span>
+              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1 line-clamp-2">Compare Q4_K_M vs Q8_0 quantizations in terms of speed, VRAM, and quality.</p>
+          </button>
+
+          <button class="starter-card p-3 rounded-xl bg-card/60 hover:bg-card border border-borderSubtle hover:border-emerald-500/40 text-left transition group">
+            <div class="text-xs font-semibold text-gray-200 group-hover:text-emerald-400 flex items-center justify-between">
+              <span>Cyberpunk Flash Fiction</span>
+              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1 line-clamp-2">Write a 2-paragraph story about an AI running on air-gapped local silicon.</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Stream List -->
+      <div id="messages-list" class="max-w-3xl mx-auto space-y-6">
+        <!-- Dynamic message bubbles injected here -->
+      </div>
+    </div>
+
+    <!-- Bottom Input Dock -->
+    <footer class="w-full max-w-3xl mx-auto px-4 pb-4 pt-1 z-20">
+      <div class="relative bg-card rounded-2xl border border-borderSubtle focus-within:border-emerald-500/60 shadow-xl transition-all duration-200">
+        <!-- Live status bar above input when generating -->
+        <div id="streaming-status-bar" class="hidden px-4 py-1.5 border-b border-borderSubtle/60 flex items-center justify-between text-[11px] font-mono text-gray-400 bg-surface/50 rounded-t-2xl">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-indicator"></span>
+            <span class="text-emerald-400 font-medium">Streaming tokens...</span>
+            <span id="stream-tokens-live">0 tokens</span>
+          </div>
+          <div id="stream-speed-live" class="text-gray-300">0.0 t/s</div>
+        </div>
+
+        <form id="chat-form" class="flex items-end p-2 sm:p-3 gap-2">
+          <!-- Textarea -->
+          <textarea
+            id="prompt-input"
+            rows="1"
+            placeholder="Send a message or test prompt... (Enter to send, Shift+Enter for newline)"
+            class="flex-1 bg-transparent text-gray-100 text-sm placeholder-gray-500 px-2 py-1.5 focus:outline-none leading-relaxed"
+          ></textarea>
+
+          <!-- Input Action Buttons -->
+          <div class="flex items-center gap-1.5 shrink-0 pb-0.5">
+            <!-- Stop Button (shown while streaming) -->
+            <button
+              id="stop-btn"
+              type="button"
+              class="hidden px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition"
+            >
+              <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i>
+              <span>Stop</span>
+            </button>
+
+            <!-- Send Button -->
+            <button
+              id="send-btn"
+              type="submit"
+              class="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:hover:bg-emerald-500 text-gray-950 font-bold flex items-center justify-center transition shadow-lg shadow-emerald-500/20"
+            >
+              <i data-lucide="arrow-up" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Under-bar info notice -->
+      <div class="mt-2 text-center text-[11px] text-gray-500 flex items-center justify-center gap-2">
+        <span>Connected to <code id="footer-endpoint-display" class="font-mono text-gray-400">http://127.0.0.1:13370</code></span>
+        <span>•</span>
+        <span>Zero-buffering SSE streaming</span>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

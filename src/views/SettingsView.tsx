@@ -39,6 +39,7 @@ import {
   installAppUpdate,
 } from '../ipc/commands';
 import { CheckboxField } from '../components/ui/Checkbox';
+import { Input } from '../components/ui/Input';
 import {
   Select,
   SelectTrigger,
@@ -486,12 +487,12 @@ export function SettingsView({ onSettingsChanged }: Props) {
 
           <div className="space-y-2 pt-1 border-t border-zinc-800/60">
             <div className="relative flex items-center">
-              <input
+              <Input
                 type={showToken ? 'text' : 'password'}
                 placeholder="hf_..."
                 value={settings.hf_token}
                 onChange={(e) => setSettings({ ...settings, hf_token: e.target.value })}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-3.5 pr-10 py-2 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full rounded-xl pl-3.5 pr-10 py-2 font-mono text-xs placeholder:text-zinc-600 focus-visible:border-indigo-500"
               />
               <button
                 type="button"
@@ -544,13 +545,13 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   Standard OpenAI tools hardcode port 13370. Strict loopback binding prevents collisions.
                 </p>
               </div>
-              <input
+              <Input
                 type="number"
                 value={settings.gateway_port}
                 onChange={(e) =>
                   setSettings({ ...settings, gateway_port: parseInt(e.target.value) || 13370 })
                 }
-                className="w-28 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 font-mono text-xs text-zinc-100 text-right focus:outline-none focus:border-cyan-500"
+                className="w-28 rounded-xl px-3 py-1.5 font-mono text-xs text-right focus-visible:ring-cyan-500 focus-visible:border-cyan-500"
               />
             </div>
 
@@ -727,11 +728,11 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-zinc-300">Models Storage Path</label>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   type="text"
                   value={settings.models_dir}
                   onChange={(e) => setSettings({ ...settings, models_dir: e.target.value })}
-                  className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 font-mono text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                  className="flex-1 rounded-xl px-3.5 py-2 font-mono text-xs focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
                 />
                 <button
                   onClick={handleCopyDir}

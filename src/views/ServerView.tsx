@@ -13,7 +13,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { ModelRecord, ServerState, ServeConfig, KvType, RunningInstanceInfo } from '../types/domain';
-import { startServer, stopServer, stopInstance, getServerLogs } from '../ipc/commands';
+import { startServer, stopServer, stopInstance, getServerLogs, clearServerLogs } from '../ipc/commands';
 import { LogViewer } from '../components/common/LogViewer';
 import {
   DropdownMenu,
@@ -23,6 +23,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSearchInput,
+  DropdownMenuEmpty,
 } from '../components/ui/DropdownMenu';
 
 interface Props {
@@ -48,6 +50,11 @@ export function ServerView({
   const [copied, setCopied] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [modelSearch, setModelSearch] = useState('');
+
+  const filteredLibraryRecords = libraryRecords.filter((r) =>
+    r.entry_id.toLowerCase().includes(modelSearch.trim().toLowerCase())
+  );
 
   useEffect(() => {
     if (initialSelectedModelId) {
@@ -136,6 +143,16 @@ export function ServerView({
       console.error('Failed to stop all instances', err);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleClearLogs = async () => {
+    try {
+      const modelParam = selectedLogModel === 'all' ? undefined : selectedLogModel;
+      await clearServerLogs(modelParam);
+      setLogs([]);
+    } catch (err) {
+      console.error('Failed to clear logs', err);
     }
   };
 
@@ -238,7 +255,7 @@ export function ServerView({
           <div className="flex flex-wrap items-center gap-4 flex-1">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-zinc-400">Model to Launch</label>
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={(open) => { if (!open) setModelSearch(''); }}>
                 <DropdownMenuTrigger asChild>
                   <button
                     disabled={isStarting || libraryRecords.length === 0}
@@ -252,19 +269,26 @@ export function ServerView({
                     <ChevronDown className="h-4 w-4 text-zinc-400 opacity-80 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-64 max-h-60 overflow-y-auto">
-                  <DropdownMenuLabel>Downloaded Models</DropdownMenuLabel>
+                <DropdownMenuContent align="start" className="min-w-72 max-h-72">
+                  <DropdownMenuLabel>Downloaded Models ({libraryRecords.length})</DropdownMenuLabel>
+                  {libraryRecords.length > 0 && (
+                    <DropdownMenuSearchInput
+                      value={modelSearch}
+                      onChange={(e) => setModelSearch(e.target.value)}
+                      placeholder="Filter downloaded models..."
+                    />
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup value={selectedModel} onValueChange={setSelectedModel}>
-                    {libraryRecords.map((r) => {
+                    {filteredLibraryRecords.map((r) => {
                       const isRunning = isModelRunning(r.entry_id);
                       return (
                         <DropdownMenuRadioItem key={r.entry_id} value={r.entry_id}>
-                          <div className="flex flex-col">
+                          <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-zinc-200">{r.entry_id}</span>
+                              <span className="font-semibold text-zinc-200 truncate">{r.entry_id}</span>
                               {isRunning && (
-                                <span className="text-[9px] font-bold px-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                                <span className="text-[9px] font-bold px-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 shrink-0">
                                   Running
                                 </span>
                               )}
@@ -276,6 +300,9 @@ export function ServerView({
                         </DropdownMenuRadioItem>
                       );
                     })}
+                    {filteredLibraryRecords.length === 0 && (
+                      <DropdownMenuEmpty>No models match &quot;{modelSearch}&quot;</DropdownMenuEmpty>
+                    )}
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -293,7 +320,7 @@ export function ServerView({
                     <ChevronDown className="h-4 w-4 text-zinc-400 opacity-80 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-40">
+                <DropdownMenuContent align="start" className="w-40 max-h-60">
                   <DropdownMenuLabel>Context Window</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup
@@ -436,25 +463,38 @@ export function ServerView({
             <span className="font-semibold text-zinc-300">Instance Logs</span>
           </div>
           {activeInstances.length > 1 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <span className="text-[11px] text-zinc-400">Filter:</span>
-              <select
-                value={selectedLogModel}
-                onChange={(e) => setSelectedLogModel(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs rounded px-2 py-0.5 focus:outline-none"
-              >
-                <option value="all">All Models (Combined)</option>
-                {activeInstances.map((inst) => (
-                  <option key={inst.model_id} value={inst.model_id}>
-                    {inst.model_id} (:{inst.port})
-                  </option>
-                ))}
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center justify-between gap-1.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors">
+                    <span className="truncate max-w-[180px]">
+                      {selectedLogModel === 'all'
+                        ? 'All Models (Combined)'
+                        : selectedLogModel}
+                    </span>
+                    <ChevronDown className="h-3 w-3 text-zinc-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 max-h-60">
+                  <DropdownMenuLabel>Filter Instance Logs</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={selectedLogModel} onValueChange={setSelectedLogModel}>
+                    <DropdownMenuRadioItem value="all">All Models (Combined)</DropdownMenuRadioItem>
+                    {activeInstances.map((inst) => (
+                      <DropdownMenuRadioItem key={inst.model_id} value={inst.model_id}>
+                        <span className="truncate">{inst.model_id}</span>
+                        <span className="ml-auto text-[10px] text-zinc-500 font-mono">:{inst.port}</span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
         <div className="flex-1 min-h-0">
-          <LogViewer logs={logs} />
+          <LogViewer logs={logs} onClear={handleClearLogs} />
         </div>
       </div>
     </div>

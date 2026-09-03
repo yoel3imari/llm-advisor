@@ -531,6 +531,15 @@ async fn get_server_logs(
 }
 
 #[tauri::command]
+async fn clear_server_logs(
+    state: State<'_, AppState>,
+    model_id: Option<String>,
+) -> Result<(), String> {
+    state.server_manager.clear_logs(model_id.as_deref());
+    Ok(())
+}
+
+#[tauri::command]
 async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
     Ok(state.settings.read().unwrap().clone())
 }
@@ -736,6 +745,14 @@ use tauri::tray::TrayIconBuilder;
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            tracing::info!("Another instance was launched; bringing existing window to focus.");
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -892,6 +909,7 @@ pub fn run() {
             stop_instance,
             list_running_instances,
             get_server_logs,
+            clear_server_logs,
             get_settings,
             save_settings,
             clean_uninstall,

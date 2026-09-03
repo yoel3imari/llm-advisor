@@ -29,7 +29,12 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSearchInput,
+  DropdownMenuEmpty,
 } from '../components/ui/DropdownMenu';
+import { Input } from '../components/ui/Input';
+import { Slider } from '../components/ui/Slider';
+import appLogo from '../public/logo.png';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -76,6 +81,7 @@ export function DashboardView({
   const [familyFilter, setFamilyFilter] = useState('all');
   const [verdictFilter, setVerdictFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [familySearch, setFamilySearch] = useState('');
 
   // Fetch recommendations whenever serve config changes
   useEffect(() => {
@@ -198,6 +204,12 @@ export function DashboardView({
     [results]
   );
 
+  const filteredFamilies = useMemo(() => {
+    const q = familySearch.trim().toLowerCase();
+    if (!q) return uniqueFamilies;
+    return uniqueFamilies.filter((fam) => fam.toLowerCase().includes(q));
+  }, [uniqueFamilies, familySearch]);
+
   if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
@@ -231,17 +243,19 @@ export function DashboardView({
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* Top Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            Dashboard & Recommendations
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/60">
-              <Sparkles className="w-3 h-3 text-indigo-400" />
-              {profile.accelerator_backend || 'Live Fit'}
-            </span>
-          </h2>
-          <p className="text-sm text-zinc-400 mt-0.5">
-            Inspect host machine limits, configure inference parameters, and explore mathematically verified models
-          </p>
+        <div className="flex items-center gap-3.5">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+              Dashboard & Recommendations
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/60">
+                <Sparkles className="w-3 h-3 text-indigo-400" />
+                {profile.accelerator_backend || 'Live Fit'}
+              </span>
+            </h2>
+            <p className="text-sm text-zinc-400 mt-0.5">
+              Inspect host machine limits, configure inference parameters, and explore mathematically verified models
+            </p>
+          </div>
         </div>
         <button
           onClick={handleRefresh}
@@ -344,20 +358,20 @@ export function DashboardView({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-800/80 pb-3.5">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <input
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+            <Input
               type="text"
               placeholder="Search by model name, family, or quant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-8 pl-8 pr-3 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 hover:border-zinc-700 transition-colors"
+              className="h-8 pl-8 pr-3 text-xs"
             />
           </div>
 
           {/* Custom DropdownMenu Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Family Filter Dropdown */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => { if (!open) setFamilySearch(''); }}>
               <DropdownMenuTrigger asChild>
                 <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[125px]">
                   <span className="truncate">
@@ -368,12 +382,19 @@ export function DashboardView({
                   <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px]">
-                <DropdownMenuLabel>Filter Family</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-[185px] max-h-72">
+                <DropdownMenuLabel>Filter Family ({uniqueFamilies.length})</DropdownMenuLabel>
+                <DropdownMenuSearchInput
+                  value={familySearch}
+                  onChange={(e) => setFamilySearch(e.target.value)}
+                  placeholder="Search families..."
+                />
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={familyFilter} onValueChange={setFamilyFilter}>
-                  <DropdownMenuRadioItem value="all">All Families</DropdownMenuRadioItem>
-                  {uniqueFamilies.map((fam) => (
+                  {!familySearch && (
+                    <DropdownMenuRadioItem value="all">All Families</DropdownMenuRadioItem>
+                  )}
+                  {filteredFamilies.map((fam) => (
                     <DropdownMenuRadioItem
                       key={fam}
                       value={fam.toLowerCase()}
@@ -382,6 +403,9 @@ export function DashboardView({
                       {fam}
                     </DropdownMenuRadioItem>
                   ))}
+                  {filteredFamilies.length === 0 && (
+                    <DropdownMenuEmpty>No families match &quot;{familySearch}&quot;</DropdownMenuEmpty>
+                  )}
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -402,7 +426,7 @@ export function DashboardView({
                   <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px]">
+              <DropdownMenuContent align="start" className="w-[140px] max-h-60">
                 <DropdownMenuLabel>Filter Verdict</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={verdictFilter} onValueChange={setVerdictFilter}>
@@ -428,7 +452,7 @@ export function DashboardView({
                   <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[170px]">
+              <DropdownMenuContent align="start" className="w-[175px] max-h-60">
                 <DropdownMenuLabel>Filter Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
@@ -474,14 +498,13 @@ export function DashboardView({
               <span>Context Size:</span>
             </div>
             <span className="font-mono text-indigo-300 font-bold w-12">{config.context_size}</span>
-            <input
-              type="range"
-              min="512"
-              max="32768"
-              step="512"
-              value={config.context_size}
-              onChange={(e) => setConfig({ ...config, context_size: parseInt(e.target.value) })}
-              className="w-28 accent-indigo-500 cursor-pointer"
+            <Slider
+              min={512}
+              max={32768}
+              step={512}
+              value={[config.context_size]}
+              onValueChange={(val) => setConfig({ ...config, context_size: val[0] })}
+              className="w-28 cursor-pointer"
             />
             {/* Quick Context Presets */}
             <div className="flex items-center gap-1">

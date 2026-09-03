@@ -64,3 +64,17 @@ This document records architectural conventions, project lessons learned, and gu
   * Never commit `.so`, `.dylib`, `.dll`, `.exe`, `llama-server*`, or `.tar.gz` archives.
   * Never commit `.gguf`, `.bin`, or `.part` model weights.
   * All binaries and weights are ignored via `.gitignore` and provisioned on demand.
+
+---
+
+## 6. Binary Size & Packaging Guardrails
+
+* **Release Profile Optimizations**:
+  * Workspace root `Cargo.toml` must declare `[profile.release]` with `lto = "thin"`, `codegen-units = 1`, `panic = "abort"`, and `strip = true`. This cuts the core binary size from 25 MB down to 13 MB.
+* **Tauri Packaging Deduplication**:
+  * In `src-tauri/tauri.conf.json`, `"resources": ["binaries/*"]` already provisions dynamic libraries into the application resource path (`/usr/lib/llm-advisor/`).
+  * Do NOT add `"files": { "/usr/lib/llm-advisor": "binaries" }` in `linux.deb` or `linux.rpm`. Doing so duplicates the 37 MB `.so` tree into a redundant 62 MB nested folder where version symlinks are dereferenced into full duplicate files.
+* **Sidecar Auxiliary Library Pruning**:
+  * Upstream `llama.cpp` releases contain implementation shared libraries for unrelated CLI tools (`libllama-bench-impl.so`, `libllama-cli-impl.so`, `libllama-perplexity-impl.so`, etc.).
+  * `scripts/fetch-sidecar.sh` filters these out during download, preserving only `llama-server` and its dynamic runtime dependencies.
+

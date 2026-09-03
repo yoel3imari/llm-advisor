@@ -228,6 +228,22 @@ impl ServerManager {
         }
     }
 
+    /// Clear recent log lines (global or for a specific model instance).
+    pub fn clear_logs(&self, model_id: Option<&str>) {
+        if let Some(mid) = model_id {
+            let instances = self.instances.lock().unwrap();
+            if let Some(p) = instances.get(mid) {
+                p.logs.write().unwrap().clear();
+            }
+        } else {
+            self.global_logs.write().unwrap().clear();
+            let instances = self.instances.lock().unwrap();
+            for p in instances.values() {
+                p.logs.write().unwrap().clear();
+            }
+        }
+    }
+
     /// Find an available localhost port.
     pub fn find_free_port() -> u16 {
         TcpListener::bind("127.0.0.1:0")
@@ -357,6 +373,7 @@ impl ServerManager {
                     // Linux package layout: /usr/bin -> /usr/lib/llm-advisor
                     if let Some(root) = p.parent() {
                         search_paths.push(root.join("lib").join("llm-advisor"));
+                        search_paths.push(root.join("lib").join("llm-advisor").join("binaries"));
                         search_paths.push(root.join("lib"));
                     }
                 }
@@ -366,13 +383,16 @@ impl ServerManager {
             if let Ok(appdir) = std::env::var("APPDIR") {
                 let appdir_path = std::path::PathBuf::from(appdir);
                 search_paths.push(appdir_path.join("usr").join("lib").join("llm-advisor"));
+                search_paths.push(appdir_path.join("usr").join("lib").join("llm-advisor").join("binaries"));
                 search_paths.push(appdir_path.join("usr").join("lib"));
                 search_paths.push(appdir_path.join("usr").join("bin"));
             }
 
             // Linux system-wide paths
             search_paths.push(std::path::PathBuf::from("/usr/lib/llm-advisor"));
+            search_paths.push(std::path::PathBuf::from("/usr/lib/llm-advisor/binaries"));
             search_paths.push(std::path::PathBuf::from("/usr/local/lib/llm-advisor"));
+            search_paths.push(std::path::PathBuf::from("/usr/local/lib/llm-advisor/binaries"));
 
             // macOS Homebrew & system paths
             search_paths.push(std::path::PathBuf::from("/opt/homebrew/lib"));

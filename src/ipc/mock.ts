@@ -34,23 +34,6 @@ export const MOCK_PROFILE: HardwareProfile = {
 
 export const MOCK_CATALOG: CatalogEntry[] = [
   {
-    id: 'tinyllama-15m-q4_k_m',
-    repo_id: 'mradermacher/tinyllama-15M-GGUF',
-    filename: 'tinyllama-15M.Q4_K_M.gguf',
-    family: 'tinyllama',
-    params_billions: 0.015,
-    n_layers: 6,
-    n_kv_heads: 6,
-    head_dim: 48,
-    context_train: 256,
-    quant: 'Q4_K_M',
-    file_size_bytes: 14650848,
-    sha256: '1c40391e29ecec2a408532a93e229d2bf3ad8652ad96de54eb58bc30f4bedc5b',
-    gated: false,
-    quality_tier: 3,
-    tags: ['tinyllama', '15m', 'ultra-light', 'test-download'],
-  },
-  {
     id: 'qwen2.5-0.5b-instruct-q4_k_m',
     repo_id: 'Qwen/Qwen2.5-0.5B-Instruct-GGUF',
     filename: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
@@ -420,6 +403,10 @@ export async function mockStopServer(): Promise<void> {
 
 export async function mockGetServerLogs(_modelId?: string): Promise<string[]> {
   return [...mockLogs];
+}
+
+export async function mockClearServerLogs(_modelId?: string): Promise<void> {
+  mockLogs = [];
 }
 
 export async function mockGetSettings(): Promise<AppSettings> {

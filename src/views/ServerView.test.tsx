@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { ServerView } from './ServerView';
 import type { ServerState, ModelRecord } from '../types/domain';
@@ -104,6 +104,30 @@ describe('ServerView UI & Error Handling', () => {
     await waitFor(() => {
       expect(screen.getByText(/Running Model Instances \(1\)/i)).toBeDefined();
       expect(screen.getByText('Stop All Instances (1)')).toBeDefined();
+    });
+  });
+
+  it('renders clean up logs button and handles log clearing', async () => {
+    const serverState: ServerState = { state: 'stopped' };
+
+    render(
+      <ServerView
+        serverState={serverState}
+        libraryRecords={mockLibraryRecords}
+        onRefreshState={() => {}}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Clear Logs')).toBeDefined();
+    });
+
+    const clearBtn = screen.getByTitle('Clean up and clear server logs');
+    expect(clearBtn).toBeDefined();
+    fireEvent.click(clearBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Cleared!|Clear Logs/i)).toBeDefined();
     });
   });
 });

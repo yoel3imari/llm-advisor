@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Terminal, ArrowDown, Copy, Check } from 'lucide-react';
+import { Terminal, ArrowDown, Copy, Check, Trash2 } from 'lucide-react';
 
 interface Props {
   logs: string[];
+  onClear?: () => void | Promise<void>;
 }
 
-export function LogViewer({ logs }: Props) {
+export function LogViewer({ logs, onClear }: Props) {
   const [autoScroll, setAutoScroll] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [cleared, setCleared] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,6 +30,20 @@ export function LogViewer({ logs }: Props) {
     }
   };
 
+  const handleClearLogs = async () => {
+    if (!onClear || logs.length === 0 || clearing) return;
+    setClearing(true);
+    try {
+      await onClear();
+      setCleared(true);
+      setTimeout(() => setCleared(false), 2000);
+    } catch (err) {
+      console.error('Failed to clear logs', err);
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden font-mono text-xs shadow-inner">
       <div className="flex items-center justify-between px-3 py-2 bg-zinc-900 border-b border-zinc-800 text-zinc-400">
@@ -36,6 +53,30 @@ export function LogViewer({ logs }: Props) {
           <span className="text-[11px] text-zinc-400">({logs.length} lines)</span>
         </div>
         <div className="flex items-center gap-2">
+          {onClear && (
+            <button
+              onClick={handleClearLogs}
+              disabled={logs.length === 0 || clearing}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+                cleared
+                  ? 'bg-rose-950 text-rose-300 border-rose-800'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed'
+              }`}
+              title="Clean up and clear server logs"
+            >
+              {cleared ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Cleared!</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Clear Logs</span>
+                </>
+              )}
+            </button>
+          )}
           <button
             onClick={handleCopyLogs}
             disabled={logs.length === 0}
