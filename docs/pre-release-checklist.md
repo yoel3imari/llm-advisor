@@ -146,8 +146,8 @@ This document details all verification procedures and acceptance criteria that m
   - [ ] Enable **"Run in Background"** in Settings.
   - [ ] Close the main window $\rightarrow$ verify window hides, the system tray icon remains active, and gateway `:13370` continues serving requests.
 - [ ] **Tray Actions**:
-  - [ ] Left-click tray icon $\rightarrow$ restores and focuses main window.
-  - [ ] Right-click tray menu $\rightarrow$ test **"Show LLM Advisor"**, **"Stop Inference Server"**, and **"Quit"**.
+  - [ ] Left-click tray icon $\rightarrow$ opens tray menu with **"Show LLM Advisor"**, **"Stop Inference Server"**, and **"Quit"**.
+  - [ ] Clicking **"Show LLM Advisor"** $\rightarrow$ restores and focuses main window.
   - [ ] Clicking **"Quit"** terminates gateway and all child sidecars immediately.
 
 ---

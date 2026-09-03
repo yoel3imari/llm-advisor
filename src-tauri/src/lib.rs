@@ -732,7 +732,7 @@ async fn install_app_update(app: tauri::AppHandle) -> Result<bool, String> {
 }
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
-use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::tray::TrayIconBuilder;
 
 pub fn run() {
     tauri::Builder::default()
@@ -779,7 +779,7 @@ pub fn run() {
             let tray_builder = TrayIconBuilder::with_id("main-tray")
                 .tooltip("LLM Advisor (:13370)")
                 .menu(&tray_menu)
-                .show_menu_on_left_click(false)
+                .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "show" => {
                         if let Some(window) = app.get_webview_window("main") {
@@ -803,20 +803,6 @@ pub fn run() {
                         });
                     }
                     _ => {}
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
                 });
 
             if let Some(icon) = app.default_window_icon().cloned() {
