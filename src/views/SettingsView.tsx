@@ -72,7 +72,6 @@ export function SettingsView({ onSettingsChanged }: Props) {
     models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
     run_in_background: true,
     auto_update_catalog: true,
-    catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
   });
   const [records, setRecords] = useState<ModelRecord[]>([]);
   const [profile, setProfile] = useState<HardwareProfile | null>(null);
@@ -113,7 +112,6 @@ export function SettingsView({ onSettingsChanged }: Props) {
           models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
           run_in_background: true,
           auto_update_catalog: true,
-          catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
         })),
         listLibraryModels().catch(() => []),
         getHardwareProfile().catch(() => null),
@@ -586,7 +584,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
           </div>
         </div>
 
-        {/* Section 5: Open-Source Catalog & CDN Sync */}
+        {/* Section 5: Model Catalog Synchronization */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-sky-400 font-semibold">
@@ -594,7 +592,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
                 <Globe className="w-4 h-4 text-sky-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Open-Source Catalog & CDN Updates</h3>
+                <h3 className="text-white text-sm font-semibold">Model Catalog Synchronization</h3>
                 <p className="text-[11px] text-zinc-400 font-normal">
                   Automatically discover and verify newly released open-source models on startup
                 </p>
@@ -620,23 +618,8 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   setSettings({ ...settings, auto_update_catalog: Boolean(checked) })
                 }
                 label="Check for new models automatically on application startup"
-                description="Performs a lightweight, non-blocking conditional check against the CDN endpoint so new models appear in the catalog seamlessly."
+                description="Performs a lightweight, non-blocking check on application startup so newly verified models appear in the catalog seamlessly."
               />
-            </div>
-
-            {/* Catalog Endpoint URL Input */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">Catalog CDN Endpoint URL</label>
-              <input
-                type="text"
-                value={settings.catalog_endpoint || ''}
-                onChange={(e) => setSettings({ ...settings, catalog_endpoint: e.target.value })}
-                placeholder="https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 font-mono text-xs text-zinc-100 focus:outline-none focus:border-sky-500"
-              />
-              <p className="text-[11px] text-zinc-500">
-                Custom endpoint or raw GitHub/CDN URL hosting verified GGUF catalog metadata.
-              </p>
             </div>
           </div>
         </div>

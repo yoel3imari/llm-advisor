@@ -12,7 +12,7 @@ describe('SettingsView UI & Automated Uninstaller', () => {
       expect(screen.getByText('Inference & Serving Defaults')).toBeDefined();
       expect(screen.getByText('Hugging Face Access Token')).toBeDefined();
       expect(screen.getByText('OpenAI-Compatible Gateway Network')).toBeDefined();
-      expect(screen.getByText('Open-Source Catalog & CDN Updates')).toBeDefined();
+      expect(screen.getByText('Model Catalog Synchronization')).toBeDefined();
       expect(screen.getByText('Application Updates & Version')).toBeDefined();
       expect(screen.getByText('Models Storage Directory & Reclaim')).toBeDefined();
       expect(screen.getByText('Automated Application Uninstaller & Cleaner')).toBeDefined();

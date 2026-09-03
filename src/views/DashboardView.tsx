@@ -156,7 +156,7 @@ export function DashboardView({
         showToast({
           type: 'info',
           title: 'Catalog Up to Date',
-          description: 'No new models found on CDN. You have the latest catalog.',
+          description: 'No new models found. You have the latest catalog.',
         });
       }
     } catch (err) {
@@ -447,7 +447,7 @@ export function DashboardView({
             <button
               onClick={handleSyncCatalog}
               disabled={syncingCatalog}
-              title="Check remote CDN for newly released open-source models"
+              title="Check remote catalog for newly released open-source models"
               className="flex h-8 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300 shadow-sm hover:border-zinc-700 hover:text-white transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
             >
               <RefreshCw
