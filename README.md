@@ -1,224 +1,131 @@
-# LLM Advisor (`llm-advisor`)
+<div align="center">
 
-> **Intelligent, explainable local LLM recommendations, verified GGUF downloads, and an embedded high-performance inference engine with an OpenAI-compatible gateway.**
+<img src="public/logo.png" alt="LLM Advisor Logo" width="96" height="96" />
 
----
+# LLM Advisor
 
-## 🌟 Overview
+**Deterministic Hardware-Fit Calculator, Model Library & Supervised Local LLM Gateway**
 
-**LLM Advisor** is a self-contained desktop application built with **Tauri 2**, **Rust**, and **React 19**. It inspects host hardware (CPU, system RAM, discrete/integrated GPU VRAM, Metal working sets), calculates mathematically rigorous model-fit recommendations, manages verified GGUF model downloads directly from HuggingFace, and serves an embedded `llama-server` inference sidecar behind a zero-buffering OpenAI-compatible HTTP proxy on `127.0.0.1:13370`.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Tauri 2.0](https://img.shields.io/badge/Tauri-2.0-24C8D8?logo=tauri&logoColor=white)](https://tauri.app/)
+[![Rust 2021](https://img.shields.io/badge/Rust-1.80%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](https://github.com/yoel3imari/llm-advisor/releases)
 
----
+<p align="center">
+  <a href="#-why-llm-advisor">Why LLM Advisor</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-connecting-your-developer-tools">Connect Tools</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-contributing">Contributing</a> •
+  <a href="#-reporting-issues">Reporting Issues</a>
+</p>
 
-## 🚀 Key Features
-
-* **🔍 Hardware Inspection & Profiling**:
-  * Real-time detection of host CPU cores, total system RAM, GPU brand/VRAM, and macOS Metal working-set limits without blocking startup.
-* **🧮 Deterministic Memory-Fit Engine**:
-  * Explainable calculations modeling model weights, **Grouped-Query Attention (GQA)** KV cache sizing, activation safety margins, and runtime overhead.
-  * Solves `max_context_that_fits` and recommended GPU layer offload (`-ngl`) targets based on available memory budgets.
-* **📥 Resumable Downloader & Integrity Verification**:
-  * Range-request resumption against HuggingFace Hub CDN.
-  * Streaming SHA256 checksum verification against HuggingFace LFS ETags.
-  * Binary GGUF header parser validating `n_layers`, `n_kv_heads`, and `head_dim` post-download.
-* **⚡ Sidecar Lifecycle Management**:
-  * Supervised single-instance `llama-server` sidecar process management with automatic free internal port selection and graceful termination (`SIGTERM` → `SIGKILL`).
-  * Dynamic health-polling timeouts (60s–300s) proportional to model file size.
-* **🔌 OpenAI-Compatible Reverse Proxy Gateway**:
-  * Bound strictly to `127.0.0.1:13370` for security and client determinism.
-  * SSE token streaming with zero buffering for `/v1/chat/completions` and `/v1/completions`.
-  * Structured JSON HTTP 503 envelopes when idle.
-  * Fully compatible with standard OpenAI SDKs, `curl`, Cursor, Continue, Cline, and Aider.
+</div>
 
 ---
 
-## 🏗️ Architecture & Monorepo Structure
+## 💡 Why LLM Advisor?
 
-```
-llm-advisor/
-├── crates/
-│   ├── domain/           # Core domain types, ServeConfig, FitResult, and AppError taxonomy
-│   ├── hw_probe/         # Hardware detection (sysinfo, Metal queries, system_profiler)
-│   ├── fit_engine/       # Mathematical memory-fit calculation engine & golden test suites
-│   ├── catalog/          # Curated GGUF model catalog loader & metadata
-│   ├── downloader/       # Resumable Range downloader, SHA256 hasher & GGUF header parser
-│   ├── library/          # Local GGUF file store, state management & disk reconciliation
-│   ├── server_manager/   # Child process supervisor for llama-server with health polling
-│   └── gateway/          # Axum HTTP/SSE reverse proxy gateway bound to 127.0.0.1:13370
-├── src-tauri/            # Tauri 2 application shell, capabilities, and IPC commands
-├── src/                  # React 19 + TypeScript + Vite + Tailwind CSS frontend UI
-├── docs/                 # System architecture diagrams, ADRs, and technical analyses
-└── scripts/              # Sidecar fetchers, catalog build utilities, and validation spikes
-```
+Running open-weight Large Language Models locally is often frustrating:
+* **Guesswork & Out-of-Memory Crashes**: You download a 14 GB model, only to crash when KV cache allocations overflow your VRAM or system RAM.
+* **Bloated Runtimes**: Existing desktop wrappers frequently ship 500 MB – 1 GB+ Electron builds bundling redundant Chromium runtimes.
+* **Complex CLI Flags**: Manually configuring `llama.cpp` arguments (`-ngl`, `-c`, `-fa`, `-ctk`, `-ctv`, port bindings) requires deep familiarity with quantization internals.
+
+**LLM Advisor solves this.** Built with **Tauri 2**, **Rust**, and **React 19**, it profiles your host hardware (Apple Silicon unified memory, discrete NVIDIA/AMD GPUs, or CPU RAM budgets), solves exact memory formulas (weights + GQA KV cache + activation buffers), downloads verified GGUF weights, and runs an embedded `llama.cpp` sidecar behind a zero-buffering **OpenAI-compatible gateway on `http://127.0.0.1:13370/v1`**.
 
 ---
 
-## 💻 System Prerequisites & Setup
+## ✨ Key Features
 
-### 🍎 macOS (Apple Silicon & Apple Intel)
-
-1. **Install Xcode Command Line Tools**:
-   ```bash
-   xcode-select --install
-   ```
-2. **Install Rust**:
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   source "$HOME/.cargo/env"
-   ```
-3. **Install Node.js (v18+)**:
-   ```bash
-   # Via Homebrew or fnm/nvm
-   brew install node
-   ```
+* 🧮 **Deterministic Memory-Fit Math**: Real-time evaluation of GQA (Grouped-Query Attention) KV cache sizing, context window targets (2K – 32K+), and GPU offload layers (`-ngl`). Clear status badges indicate **Fits**, **Tight Fit**, or **Exceeds Limits**.
+* ⚡ **Ultra-Lean & High-Performance**: Native Rust backend with a ThinLTO-optimized release footprint (~13 MB core binary, ~30 MB installer).
+* 📥 **Resumable GGUF Downloader**: Multi-stream HTTP Range downloads directly from HuggingFace Hub with SHA-256 checksum verification and binary GGUF header inspection (`n_layers`, `n_kv_heads`, `head_dim`).
+* 🔌 **Zero-Buffering OpenAI Gateway**: Strictly bound to `http://127.0.0.1:13370/v1`. Instantly connects to **Cursor**, **Continue**, **Cline**, **Aider**, **OpenAI Python/TS SDKs**, or standard `curl`.
+* 🛡️ **Supervised Sidecar Execution**: Automatic child process lifecycle management (`llama-server`) with health-polling timeouts, dynamic port isolation, and automated cleanup on app exit.
+* 💻 **Cross-Platform**: Tailored optimizations for macOS (Metal / Accelerate), Linux (AVX2 / Zen4 runtime kernels), and Windows.
 
 ---
 
-### 🐧 Linux (Ubuntu, Debian, Fedora, Arch)
+## 🚀 Quick Start
 
-1. **Install System Dependencies**:
-   * **Ubuntu / Debian**:
-     ```bash
-     sudo apt update && sudo apt install -y \
-       build-essential \
-       pkg-config \
-       libssl-dev \
-       libgtk-3-dev \
-       libwebkit2gtk-4.1-dev \
-       libayatana-appindicator3-dev \
-       librsvg2-dev \
-       curl \
-       wget
-     ```
-   * **Fedora / RHEL**:
-     ```bash
-     sudo dnf install -y \
-       gcc-c++ \
-       pkgconfig \
-       openssl-devel \
-       gtk3-devel \
-       webkit2gtk4.1-devel \
-       libayatana-appindicator-devel \
-       librsvg2-devel
-     ```
-   * **Arch Linux**:
-     ```bash
-     sudo pacman -S --needed \
-       base-devel \
-       pkgconf \
-       openssl \
-       gtk3 \
-       webkit2gtk-4.1 \
-       libayatana-appindicator \
-       librsvg
-     ```
-2. **Install Rust & Node.js**:
+### Option A: Download Pre-Built Releases
+Grab the latest signed installer for your operating system from [Releases](https://github.com/yoel3imari/llm-advisor/releases):
+* **macOS**: `.dmg` (Universal Apple Silicon & Intel)
+* **Linux**: `.AppImage` (portable standalone) or `.deb` / `.rpm`
+* **Windows**: `.exe` / `.msi` (x64)
+
+### Option B: Build from Source
+
+#### Prerequisites
+1. **Rust toolchain** (1.80+):
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   sudo apt install -y nodejs npm   # Or use nvm / fnm
    ```
+2. **Node.js** (v18+) & `npm`:
+   ```bash
+   node -v
+   ```
+3. **Platform Build Libraries**:
+   * **Linux (Ubuntu/Debian)**:
+     ```bash
+     sudo apt update && sudo apt install -y build-essential pkg-config libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+     ```
+   * **macOS**: Xcode Command Line Tools (`xcode-select --install`)
+   * **Windows**: Visual Studio 2022 with C++ Build Tools
 
----
-
-### 🪟 Windows (10/11 x86_64)
-
-1. **Install Visual Studio C++ Build Tools**:
-   * Download and install the Visual Studio Installer with the **"Desktop development with C++"** workload.
-2. **WebView2 Runtime**: Pre-installed on Windows 10/11.
-3. **Install Rust**:
-   * Download `rustup-init.exe` from [rustup.rs](https://rustup.rs/) (choose `x86_64-pc-windows-msvc`).
-4. **Install Node.js (v18+)**:
-   * Download from [nodejs.org](https://nodejs.org/).
-
----
-
-## 🛠️ Quick Start & Development
-
-### 1. Clone Repository & Install Node Dependencies
+#### Development Setup
 ```bash
+# 1. Clone the repository
 git clone https://github.com/yoel3imari/llm-advisor.git
 cd llm-advisor
+
+# 2. Install web frontend dependencies
 npm install
-```
 
-### 2. Fetch Pinned `llama-server` Sidecar Binary
-Download and unpack the pinned `llama.cpp` sidecar binary for your platform:
-```bash
-./scripts/fetch-sidecar.sh
-```
+# 3. Provision the pinned llama.cpp sidecar
+npm run sidecar:fetch
 
-### 3. Run in Development Mode
-Launch the full desktop application with Vite Hot-Module-Replacement (HMR) and Tauri IPC backend:
-```bash
+# 4. Launch in development mode with hot reloading
 npm run tauri dev
 ```
 
-### 4. Build Production Desktop Application
-Package a distributable native desktop binary/bundle:
+#### Production Packaging
 ```bash
+# Builds the production web frontend and packages platform bundles
 npm run tauri build
 ```
 
 ---
 
-## 🧪 Testing & Code Quality
+## 🔌 Connecting Your Developer Tools
 
-### Run Backend Rust Unit & Golden Tests
-```bash
-cargo test --workspace
-```
-*(Or test specific core crates:)*
-```bash
-cargo test --package domain --package hw_probe --package fit_engine \
-           --package catalog --package downloader --package library \
-           --package server_manager --package gateway
-```
+When a model is running, LLM Advisor exposes a standard OpenAI-compatible API on **`http://127.0.0.1:13370/v1`**.
 
-### Format & Lint Checks
-```bash
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
-```
+### 1. Cursor / Continue / Cline / Aider
+Configure your AI coding assistant to point to LLM Advisor:
+* **Base URL**: `http://127.0.0.1:13370/v1`
+* **API Key**: Any placeholder (e.g. `local` or `not-needed`)
+* **Model**: Use the ID of your loaded model (or `default`)
 
-### Run Frontend Build & Tests
-```bash
-npm test
-npm run build
-```
-
----
-
-## 🔌 Using the OpenAI-Compatible API
-
-Once a model is started in the app, the gateway is available at `http://127.0.0.1:13370/v1`.
-
-### Streaming Chat Completion (`curl`)
-```bash
-curl -N http://127.0.0.1:13370/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "active-model",
-    "messages": [
-      {"role": "system", "content": "You are a helpful coding assistant."},
-      {"role": "user", "content": "Write a Rust function to compute Fibonacci numbers."}
-    ],
-    "stream": true
-  }'
-```
-
-### Python OpenAI SDK Integration
+### 2. Python (Official `openai` SDK)
 ```python
 from openai import OpenAI
 
 client = OpenAI(
     base_url="http://127.0.0.1:13370/v1",
-    api_key="not-needed"  # Localhost gateway requires no key
+    api_key="not-needed",
 )
 
 response = client.chat.completions.create(
-    model="local-model",
-    messages=[{"role": "user", "content": "Explain KV-cache quantization."}],
-    stream=True
+    model="llama-3.1-8b-instruct-q4_k_m",
+    messages=[
+        {"role": "system", "content": "You are a concise software architect."},
+        {"role": "user", "content": "Explain Grouped-Query Attention in 2 sentences."},
+    ],
+    stream=True,
 )
 
 for chunk in response:
@@ -227,14 +134,119 @@ for chunk in response:
 print()
 ```
 
-### Check Gateway Health & Active State
+### 3. Streaming cURL
+```bash
+curl -N http://127.0.0.1:13370/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "active-model",
+    "messages": [{"role": "user", "content": "Hello LLM Advisor!"}],
+    "stream": true
+  }'
+```
+
+### 4. Health Check
 ```bash
 curl http://127.0.0.1:13370/healthz
-# Returns: {"status":"ok","state":"serving","model":"llama-3.1-8b-instruct-q4_k_m","internal_port":18421}
+# Returns: {"status":"ok","state":"serving","model":"qwen2.5-coder-7b-instruct-q4_k_m","internal_port":18421}
 ```
 
 ---
 
-## 📜 License
+## 🏗️ Architecture
 
-This project is open-source and released under the [MIT License](LICENSE).
+LLM Advisor is architected as a modular Rust Cargo workspace coupled with an accessible React 19 webview:
+
+```
+llm-advisor/
+├── crates/
+│   ├── domain/           # Shared domain types, ServeConfig, FitResult, and error taxonomy
+│   ├── hw_probe/         # Hardware inspection (sysinfo, macOS Metal sysctl, GPU bandwidth tables)
+│   ├── fit_engine/       # Mathematical memory-fit calculations, GQA KV sizing & roofline models
+│   ├── catalog/          # Curated GGUF catalog parsing, validation, and CDN synchronization
+│   ├── downloader/       # Resumable Range downloader, streaming SHA-256 hasher & GGUF header parser
+│   ├── library/          # Local model filesystem management, state storage & reconciliation
+│   ├── server_manager/   # Supervised child process manager for llama-server
+│   └── gateway/          # Axum HTTP/SSE reverse proxy gateway bound strictly to port 13370
+├── src-tauri/            # Tauri 2 application shell, capabilities, and IPC commands
+├── src/                  # React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui frontend
+├── public/               # Static assets & application icon
+├── scripts/              # Automated sidecar provisioning and bundle preparation scripts
+└── docs/                 # Architectural Decision Records (ADRs) and technical guides
+```
+
+---
+
+## 🧪 Testing & Verification
+
+We maintain automated test suites across both the Rust backend and React frontend:
+
+```bash
+# Run all Rust unit and integration tests across member crates
+cargo test --workspace
+
+# Run TypeScript type checks and Vitest component test suites
+npm test
+
+# Verify production Vite asset bundling
+npm run build
+
+# Code formatting & linting
+cargo fmt --check
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome community contributions! Whether you are adding support for new model architectures, improving hardware probing on BSD/ARM, refining the UI, or fixing bugs, here is how you can get started:
+
+### Development Workflow
+1. **Fork the repository** on GitHub.
+2. **Create a descriptive feature branch**:
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+3. **Set up local development**:
+   ```bash
+   npm install
+   npm run sidecar:fetch
+   npm run tauri dev
+   ```
+4. **Adhere to Code Standards**:
+   * Format Rust code with `cargo fmt`.
+   * Ensure `cargo clippy --workspace --all-targets` produces zero warnings.
+   * Ensure all tests pass (`cargo test` and `npm test`).
+   * Preserve architectural guardrails documented in [`AGENTS.md`](AGENTS.md).
+5. **Submit a Pull Request**:
+   * Provide a clear description of the problem solved and test cases added.
+   * Reference any related open issues.
+
+For more details, see our [Contributing Guide](CONTRIBUTING.md).
+
+---
+
+## 🐛 Reporting Issues & Feature Requests
+
+Encountered a bug, hardware detection glitch, or have an idea for a feature? We want to hear from you!
+
+* **Search Existing Issues**: Please check the [GitHub Issues](https://github.com/yoel3imari/llm-advisor/issues) tracker before creating a new report to avoid duplicates.
+* **Filing a Bug Report**:
+  When submitting a bug, please include:
+  1. **Operating System & Architecture**: (e.g., macOS 14.5 Apple Silicon M3, Ubuntu 24.04 x86_64, Windows 11).
+  2. **Hardware Specs**: Total RAM, GPU model, and VRAM amount.
+  3. **Model & Context**: The exact model ID and context size you were attempting to run.
+  4. **Logs**: Check the **Server Logs** tab inside the app or inspect logs in:
+     * **Linux**: `~/.local/share/dev.yoel3imari.llm-advisor/`
+     * **macOS**: `~/Library/Application Support/dev.yoel3imari.llm-advisor/`
+     * **Windows**: `%LOCALAPPDATA%\dev.yoel3imari.llm-advisor\`
+  5. **Steps to Reproduce**: Clear, numbered steps to trigger the behavior.
+* **Feature Requests**: Open an issue describing the proposed feature, the use case, and any alternatives you have considered.
+
+---
+
+## 📄 License
+
+LLM Advisor is open-source software licensed under the [MIT License](LICENSE).
+Inference sidecars utilize upstream binaries from [`llama.cpp`](https://github.com/ggml-org/llama.cpp) (MIT License).
