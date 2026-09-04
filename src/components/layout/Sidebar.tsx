@@ -1,7 +1,6 @@
 import { Cpu, FolderDown, PlayCircle, Settings, X } from 'lucide-react';
 import type { DownloadTask, ServerState } from '../../types/domain';
 import { ServerStatusPill } from './ServerStatusPill';
-import appLogo from '../../public/logo.png';
 
 export type NavTab = 'dashboard' | 'library' | 'server' | 'settings';
 
@@ -39,7 +38,7 @@ export function Sidebar({
       <div className="space-y-6">
         <div className="flex items-center gap-3 px-2">
           <div className="w-12 h-12 rounded-xl border border-0 flex items-center justify-center p-1 shrink-0">
-            <img src={appLogo} alt="LLM Advisor" className="w-full h-full object-contain" />
+            <img src="/app-icon.png" alt="LLM Advisor" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="font-bold text-sm tracking-tight text-white leading-none">LLM Advisor</h1>

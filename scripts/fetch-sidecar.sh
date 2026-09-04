@@ -43,13 +43,19 @@ else
     exit 1
 fi
 
-ARCHIVE_FILE="${TMP_DIR}/llama-${PINNED_TAG}.tar.gz"
+if [[ "${TARGET_URL}" == *".zip" ]]; then
+    ARCHIVE_FILE="${TMP_DIR}/llama-${PINNED_TAG}.zip"
+else
+    ARCHIVE_FILE="${TMP_DIR}/llama-${PINNED_TAG}.tar.gz"
+fi
 
 # Check if real binary already exists and works
-if [ -f "${BINARIES_DIR}/${TAURI_BIN_NAME}" ] && [ -f "${SIDECAR_DIR}/llama-server" ] && [ ! -s "${BINARIES_DIR}/${TAURI_BIN_NAME}" -o "$(head -n 1 "${BINARIES_DIR}/${TAURI_BIN_NAME}" 2>/dev/null)" != "#!/bin/sh" ]; then
+if [ -f "${BINARIES_DIR}/${TAURI_BIN_NAME}" ] && ( [ -f "${SIDECAR_DIR}/llama-server" ] || [ -f "${SIDECAR_DIR}/llama-server.exe" ] ) && ! grep -q "^#!/bin/sh" "${BINARIES_DIR}/${TAURI_BIN_NAME}" 2>/dev/null; then
     echo "==> Real sidecar binary already present at ${BINARIES_DIR}/${TAURI_BIN_NAME}"
     echo "==> Verifying binary execution..."
-    LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version || true
+    TEST_BIN="${SIDECAR_DIR}/llama-server"
+    [ -f "${TEST_BIN}.exe" ] && TEST_BIN="${TEST_BIN}.exe"
+    LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${TEST_BIN}" --version || true
     exit 0
 fi
 
@@ -58,10 +64,18 @@ curl -sSL -o "${ARCHIVE_FILE}" "${TARGET_URL}"
 
 echo "==> Extracting archive..."
 mkdir -p "${TMP_DIR}/extracted"
-tar -xzf "${ARCHIVE_FILE}" -C "${TMP_DIR}/extracted"
+if [[ "${ARCHIVE_FILE}" == *".zip" ]]; then
+    if command -v unzip &>/dev/null; then
+        unzip -q -o "${ARCHIVE_FILE}" -d "${TMP_DIR}/extracted"
+    else
+        tar -xf "${ARCHIVE_FILE}" -C "${TMP_DIR}/extracted"
+    fi
+else
+    tar -xzf "${ARCHIVE_FILE}" -C "${TMP_DIR}/extracted"
+fi
 
 # Locate llama-server / server binary in extracted files
-SERVER_BIN="$(find "${TMP_DIR}/extracted" -type f \( -name "llama-server" -o -name "server" \) | head -n 1)"
+SERVER_BIN="$(find "${TMP_DIR}/extracted" -type f \( -name "llama-server" -o -name "server" -o -name "llama-server.exe" -o -name "server.exe" \) | head -n 1)"
 if [ -z "${SERVER_BIN}" ]; then
     echo "Error: llama-server binary not found in downloaded archive!"
     exit 1
@@ -69,6 +83,9 @@ fi
 
 chmod +x "${SERVER_BIN}"
 cp "${SERVER_BIN}" "${SIDECAR_DIR}/llama-server"
+if [[ "${TAURI_BIN_NAME}" == *".exe" ]]; then
+    cp "${SERVER_BIN}" "${SIDECAR_DIR}/llama-server.exe" 2>/dev/null || true
+fi
 cp "${SERVER_BIN}" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
 
 # Also copy shared libs (libggml, etc.) into binaries dirs

@@ -34,7 +34,6 @@ import {
 } from '../components/ui/DropdownMenu';
 import { Input } from '../components/ui/Input';
 import { Slider } from '../components/ui/Slider';
-import appLogo from '../public/logo.png';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
