@@ -1,15 +1,10 @@
 name: Release
 
-on:
+'on':
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: 'Version tag to release (e.g. v0.1.0-beta.1 or v0.1.0)'
-        required: true
-        default: 'v0.1.0'
 
 permissions:
   contents: write
@@ -89,9 +84,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.release_tag || 'v0.1.0' }}
-          releaseName: 'LLM Advisor ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.release_tag || 'v0.1.0' }}'
+          tagName: v__VERSION__
+          releaseName: 'LLM Advisor v__VERSION__'
           releaseBody: 'See attached platform assets for download. Report any issues at https://github.com/yoel3imari/llm-advisor/issues'
           releaseDraft: true
-          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(inputs.release_tag, 'beta') || contains(inputs.release_tag, 'rc') }}
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           args: ${{ matrix.args }}
