@@ -36,7 +36,7 @@ elif [ "${OS}" = "linux" ]; then
         TAURI_BIN_NAME="llama-server-x86_64-unknown-linux-gnu"
     fi
 elif [[ "${OS}" == *"mingw"* ]] || [[ "${OS}" == *"msys"* ]] || [[ "${OS}" == *"cygwin"* ]] || [[ "${OS}" == "windows_nt" ]]; then
-    TARGET_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-win-avx2-x64.zip"
+    TARGET_URL="https://github.com/ggml-org/llama.cpp/releases/download/${PINNED_TAG}/llama-${PINNED_TAG}-bin-win-cpu-x64.zip"
     TAURI_BIN_NAME="llama-server-x86_64-pc-windows-msvc.exe"
 else
     echo "Unsupported OS: ${OS}"
