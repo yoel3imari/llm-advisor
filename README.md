@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/app-icon.png" alt="LLM Advisor Logo" width="96" height="96" />
+<img src="./public/app-icon.png" alt="LLM Advisor Logo" width="96" height="96" />
 
 # LLM Advisor
 
