@@ -64,7 +64,8 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libssl-dev
+            libssl-dev \
+            libfuse2t64
 
       - name: Install npm dependencies
         run: npm ci
