@@ -19,7 +19,7 @@ jobs:
         include:
           - platform: 'ubuntu-24.04'
             target: 'x86_64-unknown-linux-gnu'
-            args: ''
+            args: '--verbose'
           - platform: 'macos-latest'
             target: 'aarch64-apple-darwin'
             args: '--target aarch64-apple-darwin'
