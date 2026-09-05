@@ -14,6 +14,17 @@ TMP_DIR="${ROOT_DIR}/target/sidecar-tmp"
 
 mkdir -p "${BINARIES_DIR}" "${SIDECAR_DIR}" "${TMP_DIR}"
 
+# tauri-build resolves every `resources` glob match at compile time: a version-symlink
+# whose target library was never downloaded for this OS (dangling .dylib links on Linux,
+# .so links on macOS) fails the build, so drop links whose targets don't exist.
+prune_dangling_links() {
+    for f in "$1"/*; do
+        if [ -L "${f}" ] && [ ! -e "${f}" ]; then
+            rm -f "${f}"
+        fi
+    done
+}
+
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 
@@ -138,6 +149,8 @@ for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
      ln -sf libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
      ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
 done
+prune_dangling_links "${SIDECAR_DIR}"
+prune_dangling_links "${BINARIES_DIR}"
 
 if [ "${OS}" = "darwin" ] && command -v install_name_tool &>/dev/null; then
     echo "==> Configuring Mach-O @rpath and @loader_path on macOS..."
@@ -226,9 +239,11 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
              ln -sf libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
              ln -sf libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
              ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
-        done
+         done
+         prune_dangling_links "${SIDECAR_DIR}"
+         prune_dangling_links "${BINARIES_DIR}"
 
-        if [ "${OS}" = "darwin" ] && command -v install_name_tool &>/dev/null; then
+         if [ "${OS}" = "darwin" ] && command -v install_name_tool &>/dev/null; then
             for bin in "${SIDECAR_DIR}/llama-server" "${BINARIES_DIR}/${TAURI_BIN_NAME}"; do
                 [ -f "$bin" ] || continue
                 install_name_tool -add_rpath "@loader_path" "$bin" 2>/dev/null || true
