@@ -60,7 +60,10 @@ if [ -f "${BINARIES_DIR}/${TAURI_BIN_NAME}" ] && ( [ -f "${SIDECAR_DIR}/llama-se
 fi
 
 echo "==> Downloading from ${TARGET_URL}..."
-curl -sSL -o "${ARCHIVE_FILE}" "${TARGET_URL}"
+# --fail: HTTP errors must exit non-zero (otherwise an error page gets saved as the tarball
+# and fails confusingly at extract time). Built-in retry handles transient runner network flakes.
+curl -sSLf --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 \
+    -o "${ARCHIVE_FILE}" "${TARGET_URL}"
 
 echo "==> Extracting archive..."
 mkdir -p "${TMP_DIR}/extracted"
@@ -158,7 +161,17 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
     if command -v cmake &>/dev/null && command -v clang &>/dev/null; then
         echo "==> Compiling native llama-server from source (tag ${PINNED_TAG})..."
         BUILD_DIR="${TMP_DIR}/native-build"
-        git clone --depth 1 --branch "${PINNED_TAG}" https://github.com/ggml-org/llama.cpp.git "${BUILD_DIR}"
+        CLONE_ATTEMPT=1
+        while ! git clone --depth 1 --branch "${PINNED_TAG}" https://github.com/ggml-org/llama.cpp.git "${BUILD_DIR}"; do
+            if [ "${CLONE_ATTEMPT}" -ge 3 ]; then
+                echo "Error: git clone of llama.cpp@${PINNED_TAG} failed after 3 attempts." >&2
+                exit 1
+            fi
+            echo "==> Clone failed, retrying in 10s (attempt $((CLONE_ATTEMPT + 1))/3)..."
+            sleep 10
+            CLONE_ATTEMPT=$((CLONE_ATTEMPT + 1))
+            rm -rf "${BUILD_DIR}"
+        done
         cmake -B "${BUILD_DIR}/build" -S "${BUILD_DIR}" \
             -DGGML_BUILD_TESTS=OFF -DGGML_BUILD_EXAMPLES=OFF \
             -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \

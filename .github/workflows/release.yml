@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'ubuntu-22.04'
+          - platform: 'ubuntu-24.04'
             target: 'x86_64-unknown-linux-gnu'
             args: ''
           - platform: 'macos-latest'
@@ -55,7 +55,7 @@ jobs:
             src-tauri
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-24.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -74,7 +74,7 @@ jobs:
         run: bash ./scripts/fetch-sidecar.sh
 
       - name: Set AppImage library path (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-24.04'
         run: echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/src-tauri/binaries:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Build Tauri Application & Package Assets
