@@ -257,9 +257,14 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
                 install_name_tool -add_rpath "@executable_path" "$dylib" 2>/dev/null || true
             done
         fi
+        if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >/dev/null 2>&1; then
+            echo "Error: natively compiled llama-server also failed verification. Aborting to avoid shipping a broken sidecar." >&2
+            exit 1
+        fi
         echo "==> Native build completed successfully."
     else
-        echo "Warning: cmake/clang not found to compile native fallback. Please ensure build dependencies are installed."
+        echo "Error: precompiled llama-server failed verification and cmake/clang are unavailable for the native fallback. Failing fast to avoid shipping a broken sidecar." >&2
+        exit 1
     fi
 fi
 

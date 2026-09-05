@@ -65,7 +65,10 @@ jobs:
             librsvg2-dev \
             patchelf \
             libssl-dev \
-            libfuse2t64
+            libfuse2t64 \
+            cmake \
+            clang \
+            libcurl4
 
       - name: Install npm dependencies
         run: npm ci
