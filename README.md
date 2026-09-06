@@ -53,7 +53,7 @@ Finding the best open-weight Large Language Models (LLM) and running it locally 
 
 ### Option A: Download Pre-Built Releases
 Grab the latest signed installer for your operating system from [Releases](https://github.com/yoel3imari/llm-advisor/releases):
-* **macOS**: `.dmg` (Universal Apple Silicon & Intel)
+* **macOS**: `.dmg` (Apple Silicon)
 * **Linux**: `.AppImage` (portable standalone) or `.deb` / `.rpm`
 * **Windows**: `.exe` / `.msi` (x64)
 

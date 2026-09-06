@@ -111,9 +111,15 @@ find "${TMP_DIR}/extracted" \( -type f -o -type l \) \( -name "*.so*" -o -name "
             continue
             ;;
     esac
-    cp -a "${lib}" "${SIDECAR_DIR}/" 2>/dev/null || true
-    cp -a "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
+    cp -a "${lib}" "${SIDECAR_DIR}/" || { echo "ERROR: failed to copy ${lib} to ${SIDECAR_DIR}" >&2; exit 1; }
+    cp -a "${lib}" "${BINARIES_DIR}/" || { echo "ERROR: failed to copy ${lib} to ${BINARIES_DIR}" >&2; exit 1; }
 done
+while IFS= read -r impl_lib; do
+    cp -a "${impl_lib}" "${SIDECAR_DIR}/" || { echo "ERROR: failed to copy ${impl_lib} to ${SIDECAR_DIR}" >&2; exit 1; }
+    cp -a "${impl_lib}" "${BINARIES_DIR}/" || { echo "ERROR: failed to copy ${impl_lib} to ${BINARIES_DIR}" >&2; exit 1; }
+done < <(find "${TMP_DIR}/extracted" -name "libllama-server-impl.so*" \( -type f -o -type l \) 2>/dev/null)
+echo "==> Staged payload:"
+ls "${SIDECAR_DIR}" "${BINARIES_DIR}" || true
 
 # Create so version symlinks if on Linux or dylib version symlinks on macOS
 for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
@@ -211,9 +217,16 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
         fi
         
         find "${BUILD_DIR}/build" \( -type f -o -type l \) \( -name "*.so*" -o -name "*.dylib*" -o -name "*.dll*" -o -name "*.metal*" -o -name "*.metallib*" \) | while read -r lib; do
-            cp -a "${lib}" "${SIDECAR_DIR}/" 2>/dev/null || true
-            cp -a "${lib}" "${BINARIES_DIR}/" 2>/dev/null || true
+            cp -a "${lib}" "${SIDECAR_DIR}/" || { echo "ERROR: failed to copy ${lib} to ${SIDECAR_DIR}" >&2; exit 1; }
+            cp -a "${lib}" "${BINARIES_DIR}/" || { echo "ERROR: failed to copy ${lib} to ${BINARIES_DIR}" >&2; exit 1; }
         done
+        for impl_lib in "${BUILD_DIR}"/build/bin/libllama-server-impl.so*; do
+            [ -e "${impl_lib}" ] || continue
+            cp -a "${impl_lib}" "${SIDECAR_DIR}/" || { echo "ERROR: failed to copy ${impl_lib} to ${SIDECAR_DIR}" >&2; exit 1; }
+            cp -a "${impl_lib}" "${BINARIES_DIR}/" || { echo "ERROR: failed to copy ${impl_lib} to ${BINARIES_DIR}" >&2; exit 1; }
+        done
+        echo "==> Staged native payload:"
+        ls "${SIDECAR_DIR}" "${BINARIES_DIR}" || true
 
         for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
             (cd "$dir" && \
