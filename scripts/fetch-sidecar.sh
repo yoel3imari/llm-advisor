@@ -169,8 +169,10 @@ if [ "${OS}" = "darwin" ] && command -v install_name_tool &>/dev/null; then
 fi
 
 echo "==> Verifying binary execution..."
-if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >/dev/null 2>&1; then
-    echo "==> Precompiled binary failed verification on this system (e.g. SDK version / symbol mismatch)."
+VERIFY_LOG="${TMP_DIR}/verify.log"
+if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${VERIFY_LOG}" 2>&1; then
+    echo "==> Precompiled binary failed verification on this system (e.g. SDK version / symbol mismatch). Loader output:"
+    cat "${VERIFY_LOG}" || true
     if command -v cmake &>/dev/null && command -v clang &>/dev/null; then
         echo "==> Compiling native llama-server from source (tag ${PINNED_TAG})..."
         BUILD_DIR="${TMP_DIR}/native-build"
@@ -200,6 +202,12 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
             chmod +x "${NATIVE_SERVER_BIN}"
             cp "${NATIVE_SERVER_BIN}" "${SIDECAR_DIR}/llama-server"
             cp "${NATIVE_SERVER_BIN}" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
+            if command -v patchelf &>/dev/null; then
+                for bin in "${SIDECAR_DIR}/llama-server" "${BINARIES_DIR}/${TAURI_BIN_NAME}"; do
+                    [ -f "$bin" ] || continue
+                    patchelf --set-rpath '$ORIGIN' "$bin" 2>/dev/null || true
+                done
+            fi
         fi
         
         find "${BUILD_DIR}/build" \( -type f -o -type l \) \( -name "*.so*" -o -name "*.dylib*" -o -name "*.dll*" -o -name "*.metal*" -o -name "*.metallib*" \) | while read -r lib; do
@@ -257,8 +265,13 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
                 install_name_tool -add_rpath "@executable_path" "$dylib" 2>/dev/null || true
             done
         fi
-        if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >/dev/null 2>&1; then
-            echo "Error: natively compiled llama-server also failed verification. Aborting to avoid shipping a broken sidecar." >&2
+        NATIVE_VERIFY_LOG="${TMP_DIR}/native-verify.log"
+        if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${NATIVE_VERIFY_LOG}" 2>&1; then
+            echo "Error: natively compiled llama-server failed verification. Loader output:" >&2
+            cat "${NATIVE_VERIFY_LOG}" >&2 || true
+            echo "--- ldd ${SIDECAR_DIR}/llama-server ---" >&2
+            LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" ldd "${SIDECAR_DIR}/llama-server" >&2 || true
+            echo "Aborting to avoid shipping a broken sidecar." >&2
             exit 1
         fi
         echo "==> Native build completed successfully."
