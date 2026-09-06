@@ -124,36 +124,36 @@ ls "${SIDECAR_DIR}" "${BINARIES_DIR}" || true
 # Create so version symlinks if on Linux or dylib version symlinks on macOS
 for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
     (cd "$dir" && \
-     ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
-     ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
-     ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
-     ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
-     ln -sf libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
-     ln -sf libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
-     ln -sf libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
-     ln -sf libllama.so.0.3.0 libllama.so 2>/dev/null || true && \
-     ln -sf libggml-base.so.0.22.0 libggml-base.so.0 2>/dev/null || true && \
-     ln -sf libggml-base.so.0.22.0 libggml-base.so 2>/dev/null || true && \
-     ln -sf libggml.so.0.22.0 libggml.so.0 2>/dev/null || true && \
-     ln -sf libggml.so.0.22.0 libggml.so 2>/dev/null || true && \
-     ln -sf libmtmd.so.0.3.0 libmtmd.so.0 2>/dev/null || true && \
-     ln -sf libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true && \
-     ln -sf libllama-common.0.3.0.dylib libllama-common.0.dylib 2>/dev/null || true && \
-     ln -sf libllama-common.0.3.0.dylib libllama-common.dylib 2>/dev/null || true && \
-     ln -sf libllama.0.3.0.dylib libllama.0.dylib 2>/dev/null || true && \
-     ln -sf libllama.0.3.0.dylib libllama.dylib 2>/dev/null || true && \
-     ln -sf libggml-base.0.22.0.dylib libggml-base.0.dylib 2>/dev/null || true && \
-     ln -sf libggml-base.0.22.0.dylib libggml-base.dylib 2>/dev/null || true && \
-     ln -sf libggml.0.22.0.dylib libggml.0.dylib 2>/dev/null || true && \
-     ln -sf libggml.0.22.0.dylib libggml.dylib 2>/dev/null || true && \
-     ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.0.dylib 2>/dev/null || true && \
-     ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.dylib 2>/dev/null || true && \
-     ln -sf libggml-blas.0.22.0.dylib libggml-blas.0.dylib 2>/dev/null || true && \
-     ln -sf libggml-blas.0.22.0.dylib libggml-blas.dylib 2>/dev/null || true && \
-     ln -sf libggml-metal.0.22.0.dylib libggml-metal.0.dylib 2>/dev/null || true && \
-     ln -sf libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
-     ln -sf libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
-     ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
+     ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
+     ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
+     ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
+     ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
+     ln -s libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
+     ln -s libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
+     ln -s libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
+     ln -s libllama.so.0.3.0 libllama.so 2>/dev/null || true && \
+     ln -s libggml-base.so.0.22.0 libggml-base.so.0 2>/dev/null || true && \
+     ln -s libggml-base.so.0.22.0 libggml-base.so 2>/dev/null || true && \
+     ln -s libggml.so.0.22.0 libggml.so.0 2>/dev/null || true && \
+     ln -s libggml.so.0.22.0 libggml.so 2>/dev/null || true && \
+     ln -s libmtmd.so.0.3.0 libmtmd.so.0 2>/dev/null || true && \
+     ln -s libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true && \
+     ln -s libllama-common.0.3.0.dylib libllama-common.0.dylib 2>/dev/null || true && \
+     ln -s libllama-common.0.3.0.dylib libllama-common.dylib 2>/dev/null || true && \
+     ln -s libllama.0.3.0.dylib libllama.0.dylib 2>/dev/null || true && \
+     ln -s libllama.0.3.0.dylib libllama.dylib 2>/dev/null || true && \
+     ln -s libggml-base.0.22.0.dylib libggml-base.0.dylib 2>/dev/null || true && \
+     ln -s libggml-base.0.22.0.dylib libggml-base.dylib 2>/dev/null || true && \
+     ln -s libggml.0.22.0.dylib libggml.0.dylib 2>/dev/null || true && \
+     ln -s libggml.0.22.0.dylib libggml.dylib 2>/dev/null || true && \
+     ln -s libggml-cpu.0.22.0.dylib libggml-cpu.0.dylib 2>/dev/null || true && \
+     ln -s libggml-cpu.0.22.0.dylib libggml-cpu.dylib 2>/dev/null || true && \
+     ln -s libggml-blas.0.22.0.dylib libggml-blas.0.dylib 2>/dev/null || true && \
+     ln -s libggml-blas.0.22.0.dylib libggml-blas.dylib 2>/dev/null || true && \
+     ln -s libggml-metal.0.22.0.dylib libggml-metal.0.dylib 2>/dev/null || true && \
+     ln -s libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
+     ln -s libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
+     ln -s libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
 done
 prune_dangling_links "${SIDECAR_DIR}"
 prune_dangling_links "${BINARIES_DIR}"
@@ -230,36 +230,36 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
 
         for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
             (cd "$dir" && \
-             ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
-             ln -sf libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
-             ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
-             ln -sf libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
-             ln -sf libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
-             ln -sf libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
-             ln -sf libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
-             ln -sf libllama.so.0.3.0 libllama.so 2>/dev/null || true && \
-             ln -sf libggml-base.so.0.22.0 libggml-base.so.0 2>/dev/null || true && \
-             ln -sf libggml-base.so.0.22.0 libggml-base.so 2>/dev/null || true && \
-             ln -sf libggml.so.0.22.0 libggml.so.0 2>/dev/null || true && \
-             ln -sf libggml.so.0.22.0 libggml.so 2>/dev/null || true && \
-             ln -sf libmtmd.so.0.3.0 libmtmd.so.0 2>/dev/null || true && \
-             ln -sf libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true && \
-             ln -sf libllama-common.0.3.0.dylib libllama-common.0.dylib 2>/dev/null || true && \
-             ln -sf libllama-common.0.3.0.dylib libllama-common.dylib 2>/dev/null || true && \
-             ln -sf libllama.0.3.0.dylib libllama.0.dylib 2>/dev/null || true && \
-             ln -sf libllama.0.3.0.dylib libllama.dylib 2>/dev/null || true && \
-             ln -sf libggml-base.0.22.0.dylib libggml-base.0.dylib 2>/dev/null || true && \
-             ln -sf libggml-base.0.22.0.dylib libggml-base.dylib 2>/dev/null || true && \
-             ln -sf libggml.0.22.0.dylib libggml.0.dylib 2>/dev/null || true && \
-             ln -sf libggml.0.22.0.dylib libggml.dylib 2>/dev/null || true && \
-             ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.0.dylib 2>/dev/null || true && \
-             ln -sf libggml-cpu.0.22.0.dylib libggml-cpu.dylib 2>/dev/null || true && \
-             ln -sf libggml-blas.0.22.0.dylib libggml-blas.0.dylib 2>/dev/null || true && \
-             ln -sf libggml-blas.0.22.0.dylib libggml-blas.dylib 2>/dev/null || true && \
-             ln -sf libggml-metal.0.22.0.dylib libggml-metal.0.dylib 2>/dev/null || true && \
-             ln -sf libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
-             ln -sf libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
-             ln -sf libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
+             ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
+             ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
+             ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
+             ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
+             ln -s libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
+             ln -s libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
+             ln -s libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
+             ln -s libllama.so.0.3.0 libllama.so 2>/dev/null || true && \
+             ln -s libggml-base.so.0.22.0 libggml-base.so.0 2>/dev/null || true && \
+             ln -s libggml-base.so.0.22.0 libggml-base.so 2>/dev/null || true && \
+             ln -s libggml.so.0.22.0 libggml.so.0 2>/dev/null || true && \
+             ln -s libggml.so.0.22.0 libggml.so 2>/dev/null || true && \
+             ln -s libmtmd.so.0.3.0 libmtmd.so.0 2>/dev/null || true && \
+             ln -s libmtmd.so.0.3.0 libmtmd.so 2>/dev/null || true && \
+             ln -s libllama-common.0.3.0.dylib libllama-common.0.dylib 2>/dev/null || true && \
+             ln -s libllama-common.0.3.0.dylib libllama-common.dylib 2>/dev/null || true && \
+             ln -s libllama.0.3.0.dylib libllama.0.dylib 2>/dev/null || true && \
+             ln -s libllama.0.3.0.dylib libllama.dylib 2>/dev/null || true && \
+             ln -s libggml-base.0.22.0.dylib libggml-base.0.dylib 2>/dev/null || true && \
+             ln -s libggml-base.0.22.0.dylib libggml-base.dylib 2>/dev/null || true && \
+             ln -s libggml.0.22.0.dylib libggml.0.dylib 2>/dev/null || true && \
+             ln -s libggml.0.22.0.dylib libggml.dylib 2>/dev/null || true && \
+             ln -s libggml-cpu.0.22.0.dylib libggml-cpu.0.dylib 2>/dev/null || true && \
+             ln -s libggml-cpu.0.22.0.dylib libggml-cpu.dylib 2>/dev/null || true && \
+             ln -s libggml-blas.0.22.0.dylib libggml-blas.0.dylib 2>/dev/null || true && \
+             ln -s libggml-blas.0.22.0.dylib libggml-blas.dylib 2>/dev/null || true && \
+             ln -s libggml-metal.0.22.0.dylib libggml-metal.0.dylib 2>/dev/null || true && \
+             ln -s libggml-metal.0.22.0.dylib libggml-metal.dylib 2>/dev/null || true && \
+             ln -s libmtmd.0.3.0.dylib libmtmd.0.dylib 2>/dev/null || true && \
+             ln -s libmtmd.0.3.0.dylib libmtmd.dylib 2>/dev/null || true)
          done
          prune_dangling_links "${SIDECAR_DIR}"
          prune_dangling_links "${BINARIES_DIR}"
@@ -282,8 +282,12 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
         if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${NATIVE_VERIFY_LOG}" 2>&1; then
             echo "Error: natively compiled llama-server failed verification. Loader output:" >&2
             cat "${NATIVE_VERIFY_LOG}" >&2 || true
-            echo "--- ldd ${SIDECAR_DIR}/llama-server ---" >&2
-            LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" ldd "${SIDECAR_DIR}/llama-server" >&2 || true
+            echo "--- loader search for ${SIDECAR_DIR}/llama-server ---" >&2
+            if command -v ldd &>/dev/null; then
+                LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" ldd "${SIDECAR_DIR}/llama-server" >&2 || true
+            elif command -v otool &>/dev/null; then
+                otool -L "${SIDECAR_DIR}/llama-server" >&2 || true
+            fi
             echo "Aborting to avoid shipping a broken sidecar." >&2
             exit 1
         fi
