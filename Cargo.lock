@@ -483,7 +483,7 @@ dependencies = [
 
 [[package]]
 name = "catalog"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "chrono",
  "domain",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "domain"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "chrono",
  "serde",
@@ -1000,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "downloader"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "domain",
  "futures-util",
@@ -1211,7 +1211,7 @@ checksum = "d45db016d36b838f563236e9193d0ee6ce38f3f68b6c94e914b4929c96bbb890"
 
 [[package]]
 name = "fit_engine"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "chrono",
  "domain",
@@ -1382,7 +1382,7 @@ dependencies = [
 
 [[package]]
 name = "gateway"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "axum",
  "catalog",
@@ -1812,7 +1812,7 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "hw_probe"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "chrono",
  "domain",
@@ -2346,7 +2346,7 @@ dependencies = [
 
 [[package]]
 name = "library"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "chrono",
  "domain",
@@ -2381,7 +2381,7 @@ checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
 
 [[package]]
 name = "llm-advisor"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "catalog",
  "chrono",
@@ -3949,7 +3949,7 @@ dependencies = [
 
 [[package]]
 name = "server_manager"
-version = "0.1.9"
+version = "0.1.91"
 dependencies = [
  "chrono",
  "domain",

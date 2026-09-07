@@ -1,7 +1,7 @@
 {
   "name": "llm-advisor",
   "private": true,
-  "version": "0.1.9",
+  "version": "0.1.91",
   "type": "module",
   "license": "GPL-3.0-or-later",
   "scripts": {
@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "tauri": "cross-env LD_LIBRARY_PATH=src-tauri/binaries:$LD_LIBRARY_PATH tauri",
     "doctor": "bash ./scripts/doctor.sh",
+    "version:bump": "bash ./scripts/bump-version.sh",
     "sidecar:fetch": "bash ./scripts/fetch-sidecar.sh",
     "demo": "bash ./demo/serve.sh 3333",
     "test": "vitest run",
