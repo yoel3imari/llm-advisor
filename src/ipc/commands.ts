@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from '@tauri-apps/api/app';
 import type {
   HardwareProfile,
   CatalogEntry,
@@ -145,6 +146,11 @@ export async function pruneOrphans(orphans: string[]): Promise<number> {
 export async function checkAppUpdate(): Promise<AppUpdateInfo> {
   if (useMock) return mock.mockCheckAppUpdate();
   return invoke<AppUpdateInfo>('check_app_update');
+}
+
+export async function getAppVersion(): Promise<string> {
+  if (useMock) return mock.mockAppVersion();
+  return getVersion();
 }
 
 export async function installAppUpdate(): Promise<boolean> {

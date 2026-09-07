@@ -36,6 +36,7 @@ import {
   pruneOrphans,
   syncCatalog,
   checkAppUpdate,
+  getAppVersion,
   installAppUpdate,
 } from '../ipc/commands';
 import { CheckboxField } from '../components/ui/Checkbox';
@@ -88,6 +89,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
   const [checkingAppUpdate, setCheckingAppUpdate] = useState(false);
   const [installingAppUpdate, setInstallingAppUpdate] = useState(false);
   const [appUpdateInfo, setAppUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [installedVersion, setInstalledVersion] = useState<string | null>(null);
   const [appUpdateNotice, setAppUpdateNotice] = useState<{
     text: string;
     type: 'success' | 'info' | 'error';
@@ -104,7 +106,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
 
   const loadData = async () => {
     try {
-      const [s, recs, p] = await Promise.all([
+      const [s, recs, p, ver] = await Promise.all([
         getSettings().catch(() => ({
           hf_token: '',
           gateway_port: 13370,
@@ -116,10 +118,12 @@ export function SettingsView({ onSettingsChanged }: Props) {
         })),
         listLibraryModels().catch(() => []),
         getHardwareProfile().catch(() => null),
+        getAppVersion().catch(() => null),
       ]);
       setSettings(s);
       setRecords(recs);
       setProfile(p);
+      setInstalledVersion(ver);
     } catch (err) {
       console.error('Failed to load settings data', err);
     }
@@ -653,7 +657,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <div className="flex items-center justify-between text-xs py-1">
               <span className="text-zinc-400">Current Installed Version:</span>
               <span className="font-mono text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded text-[11px] border border-zinc-700">
-                v0.1.0
+                v{appUpdateInfo?.current_version ?? installedVersion ?? '...'}
               </span>
             </div>
 

@@ -14,6 +14,7 @@ import type {
   CatalogSyncResult,
   AppUpdateInfo,
 } from '../types/domain';
+import { version as appVersion } from '../../package.json';
 
 export const MOCK_PROFILE: HardwareProfile = {
   cpu_name: 'Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz',
@@ -481,11 +482,15 @@ export async function mockPruneOrphans(orphans: string[]): Promise<number> {
   return orphans.length;
 }
 
+export async function mockAppVersion(): Promise<string> {
+  return appVersion;
+}
+
 export async function mockCheckAppUpdate(): Promise<AppUpdateInfo> {
   await new Promise((r) => setTimeout(r, 150));
   return {
-    current_version: '0.1.0',
-    latest_version: '0.1.0',
+    current_version: appVersion,
+    latest_version: appVersion,
     update_available: false,
     release_notes: undefined,
     pub_date: undefined,

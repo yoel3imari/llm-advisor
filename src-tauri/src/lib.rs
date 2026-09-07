@@ -721,7 +721,12 @@ async fn check_app_update(app: tauri::AppHandle) -> Result<AppUpdateInfo, String
         }),
         Err(e) => {
             tracing::warn!("Failed to check for app updates: {}", e);
-            Err(e.to_string())
+            let msg = e.to_string();
+            if msg.contains("Could not fetch a valid release JSON") {
+                Err("Something went wrong please try again later!".to_string())
+            } else {
+                Err(msg)
+            }
         }
     }
 }
