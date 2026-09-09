@@ -126,8 +126,12 @@ for dir in "${SIDECAR_DIR}" "${BINARIES_DIR}"; do
     (cd "$dir" && \
      ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
      ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
+     ln -s libllama-server-impl.so libllama-server-impl.so.0 2>/dev/null || true && \
+     ln -s libllama-server-impl.so libllama-server-impl.so.0.3.0 2>/dev/null || true && \
      ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
      ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
+     ln -s libllama-server-impl.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
+     ln -s libllama-server-impl.dylib libllama-server-impl.0.3.0.dylib 2>/dev/null || true && \
      ln -s libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
      ln -s libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
      ln -s libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
@@ -232,8 +236,12 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
             (cd "$dir" && \
              ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so.0 2>/dev/null || true && \
              ln -s libllama-server-impl.so.0.3.0 libllama-server-impl.so 2>/dev/null || true && \
+             ln -s libllama-server-impl.so libllama-server-impl.so.0 2>/dev/null || true && \
+             ln -s libllama-server-impl.so libllama-server-impl.so.0.3.0 2>/dev/null || true && \
              ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
              ln -s libllama-server-impl.0.3.0.dylib libllama-server-impl.dylib 2>/dev/null || true && \
+             ln -s libllama-server-impl.dylib libllama-server-impl.0.dylib 2>/dev/null || true && \
+             ln -s libllama-server-impl.dylib libllama-server-impl.0.3.0.dylib 2>/dev/null || true && \
              ln -s libllama-common.so.0.3.0 libllama-common.so.0 2>/dev/null || true && \
              ln -s libllama-common.so.0.3.0 libllama-common.so 2>/dev/null || true && \
              ln -s libllama.so.0.3.0 libllama.so.0 2>/dev/null || true && \
