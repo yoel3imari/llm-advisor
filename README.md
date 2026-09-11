@@ -51,13 +51,28 @@ Finding the best open-weight Large Language Models (LLM) and running it locally 
 
 ## 🚀 Quick Start
 
-### Option A: Download Pre-Built Releases
+### Option A: One-Command Install (macOS & Linux)
+Install the latest prebuilt release straight from GitHub Releases:
+```bash
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash
+```
+
+Pin a version, preview without installing, or force a Linux package format:
+```bash
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --version v0.1.91
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --format appimage
+```
+
+> **Windows**: download the `.exe` / `.msi` from [Releases](https://github.com/yoel3imari/llm-advisor/releases) manually.
+
+### Option B: Download Pre-Built Releases Manually
 Grab the latest signed installer for your operating system from [Releases](https://github.com/yoel3imari/llm-advisor/releases):
 * **macOS**: `.dmg` (Apple Silicon)
 * **Linux**: `.AppImage` (portable standalone) or `.deb` / `.rpm`
 * **Windows**: `.exe` / `.msi` (x64)
 
-### Option B: Build from Source
+### Option C: Build from Source
 
 #### Prerequisites
 1. **Rust toolchain** (1.80+):
