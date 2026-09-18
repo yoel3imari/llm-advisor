@@ -248,6 +248,55 @@ pub fn estimate_host_bandwidth_gbps(_logical_cores: u32) -> f32 {
     50.0
 }
 
+/// Parse `nvidia-smi --query-gpu=gpu_name,memory.total --format=csv,noheader,nounits`
+/// output, summing VRAM across ALL GPUs. Returns (display_name, total_vram_bytes, gpu_count).
+pub fn parse_nvidia_smi_csv(text: &str) -> Option<(String, u64, usize)> {
+    let mut total_mb: u64 = 0;
+    let mut count: usize = 0;
+    let mut first_name: Option<String> = None;
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
+        if parts.len() >= 2 {
+            if first_name.is_none() {
+                first_name = Some(parts[0].to_string());
+            }
+            if let Ok(mb) = parts[1].parse::<u64>() {
+                total_mb = total_mb.saturating_add(mb);
+                count += 1;
+            }
+        }
+    }
+    let name = first_name?;
+    if count == 0 {
+        return None;
+    }
+    Some((
+        format_multi_gpu_name(&vec![name; count]),
+        total_mb * 1024 * 1024,
+        count,
+    ))
+}
+
+/// Format a display name for one or more detected GPUs.
+/// Identical models collapse to "2x <model>", mixed models join with " + ".
+pub fn format_multi_gpu_name(names: &[String]) -> String {
+    if names.is_empty() {
+        return String::new();
+    }
+    if names.len() == 1 {
+        return names[0].clone();
+    }
+    let first = &names[0];
+    if names.iter().all(|n| n == first) {
+        return format!("{}x {}", names.len(), first);
+    }
+    names.join(" + ")
+}
+
 /// Probe Linux GPU devices (NVIDIA, AMD DRM, Intel/lspci).
 #[cfg(target_os = "linux")]
 pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
@@ -261,23 +310,16 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
     {
         if output.status.success() {
             let text = String::from_utf8_lossy(&output.stdout);
-            if let Some(first_line) = text.lines().next() {
-                let parts: Vec<&str> = first_line.split(',').map(|s| s.trim()).collect();
-                if parts.len() >= 2 {
-                    let name = parts[0].to_string();
-                    if let Ok(mb) = parts[1].parse::<u64>() {
-                        let vram_bytes = mb * 1024 * 1024;
-                        let is_unified = name.to_lowercase().contains("grace")
-                            || name.to_lowercase().contains("tegra")
-                            || name.to_lowercase().contains("orin");
-                        return Some(MetalDeviceInfo {
-                            device_name: name,
-                            working_set_bytes: vram_bytes,
-                            has_unified_memory: is_unified,
-                            vram_bytes: Some(vram_bytes),
-                        });
-                    }
-                }
+            if let Some((name, vram_bytes, _)) = parse_nvidia_smi_csv(&text) {
+                let is_unified = name.to_lowercase().contains("grace")
+                    || name.to_lowercase().contains("tegra")
+                    || name.to_lowercase().contains("orin");
+                return Some(MetalDeviceInfo {
+                    device_name: name,
+                    working_set_bytes: vram_bytes,
+                    has_unified_memory: is_unified,
+                    vram_bytes: Some(vram_bytes),
+                });
             }
         }
     }
@@ -294,7 +336,8 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
                     if let Ok(content) = std::fs::read_to_string(vram_file) {
                         if let Ok(bytes) = content.trim().parse::<u64>() {
                             if bytes > 0 {
-                                drm_vram = Some(drm_vram.map_or(bytes, |b| b.max(bytes)));
+                                drm_vram =
+                                    Some(drm_vram.map_or(bytes, |b| b.saturating_add(bytes)));
                             }
                         }
                     }
@@ -307,7 +350,7 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
     if let Ok(output) = std::process::Command::new("lspci").output() {
         if output.status.success() {
             let text = String::from_utf8_lossy(&output.stdout);
-            let mut discrete_name = None;
+            let mut discrete_names: Vec<String> = Vec::new();
             let mut integrated_name = None;
 
             for line in text.lines() {
@@ -328,7 +371,7 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
                         || lower.contains("radeon")
                         || lower.contains("advanced micro devices")
                     {
-                        discrete_name = Some(clean_name.to_string());
+                        discrete_names.push(clean_name.to_string());
                     } else {
                         integrated_name = Some(clean_name.to_string());
                     }
@@ -336,7 +379,8 @@ pub fn query_linux_gpu() -> Option<MetalDeviceInfo> {
             }
 
             // If discrete GPU is found, prioritize it and filter out small iGPUs <= 2GB
-            if let Some(d_name) = discrete_name {
+            if !discrete_names.is_empty() {
+                let d_name = format_multi_gpu_name(&discrete_names);
                 let is_unified = d_name.to_lowercase().contains("strix halo")
                     || d_name.to_lowercase().contains("ryzen ai max");
                 return Some(MetalDeviceInfo {
@@ -497,20 +541,13 @@ pub fn query_windows_gpu() -> Option<MetalDeviceInfo> {
     {
         if output.status.success() {
             let text = String::from_utf8_lossy(&output.stdout);
-            if let Some(first_line) = text.lines().next() {
-                let parts: Vec<&str> = first_line.split(',').map(|s| s.trim()).collect();
-                if parts.len() >= 2 {
-                    let name = parts[0].to_string();
-                    if let Ok(mb) = parts[1].parse::<u64>() {
-                        let vram_bytes = mb * 1024 * 1024;
-                        return Some(MetalDeviceInfo {
-                            device_name: name,
-                            working_set_bytes: vram_bytes,
-                            has_unified_memory: false,
-                            vram_bytes: Some(vram_bytes),
-                        });
-                    }
-                }
+            if let Some((name, vram_bytes, _)) = parse_nvidia_smi_csv(&text) {
+                return Some(MetalDeviceInfo {
+                    device_name: name,
+                    working_set_bytes: vram_bytes,
+                    has_unified_memory: false,
+                    vram_bytes: Some(vram_bytes),
+                });
             }
         }
     }
@@ -566,9 +603,9 @@ impl SysProvider for LiveSysProvider {
         disks
             .list()
             .iter()
+            .filter(|d| !d.is_removable())
             .map(|d| d.available_space())
-            .max()
-            .unwrap_or(50 * 1024 * 1024 * 1024)
+            .sum()
     }
 
     fn cpu_info(&self) -> (String, String, u32, u32) {
@@ -1108,5 +1145,56 @@ mod tests {
             Some(192.0)
         );
         assert_eq!(lookup_gpu_bandwidth_gbps("Unknown Custom GPU XYZ"), None);
+    }
+
+    #[test]
+    fn test_parse_nvidia_smi_csv_sums_all_gpus() {
+        let text = "NVIDIA GeForce RTX 3090, 24576\nNVIDIA GeForce RTX 3090, 24576\n";
+        let (name, vram_bytes, count) = parse_nvidia_smi_csv(text).unwrap();
+        assert_eq!(count, 2);
+        assert_eq!(vram_bytes, 2 * 24576 * 1024 * 1024);
+        assert_eq!(name, "2x NVIDIA GeForce RTX 3090");
+    }
+
+    #[test]
+    fn test_parse_nvidia_smi_csv_single_gpu() {
+        let text = "NVIDIA GeForce RTX 4090, 24576\n";
+        let (name, vram_bytes, count) = parse_nvidia_smi_csv(text).unwrap();
+        assert_eq!(count, 1);
+        assert_eq!(vram_bytes, 24576 * 1024 * 1024);
+        assert_eq!(name, "NVIDIA GeForce RTX 4090");
+    }
+
+    #[test]
+    fn test_parse_nvidia_smi_csv_empty_returns_none() {
+        assert_eq!(parse_nvidia_smi_csv(""), None);
+        assert_eq!(parse_nvidia_smi_csv("   \n"), None);
+    }
+
+    #[test]
+    fn test_format_multi_gpu_name_identical_collapses() {
+        let names = vec![
+            "AMD Radeon RX 7900 XTX".to_string(),
+            "AMD Radeon RX 7900 XTX".to_string(),
+        ];
+        assert_eq!(format_multi_gpu_name(&names), "2x AMD Radeon RX 7900 XTX");
+    }
+
+    #[test]
+    fn test_format_multi_gpu_name_mixed_joins() {
+        let names = vec![
+            "AMD Radeon RX 7900 XTX".to_string(),
+            "AMD Radeon RX 6800".to_string(),
+        ];
+        assert_eq!(
+            format_multi_gpu_name(&names),
+            "AMD Radeon RX 7900 XTX + AMD Radeon RX 6800"
+        );
+    }
+
+    #[test]
+    fn test_format_multi_gpu_name_single_passthrough() {
+        let names = vec!["Intel UHD Graphics 630".to_string()];
+        assert_eq!(format_multi_gpu_name(&names), "Intel UHD Graphics 630");
     }
 }
