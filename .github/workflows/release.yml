@@ -95,4 +95,5 @@ jobs:
           releaseBody: 'See attached platform assets for download. Report any issues at https://github.com/yoel3imari/llm-advisor/issues'
           releaseDraft: true
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          retryAttempts: 3
           args: ${{ matrix.args }}
