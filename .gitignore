@@ -94,3 +94,4 @@ ehthumbs.db
 hf_models.json
 */**/__pycache__
 .omo
+.sisyphus

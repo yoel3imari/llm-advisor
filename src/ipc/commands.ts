@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, Channel } from '@tauri-apps/api/core';
 import { getVersion } from '@tauri-apps/api/app';
 import type {
   HardwareProfile,
@@ -16,6 +16,7 @@ import type {
   CatalogSyncResult,
   AppUpdateInfo,
 } from '../types/domain';
+import type { ChatEvent, ChatStreamRequest } from '../types/chat';
 import * as mock from './mock';
 
 // Detect if running inside Tauri webview or mock browser environment
@@ -156,5 +157,38 @@ export async function getAppVersion(): Promise<string> {
 export async function installAppUpdate(): Promise<boolean> {
   if (useMock) return mock.mockInstallAppUpdate();
   return invoke<boolean>('install_app_update');
+}
+
+export interface ChatStreamCallbacks {
+  onToken: (delta: string) => void;
+  onDone: () => void;
+  onError: (code: string, message: string) => void;
+}
+
+export async function chatStream(
+  request: ChatStreamRequest,
+  callbacks: ChatStreamCallbacks
+): Promise<string> {
+  const channel = new Channel<ChatEvent>();
+
+  channel.onmessage = (event: ChatEvent) => {
+    switch (event.type) {
+      case 'token':
+        callbacks.onToken(event.delta);
+        break;
+      case 'done':
+        callbacks.onDone();
+        break;
+      case 'error':
+        callbacks.onError(event.code, event.message);
+        break;
+    }
+  };
+
+  return invoke<string>('chat_stream', { request, channel });
+}
+
+export async function chatCancel(sessionId: string): Promise<void> {
+  await invoke('chat_cancel', { sessionId });
 }
 

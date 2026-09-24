@@ -1,8 +1,8 @@
-import { Cpu, FolderDown, PlayCircle, Settings, X } from 'lucide-react';
+import { Cpu, FolderDown, MessageSquare, PlayCircle, Settings, X } from 'lucide-react';
 import type { DownloadTask, ServerState } from '../../types/domain';
 import { ServerStatusPill } from './ServerStatusPill';
 
-export type NavTab = 'dashboard' | 'library' | 'server' | 'settings';
+export type NavTab = 'chat' | 'dashboard' | 'library' | 'server' | 'settings';
 
 interface Props {
   activeTab: NavTab;
@@ -27,6 +27,7 @@ export function Sidebar({
   onCancelDownload,
 }: Props) {
   const navItems = [
+    { id: 'chat' as NavTab, label: 'Chat', icon: MessageSquare },
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: Cpu },
     { id: 'library' as NavTab, label: 'Library', icon: FolderDown },
     { id: 'server' as NavTab, label: 'Server Control', icon: PlayCircle },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sidebar, type NavTab } from './components/layout/Sidebar';
+import { ChatView } from './components/chat/ChatView';
 import { DashboardView } from './views/DashboardView';
 import { LibraryView } from './views/LibraryView';
 import { ServerView } from './views/ServerView';
@@ -29,7 +30,7 @@ function isTauriEnvironment(): boolean {
 }
 
 function MainApp() {
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<NavTab>('chat');
   const [profile, setProfile] = useState<HardwareProfile | null>(null);
   const [libraryRecords, setLibraryRecords] = useState<ModelRecord[]>([]);
   const [activeDownloads, setActiveDownloads] = useState<DownloadTask[]>([]);
@@ -158,6 +159,13 @@ function MainApp() {
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-950 overflow-hidden">
+        {activeTab === 'chat' && (
+          <ChatView
+            modelId={
+              serverState.state === 'serving' ? serverState.model_id : null
+            }
+          />
+        )}
         {activeTab === 'dashboard' && (
           <DashboardView
             profile={profile}

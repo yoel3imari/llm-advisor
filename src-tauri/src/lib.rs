@@ -17,6 +17,9 @@ use tauri::{Emitter, Manager, State};
 use tauri_plugin_updater::UpdaterExt;
 use tokio_util::sync::CancellationToken;
 
+pub mod chat;
+use chat::{chat_cancel, chat_stream};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppUpdateInfo {
     pub current_version: String,
@@ -88,6 +91,7 @@ pub struct AppState {
     pub settings_path: PathBuf,
     pub app_data_dir: PathBuf,
     pub active_downloads: Arc<Mutex<HashMap<String, (DownloadTask, CancellationToken)>>>,
+    pub chat_sessions: Arc<chat::ChatSessionManager>,
 }
 
 fn load_or_init_settings(
@@ -870,6 +874,7 @@ pub fn run() {
                 settings_path,
                 app_data_dir,
                 active_downloads: Arc::new(Mutex::new(HashMap::new())),
+                chat_sessions: Arc::new(chat::ChatSessionManager::new()),
             });
 
             Ok(())
@@ -921,7 +926,9 @@ pub fn run() {
             prune_orphans,
             sync_catalog,
             check_app_update,
-            install_app_update
+            install_app_update,
+            chat_stream,
+            chat_cancel
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
