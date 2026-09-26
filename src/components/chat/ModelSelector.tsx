@@ -7,9 +7,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/Select';
-import { Badge } from '../ui/Badge';
-import { listLibraryModels, startServer } from '../../ipc/commands';
-import type { ModelRecord } from '../../types/domain';
+import { getCatalog, listLibraryModels, startServer } from '../../ipc/commands';
+import type { CatalogEntry, ModelRecord } from '../../types/domain';
+import { cn } from '../../lib/utils';
+
+export function getModelFamilyName(
+  entryId: string,
+  catalogMap: Record<string, CatalogEntry>
+): string {
+  if (catalogMap[entryId]?.family) {
+    return catalogMap[entryId].family;
+  }
+  const match = entryId.match(/^([a-zA-Z0-9._]+(?:-[a-zA-Z0-9._]+)?)(?:-\d+(?:\.\d+)?b)?/i);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return entryId;
+}
 
 export function ModelSelector({
   selectedModelId,
@@ -18,6 +32,7 @@ export function ModelSelector({
   contextSize = 4096,
   onSelect,
   onServerStarted,
+  triggerClassName,
 }: {
   selectedModelId: string | null;
   runningModelId?: string | null;
@@ -25,16 +40,27 @@ export function ModelSelector({
   contextSize?: number;
   onSelect: (modelId: string) => void;
   onServerStarted?: () => void;
+  triggerClassName?: string;
 }) {
   const [models, setModels] = React.useState<ModelRecord[]>([]);
+  const [catalogMap, setCatalogMap] = React.useState<Record<string, CatalogEntry>>({});
   const [warming, setWarming] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
-    listLibraryModels()
-      .then((records) => {
-        if (active) setModels(records);
+    Promise.all([
+      listLibraryModels(),
+      getCatalog().catch(() => [] as CatalogEntry[]),
+    ])
+      .then(([records, catalogEntries]) => {
+        if (!active) return;
+        setModels(records);
+        const map: Record<string, CatalogEntry> = {};
+        for (const entry of catalogEntries) {
+          map[entry.id] = entry;
+        }
+        setCatalogMap(map);
       })
       .catch((e) => {
         if (active) setLoadError(String(e));
@@ -71,7 +97,7 @@ export function ModelSelector({
 
   if (models.length === 0 && !loadError) {
     return (
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-500 font-mono">
         No downloaded models — download one from the Library first.
       </p>
     );
@@ -84,20 +110,26 @@ export function ModelSelector({
         onValueChange={handleChange}
         disabled={busy}
       >
-        <SelectTrigger aria-label="Select model" className="w-[220px]">
+        <SelectTrigger
+          aria-label="Select model"
+          className={cn(
+            'h-8 rounded-xl px-2.5 text-xs bg-obsidian-850/90 border border-white/[0.08] hover:border-white/[0.18] transition-colors min-w-[120px] max-w-[200px] truncate',
+            triggerClassName
+          )}
+        >
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>
-          {models.map((m) => (
-            <SelectItem key={m.entry_id} value={m.entry_id}>
-              <span className="flex items-center gap-2">
-                {m.entry_id}
-                {m.entry_id === runningModelId && (
-                  <Badge variant="success">Running</Badge>
-                )}
-              </span>
-            </SelectItem>
-          ))}
+          {models.map((m) => {
+            const familyName = getModelFamilyName(m.entry_id, catalogMap);
+            return (
+              <SelectItem key={m.entry_id} value={m.entry_id} title={m.entry_id}>
+                <span className="truncate max-w-[240px] block font-medium">
+                  {familyName}
+                </span>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
       {warming && (

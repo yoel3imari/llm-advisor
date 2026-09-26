@@ -176,11 +176,13 @@ export function ServerView({
   const isStarting = serverState.state === 'starting';
 
   return (
-    <div className="flex-1 p-6 flex flex-col space-y-5 overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div className="flex-1 p-6 flex flex-col space-y-5 overflow-y-auto custom-scrollbar relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Inference Server Control</h2>
-          <p className="text-sm text-zinc-400 mt-0.5">
+          <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <span>Inference Server Control</span>
+          </h2>
+          <p className="text-xs text-zinc-400 mt-1 font-mono">
             Multi-model sidecar pool with automatic request routing on localhost:13370
           </p>
         </div>
@@ -189,10 +191,10 @@ export function ServerView({
           <button
             onClick={handleStopAll}
             disabled={busy}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-semibold transition-colors self-start sm:self-auto"
+            className="hardware-button-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-laser-950/80 hover:bg-laser-900 border border-laser-600/40 text-laser-200 text-xs font-semibold transition-colors self-start sm:self-auto shadow-bevel"
             title="Stop all running sidecars"
           >
-            <StopCircle className="w-4 h-4 text-red-400" />
+            <StopCircle className="w-4 h-4 text-laser-400" />
             <span>Stop All Instances ({activeInstances.length})</span>
           </button>
         )}
@@ -202,12 +204,12 @@ export function ServerView({
       {activeInstances.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-zinc-300">
-            <span className="flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-400" />
+            <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-telemetry-400">
+              <Layers className="w-4 h-4" />
               <span>Running Model Instances ({activeInstances.length})</span>
             </span>
-            <span className="text-[11px] text-zinc-400 font-normal">
-              External apps route automatically via <code className="text-indigo-300 font-mono">"model": "&lt;id&gt;"</code>
+            <span className="text-[11px] text-zinc-400 font-mono">
+              External apps route automatically via <code className="text-telemetry-300 font-mono">"model": "&lt;id&gt;"</code>
             </span>
           </div>
 
@@ -215,20 +217,20 @@ export function ServerView({
             {activeInstances.map((inst) => (
               <div
                 key={inst.model_id}
-                className="bg-zinc-900/90 border border-indigo-900/50 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-lg shadow-indigo-950/20"
+                className="hardware-card p-3.5 flex items-center justify-between gap-3 shadow-bevel border-white/[0.1]"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-phosphor-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-phosphor-400"></span>
                     </span>
-                    <span className="font-semibold text-white text-xs truncate" title={inst.model_id}>
+                    <span className="font-semibold text-white text-xs truncate font-mono" title={inst.model_id}>
                       {inst.model_id}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400">
-                    <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-emerald-400">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 tabular-nums">
+                    <span className="px-1.5 py-0.5 rounded bg-obsidian-950 border border-white/[0.08] text-phosphor-400 font-bold">
                       :{inst.port}
                     </span>
                     <span>{inst.context_size.toLocaleString()} ctx</span>
@@ -238,7 +240,7 @@ export function ServerView({
                 <button
                   onClick={() => handleStopInstance(inst.model_id)}
                   disabled={busy}
-                  className="p-1.5 rounded-lg bg-zinc-800 hover:bg-red-950/80 hover:text-red-300 border border-zinc-700 hover:border-red-800 text-zinc-400 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg bg-obsidian-850 hover:bg-laser-950 hover:text-laser-300 border border-white/[0.08] hover:border-laser-600/40 text-zinc-400 transition-colors shrink-0"
                   title={`Stop instance ${inst.model_id}`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -250,7 +252,7 @@ export function ServerView({
       )}
 
       {/* Model Launcher Strip */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
+      <div className="hardware-card p-5 space-y-4 shadow-bevel">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4 flex-1">
             <div className="space-y-1">
@@ -402,11 +404,11 @@ export function ServerView({
         </div>
 
         {/* Endpoint Info Bar */}
-        <div className="pt-3 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="pt-3 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-zinc-300">
-            <Globe className="w-4 h-4 text-indigo-400" />
-            <span>OpenAI Gateway:</span>
-            <code className="px-2 py-0.5 bg-zinc-950 border border-zinc-800 rounded text-emerald-400 font-mono font-bold">
+            <Globe className="w-4 h-4 text-telemetry-400" />
+            <span className="font-mono text-zinc-400 text-xs">OpenAI Gateway:</span>
+            <code className="px-2.5 py-0.5 bg-obsidian-950 border border-white/[0.08] rounded text-phosphor-400 font-mono font-bold tabular-nums">
               {endpointUrl}
             </code>
             <button
@@ -414,19 +416,19 @@ export function ServerView({
               className="p-1 text-zinc-400 hover:text-white transition-colors"
               title="Copy URL"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-phosphor-400" /> : <Copy className="w-4 h-4" />}
             </button>
             <button
               onClick={handleCopyCurl}
-              className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] text-zinc-300 transition-colors"
+              className="ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-[11px] font-mono text-zinc-300 border border-white/[0.08] transition-all hardware-button-tactile"
               title="Copy curl snippet"
             >
-              <Terminal className="w-3 h-3 text-indigo-400" />
-              {copiedCurl ? 'Copied curl!' : 'Copy curl'}
+              <Terminal className="w-3 h-3 text-telemetry-400" />
+              <span>{copiedCurl ? 'Copied curl!' : 'Copy cURL'}</span>
             </button>
           </div>
 
-          <div className="text-zinc-400 italic text-[11px]">
+          <div className="text-zinc-500 font-mono text-[11px]">
             {activeInstances.length > 0
               ? `${activeInstances.length} active model(s) ready for Cursor, Continue, or Aider`
               : 'Gateway returns 503 while idle'}
@@ -436,15 +438,15 @@ export function ServerView({
 
       {/* Error state alert */}
       {serverState.state === 'error' && (
-        <div className="p-4 bg-red-950/80 border border-red-800 rounded-xl space-y-2 text-xs text-red-200 shrink-0">
-          <div className="flex items-center gap-2 font-bold text-red-300 min-w-0">
+        <div className="p-4 bg-laser-950/40 border border-laser-600/40 rounded-xl space-y-2 text-xs text-laser-200 shrink-0 shadow-bevel">
+          <div className="flex items-center gap-2 font-bold text-laser-300 min-w-0 font-mono">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span className="truncate" title={serverState.reason}>
               Inference Server Error: {serverState.reason}
             </span>
           </div>
           {serverState.stderr_tail.length > 0 && (
-            <div className="font-mono bg-black/50 p-2.5 rounded border border-red-900/60 overflow-auto max-h-36 space-y-0.5 select-text cursor-text selection:bg-red-500/40 selection:text-white">
+            <div className="font-mono bg-black/50 p-2.5 rounded-lg border border-laser-900/60 overflow-auto max-h-36 space-y-0.5 select-text cursor-text selection:bg-laser-500/40 selection:text-white">
               {serverState.stderr_tail.map((line, idx) => (
                 <div key={idx} className="select-text whitespace-nowrap">
                   {line}

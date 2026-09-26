@@ -74,6 +74,19 @@ export function useChatStream({
       setMessages(next);
 
       const merged = { ...defaultParams(), ...params };
+      const finalMaxTokens =
+        typeof merged.maxTokens === 'number' && Number.isFinite(merged.maxTokens)
+          ? merged.maxTokens
+          : 2048;
+
+      // console.log('[DEBUG 2: useChatStream.send] start', {
+      //   text,
+      //   model,
+      //   params,
+      //   merged,
+      //   finalMaxTokens,
+      // });
+
       const payload = [
         ...(merged.systemPrompt
           ? [{ role: 'system' as const, content: merged.systemPrompt }]
@@ -81,18 +94,23 @@ export function useChatStream({
         ...history.map((m) => ({ role: m.role, content: m.content })),
       ];
 
+      const streamRequest = {
+        model,
+        messages: payload,
+        stream: true,
+        temperature: merged.temperature,
+        maxTokens: finalMaxTokens,
+      };
+
+      // console.log('[DEBUG 2a: useChatStream.send] invoking chatStream with request:', streamRequest);
+
       armStall();
       try {
         const sessionId = await chatStream(
-          {
-            model,
-            messages: payload,
-            stream: true,
-            temperature: merged.temperature,
-            max_tokens: merged.maxTokens,
-          },
+          streamRequest,
           {
             onToken: (delta: string) => {
+              // console.log('[DEBUG 4a: useChatStream.onToken] delta received, length:', delta.length);
               setStatus((s) => (s === 'warming' ? 'streaming' : s));
               armStall();
               setMessages((prev) => {
@@ -112,12 +130,14 @@ export function useChatStream({
               });
             },
             onDone: () => {
+              // console.log('[DEBUG 4b: useChatStream.onDone] stream finished successfully');
               activeRef.current = false;
               sessionRef.current = null;
               clearStall();
               setStatus('done');
             },
             onError: (code: string, message: string) => {
+              // console.error('[DEBUG 4c-ERROR: useChatStream.onError] stream error:', { code, message });
               activeRef.current = false;
               sessionRef.current = null;
               clearStall();
@@ -126,8 +146,10 @@ export function useChatStream({
             },
           }
         );
+        // console.log('[DEBUG 2b: useChatStream.send] chatStream resolved with sessionId:', sessionId);
         sessionRef.current = sessionId;
       } catch (e) {
+        // console.error('[DEBUG 2-CATCH: useChatStream.send] IPC exception thrown:', e);
         activeRef.current = false;
         sessionRef.current = null;
         clearStall();

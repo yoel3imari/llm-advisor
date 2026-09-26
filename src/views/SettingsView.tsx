@@ -23,8 +23,11 @@ import {
   Globe,
   ArrowUpCircle,
   ArrowDownToLine,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import type { AppSettings, ModelRecord, KvType, HardwareProfile, AppUpdateInfo } from '../types/domain';
+import { getStoredTheme, applyTheme } from '../lib/theme';
 import {
   getSettings,
   saveSettings,
@@ -74,6 +77,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
     models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
     run_in_background: true,
     auto_update_catalog: true,
+    theme: getStoredTheme(),
   });
   const [records, setRecords] = useState<ModelRecord[]>([]);
   const [profile, setProfile] = useState<HardwareProfile | null>(null);
@@ -115,17 +119,32 @@ export function SettingsView({ onSettingsChanged }: Props) {
           models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
           run_in_background: true,
           auto_update_catalog: true,
+          theme: getStoredTheme(),
         })),
         listLibraryModels().catch(() => []),
         getHardwareProfile().catch(() => null),
         getAppVersion().catch(() => null),
       ]);
-      setSettings(s);
+      const currentTheme = s.theme || getStoredTheme();
+      setSettings({ ...s, theme: currentTheme });
+      applyTheme(currentTheme);
       setRecords(recs);
       setProfile(p);
       setInstalledVersion(ver);
     } catch (err) {
       console.error('Failed to load settings data', err);
+    }
+  };
+
+  const handleThemeChange = async (newTheme: 'dark' | 'light') => {
+    const updated: AppSettings = { ...settings, theme: newTheme };
+    setSettings(updated);
+    applyTheme(newTheme);
+    try {
+      await saveSettings(updated);
+      onSettingsChanged?.();
+    } catch (err) {
+      console.error('Failed to persist theme setting', err);
     }
   };
 
@@ -309,12 +328,14 @@ export function SettingsView({ onSettingsChanged }: Props) {
   };
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6 ">
+    <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
       {/* Top Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Application Settings</h2>
-          <p className="text-sm text-zinc-400 mt-0.5">
+          <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <span>Application Settings</span>
+          </h2>
+          <p className="text-xs text-zinc-400 mt-1 font-mono">
             Configure inference defaults, OpenAI gateway (:13370), background execution, and automated uninstallation
           </p>
         </div>
@@ -322,16 +343,16 @@ export function SettingsView({ onSettingsChanged }: Props) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-950/50 transition-all disabled:opacity-50"
+          className="hardware-button-tactile flex items-center gap-2 px-5 py-2.5 rounded-xl bg-telemetry-500 hover:bg-telemetry-400 text-obsidian-950 text-xs font-bold shadow-glow-cyan transition-all disabled:opacity-50"
         >
           {saved ? (
             <>
-              <Check className="w-4 h-4 text-emerald-300 stroke-[3]" />
-              <span>Saved!</span>
+              <Check className="w-4 h-4 text-obsidian-950 stroke-[3]" />
+              <span>Preferences Saved!</span>
             </>
           ) : (
             <>
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 stroke-[2.5]" />
               <span>Save Preferences</span>
             </>
           )}
@@ -357,6 +378,76 @@ export function SettingsView({ onSettingsChanged }: Props) {
       )}
 
       <div className="space-y-6 text-sm">
+        {/* Section: Appearance & Theme Mode */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-blaze-400 font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-blaze-950/80 border border-blaze-800/80 flex items-center justify-center">
+                {settings.theme === 'light' ? (
+                  <Sun className="w-4 h-4 text-blaze-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-blaze-400" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-white text-sm font-semibold">Appearance & Theme Mode</h3>
+                <p className="text-[11px] text-zinc-400 font-normal">
+                  Toggle interface appearance between dark obsidian contrast and clean daylight mode
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono bg-blaze-950 text-blaze-300 border border-blaze-800/60 px-2.5 py-1 rounded-md uppercase">
+              {settings.theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+            </span>
+          </div>
+
+          <div className="pt-1 border-t border-zinc-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <div className="text-xs font-medium text-zinc-200">Color Theme</div>
+              <p className="text-[11px] text-zinc-400">
+                Switches the application theme and persists your choice across application restarts.
+              </p>
+            </div>
+
+            {/* Switch Buttons */}
+            <div
+              role="radiogroup"
+              aria-label="Theme mode switcher"
+              className="flex items-center p-1 rounded-xl bg-zinc-950 border border-zinc-800/80 shrink-0 self-start sm:self-auto"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={settings.theme !== 'light'}
+                onClick={() => handleThemeChange('dark')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  settings.theme !== 'light'
+                    ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                <span>Dark</span>
+              </button>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={settings.theme === 'light'}
+                onClick={() => handleThemeChange('light')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  settings.theme === 'light'
+                    ? 'bg-white text-zinc-950 shadow-sm border border-zinc-300 font-bold'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5 text-blaze-500" />
+                <span>Light</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Section 1: Background Execution & System Tray */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">

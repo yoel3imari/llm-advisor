@@ -48,7 +48,8 @@ export interface ChatStreamRequest {
   messages: Array<{ role: ChatRole; content: string }>;
   stream: boolean;
   temperature: number;
-  max_tokens: number;
+  maxTokens?: number;
+  max_tokens?: number;
 }
 
 export function defaultParams(): ChatParams {

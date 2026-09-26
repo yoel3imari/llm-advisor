@@ -169,9 +169,11 @@ export async function chatStream(
   request: ChatStreamRequest,
   callbacks: ChatStreamCallbacks
 ): Promise<string> {
+  // console.log('[DEBUG 3a: commands.chatStream] entered with request:', JSON.stringify(request));
   const channel = new Channel<ChatEvent>();
 
   channel.onmessage = (event: ChatEvent) => {
+    // console.log('[DEBUG 3b: commands.chatStream] channel onmessage received event:', event);
     switch (event.type) {
       case 'token':
         callbacks.onToken(event.delta);
@@ -185,7 +187,15 @@ export async function chatStream(
     }
   };
 
-  return invoke<string>('chat_stream', { request, channel });
+  try {
+    // console.log('[DEBUG 3c: commands.chatStream] calling invoke("chat_stream")...');
+    const sessionId = await invoke<string>('chat_stream', { request, channel });
+    // console.log('[DEBUG 3d: commands.chatStream] invoke("chat_stream") succeeded with sessionId:', sessionId);
+    return sessionId;
+  } catch (err) {
+    // console.error('[DEBUG 3e-ERROR: commands.chatStream] invoke("chat_stream") REJECTED:', err);
+    throw err;
+  }
 }
 
 export async function chatCancel(sessionId: string): Promise<void> {

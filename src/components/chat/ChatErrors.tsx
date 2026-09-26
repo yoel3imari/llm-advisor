@@ -28,7 +28,7 @@ export function ChatErrors({
     <div className="space-y-2 p-3">
       {/* Context limit warning banner */}
       {contextCritical ? (
-        <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-amber-200 text-xs shadow-sm">
+        <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-amber-200 text-xs">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             <span>
@@ -48,7 +48,7 @@ export function ChatErrors({
 
       {/* IPC / Inference Errors */}
       {error && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-950/50 border border-red-800/80 text-red-200 text-xs shadow-sm">
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-950/50 border border-red-800/80 text-red-200 text-xs">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
             <div className="space-y-0.5">

@@ -771,20 +771,20 @@ export function ModelsTable({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/90 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="hardware-card overflow-hidden shadow-bevel">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[960px]">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-zinc-800 bg-zinc-950/80 text-xs">
+                <tr key={headerGroup.id} className="border-b border-white/[0.08] bg-obsidian-950 text-xs">
                   {headerGroup.headers.map((header) => {
                     const isActions = header.id === 'actions';
                     return (
                       <th
                         key={header.id}
-                        className={`px-3.5 py-3 font-semibold text-zinc-300 ${
+                        className={`px-3.5 py-3 font-semibold text-zinc-300 font-mono text-[11px] uppercase tracking-wider ${
                           isActions
-                            ? 'sticky right-0 z-20 bg-zinc-950 shadow-[-6px_0_12px_rgba(0,0,0,0.4)] border-l border-zinc-800 text-right'
+                            ? 'sticky right-0 z-20 bg-obsidian-950 shadow-[-6px_0_12px_rgba(0,0,0,0.5)] border-l border-white/[0.08] text-right'
                             : ''
                         }`}
                       >
@@ -797,10 +797,10 @@ export function ModelsTable({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-xs">
+            <tbody className="divide-y divide-white/[0.05] text-xs">
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-12 text-center text-zinc-400">
+                  <td colSpan={columns.length} className="px-4 py-12 text-center text-zinc-400 font-mono text-xs">
                     No models matching the selected filters.
                   </td>
                 </tr>
@@ -808,7 +808,7 @@ export function ModelsTable({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-zinc-800/40 transition-colors group"
+                    className="hover:bg-white/[0.03] transition-colors group"
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isActions = cell.column.id === 'actions';
@@ -817,7 +817,7 @@ export function ModelsTable({
                           key={cell.id}
                           className={`px-3.5 py-2.5 ${
                             isActions
-                              ? 'sticky right-0 z-10 bg-zinc-900 group-hover:bg-zinc-850 shadow-[-6px_0_12px_rgba(0,0,0,0.4)] border-l border-zinc-800/60 text-right'
+                              ? 'sticky right-0 z-10 bg-obsidian-900 group-hover:bg-obsidian-850 shadow-[-6px_0_12px_rgba(0,0,0,0.5)] border-l border-white/[0.06] text-right transition-colors'
                               : ''
                           }`}
                         >
@@ -834,26 +834,26 @@ export function ModelsTable({
 
         {/* Table Footer with Pagination */}
         {table.getPageCount() > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800 bg-zinc-950/40 text-xs text-zinc-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.07] bg-obsidian-950/80 text-xs text-zinc-400 font-mono tabular-nums">
             <div>
               Showing{' '}
-              <span className="font-semibold text-zinc-200">
+              <span className="font-semibold text-zinc-100">
                 {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
               </span>{' '}
               to{' '}
-              <span className="font-semibold text-zinc-200">
+              <span className="font-semibold text-zinc-100">
                 {Math.min(
                   (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                   filteredData.length
                 )}
               </span>{' '}
-              of <span className="font-semibold text-zinc-200">{filteredData.length}</span> models
+              of <span className="font-semibold text-zinc-100">{filteredData.length}</span> models
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 disabled:opacity-40 disabled:hover:bg-zinc-800 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-zinc-200 border border-white/[0.08] disabled:opacity-40 disabled:hover:bg-obsidian-850 transition-all font-mono"
               >
                 Previous
               </button>
@@ -863,7 +863,7 @@ export function ModelsTable({
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 disabled:opacity-40 disabled:hover:bg-zinc-800 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-zinc-200 border border-white/[0.08] disabled:opacity-40 disabled:hover:bg-obsidian-850 transition-all font-mono"
               >
                 Next
               </button>

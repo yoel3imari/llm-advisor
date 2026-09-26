@@ -17,39 +17,50 @@ export function MemoryBar({ weightsBytes, kvBytes, totalBytes, budgetBytes }: Pr
   const isOverBudget = totalBytes > budgetBytes;
 
   return (
-    <div className="w-full space-y-1.5 text-xs">
-      <div className="flex justify-between text-zinc-400">
-        <span>Estimated Memory: <strong className={isOverBudget ? 'text-red-400' : 'text-zinc-200'}>{gb(totalBytes)} GB</strong></span>
-        <span>Budget: <strong className="text-zinc-200">{gb(budgetBytes)} GB</strong></span>
+    <div className="w-full space-y-2 text-xs select-none">
+      <div className="flex justify-between items-center text-zinc-400 font-mono text-[11px] tabular-nums">
+        <span>
+          Est. Footprint:{' '}
+          <strong className={isOverBudget ? 'text-laser-400 font-semibold' : 'text-zinc-100 font-semibold'}>
+            {gb(totalBytes)} GB
+          </strong>
+        </span>
+        <span>
+          Host Budget: <strong className="text-telemetry-300 font-semibold">{gb(budgetBytes)} GB</strong>
+        </span>
       </div>
-      <div className="h-2.5 w-full bg-zinc-900 rounded-full overflow-hidden flex border border-zinc-800">
+
+      {/* Segmented Track Bar */}
+      <div className="h-2.5 w-full bg-obsidian-950 rounded-full overflow-hidden flex border border-white/[0.08] shadow-well p-[1px]">
         <div
           style={{ width: `${weightsPct}%` }}
-          className="bg-indigo-500 transition-all duration-300"
+          className="bg-gradient-to-r from-violet-700 to-violet-500 rounded-l-full transition-all duration-300 relative group"
           title={`Weights: ${gb(weightsBytes)} GB`}
         />
         <div
           style={{ width: `${kvPct}%` }}
-          className="bg-cyan-500 transition-all duration-300"
+          className="bg-telemetry-400 transition-all duration-300"
           title={`KV Cache: ${gb(kvBytes)} GB`}
         />
         <div
           style={{ width: `${overheadPct}%` }}
-          className="bg-amber-500 transition-all duration-300"
-          title={`Overhead & Activations: ${gb(overheadBytes)} GB`}
+          className="bg-voltage-400 transition-all duration-300 rounded-r-full"
+          title={`Overhead & CUDA/Metal: ${gb(overheadBytes)} GB`}
         />
       </div>
-      <div className="flex gap-4 text-[11px] text-zinc-400">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+
+      {/* Breakdown Legend */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-mono tabular-nums text-zinc-400">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
           Weights ({gb(weightsBytes)} GB)
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-cyan-500" />
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-telemetry-400" />
           KV Cache ({gb(kvBytes)} GB)
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-voltage-400" />
           Overhead ({gb(overheadBytes)} GB)
         </span>
       </div>

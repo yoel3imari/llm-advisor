@@ -1,16 +1,17 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChatView } from './ChatView';
-import { chatStream, chatCancel, listLibraryModels, startServer } from '../../ipc/commands';
-import type { ChatStreamCallbacks } from '../../ipc/commands';
-import type { ModelRecord } from '../../types/domain';
+import { chatStream, chatCancel, listLibraryModels, startServer } from '../ipc/commands';
+import type { ChatStreamCallbacks } from '../ipc/commands';
+import type { ModelRecord } from '../types/domain';
 
-vi.mock('../../ipc/commands', () => ({
+vi.mock('../ipc/commands', () => ({
   chatStream: vi.fn(),
   chatCancel: vi.fn(),
   listLibraryModels: vi.fn(),
   startServer: vi.fn(),
   getServerState: vi.fn().mockResolvedValue(null),
+  getCatalog: vi.fn().mockResolvedValue([]),
 }));
 
 const mockModels: ModelRecord[] = [

@@ -1,33 +1,28 @@
-import { Avatar, AvatarFallback } from '../ui/Avatar';
 import { Markdown } from './Markdown';
 import { cn } from '../../lib/utils';
 import type { ChatMessage } from '../../types/chat';
 
+export interface MessageBubbleProps {
+  message: ChatMessage;
+  streaming?: boolean;
+}
+
 export function MessageBubble({
   message,
   streaming = false,
-}: {
-  message: ChatMessage;
-  streaming?: boolean;
-}) {
+}: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
   return (
     <div
-      className={cn('flex w-full gap-2.5', isUser ? 'justify-end' : 'justify-start')}
+      className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}
       data-testid={`message-${message.role}`}
     >
-      {!isUser && (
-        <Avatar className="mt-0.5">
-          <AvatarFallback>AI</AvatarFallback>
-        </Avatar>
-      )}
       <div
         className={cn(
-          'max-w-[80%] rounded-lg px-3 py-2',
           isUser
-            ? 'bg-zinc-800 text-zinc-100'
-            : 'border border-zinc-800 bg-zinc-900 text-zinc-200',
+            ? 'max-w-[85%] rounded-2xl px-4 py-2.5 bg-zinc-800 border border-zinc-700/80 text-zinc-100'
+            : 'w-full max-w-full rounded-2xl px-1 py-1 bg-transparent text-zinc-100',
           streaming && !isUser && 'animate-pulse'
         )}
       >
@@ -42,21 +37,16 @@ export function MessageBubble({
               <span
                 data-testid="streaming-shimmer"
                 aria-label="Generating response"
-                className="inline-flex items-center gap-1 py-1"
+                className="inline-flex items-center gap-1.5 py-1"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse [animation-delay:200ms]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse [animation-delay:400ms]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-telemetry-400 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-telemetry-400 animate-pulse [animation-delay:200ms]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-telemetry-400 animate-pulse [animation-delay:400ms]" />
               </span>
             )}
           </div>
         )}
       </div>
-      {isUser && (
-        <Avatar className="mt-0.5">
-          <AvatarFallback>You</AvatarFallback>
-        </Avatar>
-      )}
     </div>
   );
 }
@@ -69,7 +59,7 @@ export function MessageList({
   streamingMessageId?: string | null;
 }) {
   return (
-    <div role="log" aria-live="polite" className="flex flex-col gap-3">
+    <div role="log" aria-live="polite" className="flex flex-col gap-3.5">
       {messages.map((message) => (
         <MessageBubble
           key={message.id}

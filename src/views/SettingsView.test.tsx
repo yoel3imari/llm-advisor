@@ -8,6 +8,7 @@ describe('SettingsView UI & Automated Uninstaller', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Application Settings')).toBeDefined();
+      expect(screen.getByText('Appearance & Theme Mode')).toBeDefined();
       expect(screen.getByText('Background Execution & System Tray')).toBeDefined();
       expect(screen.getByText('Inference & Serving Defaults')).toBeDefined();
       expect(screen.getByText('Hugging Face Access Token')).toBeDefined();
@@ -16,6 +17,38 @@ describe('SettingsView UI & Automated Uninstaller', () => {
       expect(screen.getByText('Application Updates & Version')).toBeDefined();
       expect(screen.getByText('Models Storage Directory & Reclaim')).toBeDefined();
       expect(screen.getByText('Automated Application Uninstaller & Cleaner')).toBeDefined();
+    });
+  });
+
+  it('switches between dark and light theme modes and persists choice', async () => {
+    render(<SettingsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Appearance & Theme Mode')).toBeDefined();
+    });
+
+    const lightButton = screen.getByRole('radio', { name: /light/i });
+    const darkButton = screen.getByRole('radio', { name: /dark/i });
+
+    expect(lightButton).toBeDefined();
+    expect(darkButton).toBeDefined();
+
+    // Switch to Light Mode
+    fireEvent.click(lightButton);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('light')).toBe(true);
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+      expect(localStorage.getItem('llm_advisor_theme')).toBe('light');
+    });
+
+    // Switch back to Dark Mode
+    fireEvent.click(darkButton);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+      expect(document.documentElement.classList.contains('light')).toBe(false);
+      expect(localStorage.getItem('llm_advisor_theme')).toBe('dark');
     });
   });
 

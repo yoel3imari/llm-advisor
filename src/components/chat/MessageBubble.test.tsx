@@ -4,23 +4,28 @@ import { MessageBubble, MessageList } from './MessageBubble';
 import { newMessage } from '../../types/chat';
 
 describe('MessageBubble', () => {
-  it('aligns user messages to the end', () => {
+  it('aligns user messages to the end with standing out bg and no avatar', () => {
     const { container } = render(
       <MessageBubble message={newMessage('user', 'Hello')} />
     );
     const row = container.firstElementChild;
     expect(row?.className).toContain('justify-end');
     expect(screen.getByText('Hello')).toBeDefined();
+    expect(screen.queryByText('You')).toBeNull();
+    const bubble = container.querySelector('[data-testid="message-user"] > div');
+    expect(bubble?.className).toContain('bg-zinc-800');
   });
 
-  it('aligns assistant messages to the start with avatar', () => {
+  it('aligns assistant messages to the start without avatar and with transparent bg', () => {
     const { container } = render(
       <MessageBubble message={newMessage('assistant', 'Hi there')} />
     );
     const row = container.firstElementChild;
     expect(row?.className).toContain('justify-start');
-    expect(screen.getByText('AI')).toBeDefined();
+    expect(screen.queryByText('AI')).toBeNull();
     expect(screen.getByText('Hi there')).toBeDefined();
+    const bubble = container.querySelector('[data-testid="message-assistant"] > div');
+    expect(bubble?.className).toContain('bg-transparent');
   });
 
   it('renders markdown tables and code with copy button', () => {

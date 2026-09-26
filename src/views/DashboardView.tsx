@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   Search,
   Sliders,
-  Sparkles,
   ChevronDown,
 } from 'lucide-react';
 import type { FitResult, HardwareProfile, ModelRecord, ServeConfig, DownloadTask } from '../types/domain';
@@ -239,140 +238,161 @@ export function DashboardView({
   const hostBudget = Math.min(profile.metal_working_set_bytes, profile.total_ram_bytes);
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6">
+    <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
       {/* Top Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3.5">
           <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              Dashboard & Recommendations
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/60">
-                <Sparkles className="w-3 h-3 text-indigo-400" />
+            <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+              <span>Dashboard & Recommendations</span>
+              <span className="inline-flex items-center gap-1.5 text-xs  font-thin font-mono font-semibold px-2.5 py-0.5 rounded-full bg-telemetry-950/80 text-telemetry-300 border border-telemetry-500/40 shadow-glow-cyan">
+                <span className="w-1.5 h-1.5 rounded-full bg-telemetry-400 animate-pulse"></span>
                 {profile.accelerator_backend || 'Live Fit'}
               </span>
             </h2>
-            <p className="text-sm text-zinc-400 mt-0.5">
-              Inspect host machine limits, configure inference parameters, and explore mathematically verified models
+            <p className="text-xs text-zinc-400 mt-1 font-mono">
+              Host silicon telemetry · Mathematical KV fit verification · Ephemeral port binding
             </p>
           </div>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-semibold border border-zinc-800 transition-colors disabled:opacity-50 shadow-sm"
+          className="hardware-button-tactile flex items-center gap-2 px-3.5 py-2 rounded-xl bg-obsidian-900 hover:bg-obsidian-850 text-zinc-200 text-xs font-semibold border border-white/[0.08] transition-all disabled:opacity-50"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
-          Refresh Specs
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-telemetry-400' : 'text-zinc-400'}`} />
+          <span>Refresh Hardware</span>
         </button>
       </div>
 
-      {/* 1. Machine Specs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Processor Card */}
-        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-2">
-          <div className="flex items-center gap-2 text-indigo-400">
-            <Cpu className="w-4 h-4" />
-            <h3 className="font-semibold text-xs text-white uppercase tracking-wider">Processor</h3>
+      {/* 1. Asymmetric Bento Telemetry Deck */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Hero Card: Unified Memory / VRAM Radar (Span 2 cols on lg) */}
+        <div className="lg:col-span-2 hardware-card p-5 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-telemetry-400">
+              <Layers className="w-4 h-4" />
+              <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-100 font-mono">
+                {profile.has_unified_memory ? 'Unified Memory Architecture (UMA)' : 'Host System Memory'}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-telemetry-950/80 text-telemetry-300 border border-telemetry-500/30 font-bold">
+                {workingSetPct}% Usable Working Set
+              </span>
+            </div>
           </div>
-          <div className="font-semibold text-sm text-zinc-100 truncate" title={profile.cpu_name}>
-            {profile.cpu_name}
+
+          <div className="flex items-baseline justify-between">
+            <div className="font-mono tabular-nums">
+              <span className="text-2xl font-bold text-white tracking-tight">{workingSetGb}</span>
+              <span className="text-xs text-zinc-400 ml-1">GB Usable Headroom</span>
+            </div>
+            <div className="text-xs font-mono text-zinc-400 tabular-nums">
+              Total RAM: <span className="text-zinc-200 font-semibold">{hostRamGb} GB</span>
+            </div>
           </div>
-          <div className="text-xs text-zinc-400 font-mono">
-            {profile.cpu_physical_cores}C / {profile.cpu_logical_cores}T ({profile.arch})
+
+          {/* Precision Multi-Segment Bar */}
+          <div className="space-y-1.5">
+            <div className="w-full h-2.5 bg-obsidian-950 rounded-full overflow-hidden border border-white/[0.08] p-[1px] shadow-well flex">
+              <div
+                style={{ width: `${workingSetPct}%` }}
+                className="h-full bg-gradient-to-r from-blaze-500 via-blaze-500 to-violet-500 rounded-full transition-all duration-500 shadow-glow-orange"
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-mono text-zinc-400 tabular-nums">
+              <span>0 GB</span>
+              <span>Safe Inference Ceiling: {workingSetGb} GB</span>
+              <span>{hostRamGb} GB Total</span>
+            </div>
+          </div>
+
+          <div className="pt-1 text-[11px] text-zinc-400 flex items-center justify-between border-t border-white/[0.05]">
+            <span>
+              {profile.has_unified_memory
+                ? 'Zero-copy high-bandwidth unified bus shared with Metal GPU'
+                : 'Host system RAM available for CPU inference & partial offload'}
+            </span>
+            <span className="text-telemetry-400 font-mono text-[10px] uppercase font-semibold">Zero-OOM Cap</span>
           </div>
         </div>
 
-        {/* RAM Budget Card */}
-        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-2">
-          <div className="flex items-center justify-between text-cyan-400">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">
-                {profile.has_unified_memory ? 'Unified Memory' : 'Host RAM Budget'}
-              </h3>
+        {/* Card 2: Silicon Engine (1 Col) */}
+        <div className="hardware-card p-4 space-y-2.5 flex flex-col justify-between hover:border-violet-500/30 transition-colors">
+          <div>
+            <div className="flex items-center justify-between text-zinc-400">
+              <div className="flex items-center gap-2 text-violet-400">
+                <Cpu className="w-4 h-4" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-200 font-mono">Silicon Engine</h3>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-400 uppercase">{profile.arch}</span>
             </div>
-            <span className="text-[10px] font-mono font-bold text-cyan-300">
-              {workingSetPct}% Usable
+            <div className="font-bold text-sm text-zinc-100 mt-2 truncate" title={profile.cpu_name}>
+              {profile.cpu_name}
+            </div>
+            <div className="text-xs text-zinc-400 font-mono mt-1">
+              {profile.cpu_physical_cores} Physical · {profile.cpu_logical_cores} Threads
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
+            <span className="text-zinc-400 font-mono text-[10px]">
+              {gpuVramGb > 0 ? `VRAM (${gpuVramGb} GB):` : 'ACCELERATOR:'}
+            </span>
+            <span className="font-mono text-violet-300 font-semibold truncate max-w-[120px]">
+              {profile.gpu_name || profile.accelerator_backend || (profile.has_unified_memory ? 'Metal GPU' : 'CPU')}
             </span>
           </div>
-          <div className="font-semibold text-sm text-zinc-100 font-mono">
-            {workingSetGb} GB <span className="text-xs font-normal text-zinc-400">/ {hostRamGb} GB Total</span>
-          </div>
-          <div className="w-full h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
-            <div
-              style={{ width: `${workingSetPct}%` }}
-              className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full"
-            />
-          </div>
         </div>
 
-        {/* Dedicated / Unified GPU Card */}
-        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-2">
-          <div className="flex items-center justify-between text-purple-400">
-            <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4" />
-              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">
-                {profile.has_unified_memory ? 'UMA Accelerator' : 'GPU & VRAM'}
-              </h3>
+        {/* Card 3: High-Speed Storage (1 Col) */}
+        <div className="hardware-card p-4 space-y-2.5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-phosphor-400">
+              <div className="flex items-center gap-2">
+                <HardDrive className="w-4 h-4" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-200 font-mono">NVMe Storage</h3>
+              </div>
+              <span className="text-[10px] font-mono text-phosphor-400 font-bold">READY</span>
             </div>
-            {gpuVramGb > 0 ? (
-              <span className="text-[10px] font-mono font-bold text-purple-300">
-                {gpuVramGb} GB VRAM
-              </span>
-            ) : profile.has_unified_memory ? (
-              <span className="text-[10px] font-mono font-bold text-purple-300">
-                UMA Metal
-              </span>
-            ) : null}
+            <div className="font-bold text-sm text-zinc-100 mt-2 font-mono tabular-nums">
+              {diskFreeGb} GB <span className="text-xs font-normal text-zinc-400">Available</span>
+            </div>
+            <div className="text-xs text-zinc-400 truncate mt-1" title={profile.os_version}>
+              {profile.os_version}
+            </div>
           </div>
-          <div className="font-semibold text-sm text-zinc-100 truncate" title={profile.gpu_name || profile.accelerator_backend || 'CPU Inference Engine'}>
-            {profile.gpu_name || profile.accelerator_backend || 'CPU Engine / Integrated'}
-          </div>
-          <div className="text-xs text-zinc-400">
-            {profile.has_unified_memory
-              ? 'Unified System RAM'
-              : gpuVramGb > 0
-              ? `${gpuVramGb} GB Dedicated VRAM`
-              : profile.accelerator_backend || 'Shared System RAM'}
-          </div>
-        </div>
 
-        {/* Storage Card */}
-        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-2">
-          <div className="flex items-center gap-2 text-emerald-400">
-            <HardDrive className="w-4 h-4" />
-            <h3 className="font-semibold text-xs text-white uppercase tracking-wider">Free Storage</h3>
-          </div>
-          <div className="font-semibold text-sm text-zinc-100 font-mono">
-            {diskFreeGb} GB Available
-          </div>
-          <div className="text-xs text-zinc-400 truncate" title={profile.os_version}>
-            {profile.os_version}
+          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
+            <span className="text-zinc-400 font-mono text-[10px]">GGUF WEIGHTS:</span>
+            <span className="font-mono text-phosphor-300 font-semibold">{libraryRecords.length} Saved</span>
           </div>
         </div>
       </div>
 
-      {/* 2. Model Filters & Fit Configuration Controls */}
-      <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-4 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-800/80 pb-3.5">
+      {/* 2. Hardware Synthesizer Parameter Console & Filters */}
+      <div className="hardware-panel p-4 space-y-4 shadow-bevel">
+        {/* Search & Filter Top Bar */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/[0.06] pb-3.5">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+          <div className="relative flex-1 min-w-[220px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
             <Input
               type="text"
-              placeholder="Search by model name, family, or quant..."
+              placeholder="Search model, family (Llama, Qwen, DeepSeek), or quant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-8 pr-3 text-xs"
+              className="h-8 pl-8 pr-3 text-xs bg-obsidian-950/90 border-white/[0.08] focus:border-telemetry-500/60 focus:ring-1 focus:ring-telemetry-500/40 rounded-lg text-zinc-100 placeholder:text-zinc-400"
             />
           </div>
 
-          {/* Custom DropdownMenu Filters */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Filter Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* Family Filter Dropdown */}
             <DropdownMenu onOpenChange={(open) => { if (!open) setFamilySearch(''); }}>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[125px]">
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-obsidian-950 px-2.5 py-1 text-xs text-zinc-200 shadow-bevel hover:border-white/[0.15] transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 min-w-[125px]">
                   <span className="truncate">
                     {familyFilter === 'all'
                       ? 'All Families'
@@ -381,14 +401,14 @@ export function DashboardView({
                   <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[185px] max-h-72">
-                <DropdownMenuLabel>Filter Family ({uniqueFamilies.length})</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-[185px] max-h-72 bg-obsidian-900 border-white/[0.09] shadow-2xl">
+                <DropdownMenuLabel className="text-zinc-400 font-mono text-[10px] uppercase">Filter Family ({uniqueFamilies.length})</DropdownMenuLabel>
                 <DropdownMenuSearchInput
                   value={familySearch}
                   onChange={(e) => setFamilySearch(e.target.value)}
                   placeholder="Search families..."
                 />
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/[0.06]" />
                 <DropdownMenuRadioGroup value={familyFilter} onValueChange={setFamilyFilter}>
                   {!familySearch && (
                     <DropdownMenuRadioItem value="all">All Families</DropdownMenuRadioItem>
@@ -412,7 +432,7 @@ export function DashboardView({
             {/* Verdict Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[125px]">
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-obsidian-950 px-2.5 py-1 text-xs text-zinc-200 shadow-bevel hover:border-white/[0.15] transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 min-w-[125px]">
                   <span className="truncate">
                     {verdictFilter === 'all'
                       ? 'All Verdicts'
@@ -425,9 +445,9 @@ export function DashboardView({
                   <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px] max-h-60">
-                <DropdownMenuLabel>Filter Verdict</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent align="start" className="w-[140px] max-h-60 bg-obsidian-900 border-white/[0.09] shadow-2xl">
+                <DropdownMenuLabel className="text-zinc-400 font-mono text-[10px] uppercase">Filter Verdict</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/[0.06]" />
                 <DropdownMenuRadioGroup value={verdictFilter} onValueChange={setVerdictFilter}>
                   <DropdownMenuRadioItem value="all">All Verdicts</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="fits">Fits Only</DropdownMenuRadioItem>
@@ -440,7 +460,7 @@ export function DashboardView({
             {/* Status Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200 shadow-sm hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[135px]">
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-obsidian-950 px-2.5 py-1 text-xs text-zinc-200 shadow-bevel hover:border-white/[0.15] transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 min-w-[135px]">
                   <span className="truncate">
                     {statusFilter === 'all'
                       ? 'All Statuses'
@@ -451,9 +471,9 @@ export function DashboardView({
                   <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[175px] max-h-60">
-                <DropdownMenuLabel>Filter Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent align="start" className="w-[175px] max-h-60 bg-obsidian-900 border-white/[0.09] shadow-2xl">
+                <DropdownMenuLabel className="text-zinc-400 font-mono text-[10px] uppercase">Filter Status</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/[0.06]" />
                 <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
                   <DropdownMenuRadioItem value="all">All Statuses</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="downloaded">
@@ -471,32 +491,32 @@ export function DashboardView({
               onClick={handleSyncCatalog}
               disabled={syncingCatalog}
               title="Check remote catalog for newly released open-source models"
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300 shadow-sm hover:border-zinc-700 hover:text-white transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-obsidian-950 px-3 py-1 text-xs text-zinc-300 shadow-bevel hover:border-white/[0.15] hover:text-white transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${
-                  syncingCatalog ? 'animate-spin text-indigo-400' : 'text-zinc-400'
+                  syncingCatalog ? 'animate-spin text-telemetry-400' : 'text-zinc-400'
                 }`}
               />
-              <span className="hidden sm:inline">
+              <span className="hidden sm:inline font-mono">
                 {syncingCatalog ? 'Syncing...' : 'Sync Catalog'}
               </span>
-              <span className="sm:hidden">
+              <span className="sm:hidden font-mono">
                 {syncingCatalog ? 'Syncing' : 'Sync'}
               </span>
             </button>
           </div>
         </div>
 
-        {/* Live Serving & Context Configuration Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
-          {/* Context Slider & Presets */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-indigo-400 font-semibold">
+        {/* Live Serving & Context Configuration Console */}
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs pt-1">
+          {/* Context Stepper Rack */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 text-telemetry-400 font-mono text-xs font-semibold">
               <Sliders className="w-3.5 h-3.5" />
-              <span>Context Size:</span>
+              <span>CONTEXT:</span>
             </div>
-            <span className="font-mono text-indigo-300 font-bold w-12">{config.context_size}</span>
+            <span className="font-mono text-telemetry-300 font-bold tabular-nums w-12 text-sm">{config.context_size}</span>
             <Slider
               min={512}
               max={32768}
@@ -506,15 +526,15 @@ export function DashboardView({
               className="w-28 cursor-pointer"
             />
             {/* Quick Context Presets */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-obsidian-950 p-1 rounded-lg border border-white/[0.05]">
               {[2048, 4096, 8192, 16384, 32768].map((size) => (
                 <button
                   key={size}
                   onClick={() => setConfig({ ...config, context_size: size })}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all ${
                     config.context_size === size
-                      ? 'bg-indigo-600 text-white font-bold'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
                   }`}
                 >
                   {size >= 1024 ? `${size / 1024}k` : size}
@@ -523,52 +543,55 @@ export function DashboardView({
             </div>
           </div>
 
-          {/* KV Cache Quant & Parallel Slots */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-zinc-300">KV Quant:</span>
+          {/* KV Cache Quant & Parallel Slots Rockers */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-1.5 bg-obsidian-950 p-1 rounded-lg border border-white/[0.05]">
+              <span className="font-mono text-[10px] text-zinc-400 uppercase px-1">KV:</span>
               <button
                 onClick={() => setConfig({ ...config, kv_type: 'f16' })}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                   config.kv_type === 'f16'
-                    ? 'bg-indigo-600 text-white font-bold'
-                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
                 }`}
+                title="F16: Baseline memory footprint"
               >
                 F16
               </button>
               <button
                 onClick={() => setConfig({ ...config, kv_type: 'q8_0' })}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                   config.kv_type === 'q8_0'
-                    ? 'bg-indigo-600 text-white font-bold'
-                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
                 }`}
+                title="Q8_0: -50% KV cache VRAM requirement"
               >
                 Q8_0
               </button>
               <button
                 onClick={() => setConfig({ ...config, kv_type: 'q4_0' })}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                   config.kv_type === 'q4_0'
-                    ? 'bg-indigo-600 text-white font-bold'
-                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
                 }`}
+                title="Q4_0: -75% KV cache VRAM requirement"
               >
                 Q4_0
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 border-l border-zinc-800 pl-4">
-              <span className="font-semibold text-zinc-300">Parallel Slots:</span>
+            <div className="flex items-center gap-1.5 bg-obsidian-950 p-1 rounded-lg border border-white/[0.05]">
+              <span className="font-mono text-[10px] text-zinc-400 uppercase px-1">Slots:</span>
               {[1, 2, 4].map((n) => (
                 <button
                   key={n}
                   onClick={() => setConfig({ ...config, n_parallel: n })}
-                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                     config.n_parallel === n
-                      ? 'bg-indigo-600 text-white font-bold'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
                   }`}
                 >
                   {n}x

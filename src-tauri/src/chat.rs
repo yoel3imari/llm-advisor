@@ -10,7 +10,19 @@ use tracing::warn;
 
 use crate::AppState;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+fn default_stream() -> bool {
+    true
+}
+
+fn default_temperature() -> f64 {
+    0.7
+}
+
+fn default_max_tokens() -> u32 {
+    2048
+}
+
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatStreamRequest {
     pub model: String,
@@ -18,6 +30,40 @@ pub struct ChatStreamRequest {
     pub stream: bool,
     pub temperature: f64,
     pub max_tokens: u32,
+}
+
+impl<'de> Deserialize<'de> for ChatStreamRequest {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct RawRequest {
+            model: String,
+            messages: Vec<ChatMessage>,
+            #[serde(default = "default_stream")]
+            stream: bool,
+            #[serde(default = "default_temperature")]
+            temperature: f64,
+            max_tokens: Option<u32>,
+            #[serde(rename = "maxTokens")]
+            max_tokens_camel: Option<u32>,
+        }
+
+        let raw = RawRequest::deserialize(deserializer)?;
+        let max_tokens = raw
+            .max_tokens_camel
+            .or(raw.max_tokens)
+            .unwrap_or_else(default_max_tokens);
+
+        Ok(ChatStreamRequest {
+            model: raw.model,
+            messages: raw.messages,
+            stream: raw.stream,
+            temperature: raw.temperature,
+            max_tokens,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -87,10 +133,34 @@ fn parse_sse_line(line: &str) -> Option<ChatEvent> {
 
     let data = line.strip_prefix("data:")?.trim();
     if data == "[DONE]" {
+        // eprintln!("[DEBUG Rust parse_sse_line] Received [DONE]");
         return Some(ChatEvent::Done);
     }
 
-    let obj: serde_json::Value = serde_json::from_str(data).ok()?;
+    let obj: serde_json::Value = match serde_json::from_str(data) {
+        Ok(v) => v,
+        Err(_e) => {
+            // eprintln!("[DEBUG Rust parse_sse_line] Failed to parse JSON from SSE data: '{}' err={}", data, _e);
+            return None;
+        }
+    };
+
+    if let Some(err_val) = obj.get("error") {
+        // eprintln!("[DEBUG Rust parse_sse_line-ERROR] Upstream returned error in SSE: {:?}", err_val);
+        let msg = err_val
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Upstream error in SSE");
+        let code = err_val
+            .get("code")
+            .and_then(|c| c.as_str())
+            .unwrap_or("UPSTREAM_ERROR");
+        return Some(ChatEvent::Error {
+            code: code.to_string(),
+            message: msg.to_string(),
+        });
+    }
+
     let content = obj
         .get("choices")?
         .as_array()?
@@ -128,27 +198,38 @@ async fn proxy_stream(
         "temperature": request.temperature,
         "max_tokens": request.max_tokens,
     });
+    // eprintln!("[DEBUG Rust proxy_stream] 5a. Prepared proxy request to URL={}, body={}", url, body);
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let resp = client
+    // eprintln!("[DEBUG Rust proxy_stream] 5b. Sending POST to gateway...");
+    let resp = match client
         .post(&url)
         .header("Content-Type", "application/json")
         .body(body.to_string())
         .send()
         .await
-        .map_err(|e| {
-            if e.is_connect() {
-                "NO_MODEL".to_string()
-            } else {
-                e.to_string()
-            }
-        })?;
+    {
+        Ok(r) => {
+            // eprintln!("[DEBUG Rust proxy_stream] 5c. Gateway responded with status: {}", r.status());
+            r
+        }
+        Err(e) => {
+            // eprintln!("[DEBUG Rust proxy_stream-ERROR] reqwest send failed: {}", e);
+            let code = if e.is_connect() { "NO_MODEL" } else { "STREAM_ERROR" };
+            let _ = channel.send(ChatEvent::Error {
+                code: code.to_string(),
+                message: e.to_string(),
+            });
+            return Err(e.to_string());
+        }
+    };
 
     if resp.status().as_u16() == 503 {
+        // eprintln!("[DEBUG Rust proxy_stream] Gateway 503 NO_MODEL");
         let _ = channel.send(ChatEvent::Error {
             code: "NO_MODEL".to_string(),
             message: "No model serving — select and Start".to_string(),
@@ -158,9 +239,11 @@ async fn proxy_stream(
 
     if !resp.status().is_success() {
         let status = resp.status().as_u16();
+        let err_text = resp.text().await.unwrap_or_default();
+        // eprintln!("[DEBUG Rust proxy_stream-ERROR] Gateway returned non-success: status={}, body={}", status, err_text);
         let _ = channel.send(ChatEvent::Error {
             code: "UPSTREAM_ERROR".to_string(),
-            message: format!("Gateway returned status {}", status),
+            message: format!("Gateway returned status {}: {}", status, err_text),
         });
         return Ok(());
     }
@@ -172,6 +255,7 @@ async fn proxy_stream(
         let chunk = match chunk_result {
             Ok(bytes) => bytes,
             Err(e) => {
+                // eprintln!("[DEBUG Rust proxy_stream-ERROR] Stream error: {}", e);
                 let _ = channel.send(ChatEvent::Error {
                     code: "SIDECAR_DIED".to_string(),
                     message: format!("Upstream stream ended: {}", e),
@@ -186,8 +270,10 @@ async fn proxy_stream(
             if trimmed.is_empty() || trimmed.starts_with(':') {
                 continue;
             }
+            // eprintln!("[DEBUG Rust proxy_stream] SSE line: {}", trimmed);
             match parse_sse_line(&line) {
                 Some(ChatEvent::Done) => {
+                    // eprintln!("[DEBUG Rust proxy_stream] Forwarding Done event");
                     let _ = channel.send(ChatEvent::Done);
                     return Ok(());
                 }
@@ -195,7 +281,7 @@ async fn proxy_stream(
                     let _ = channel.send(event);
                 }
                 None => {
-                    warn!("chat_stream: skipping malformed SSE line");
+                    warn!("chat_stream: skipping unhandled SSE line: {}", trimmed);
                 }
             }
         }
@@ -207,6 +293,7 @@ async fn proxy_stream(
         }
     }
 
+    // eprintln!("[DEBUG Rust proxy_stream] Stream loop ended normally");
     Ok(())
 }
 
@@ -216,6 +303,14 @@ pub async fn chat_stream(
     channel: Channel<ChatEvent>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
+    // eprintln!(
+    //     "[DEBUG Rust chat_stream command] ENTERED: model='{}', messages_count={}, stream={}, temperature={}, max_tokens={}",
+    //     request.model,
+    //     request.messages.len(),
+    //     request.stream,
+    //     request.temperature,
+    //     request.max_tokens
+    // );
     let gateway_port = state
         .settings
         .read()
@@ -228,6 +323,7 @@ pub async fn chat_stream(
 
     let handle = tokio::spawn(async move {
         if let Err(message) = proxy_stream(request, channel.clone(), gateway_port).await {
+            // eprintln!("[DEBUG Rust chat_stream task-ERROR] proxy_stream returned error: {}", message);
             let _ = channel.send(ChatEvent::Error {
                 code: "STREAM_ERROR".to_string(),
                 message,
@@ -237,6 +333,7 @@ pub async fn chat_stream(
     });
     manager.register(session_id.clone(), handle);
 
+    // eprintln!("[DEBUG Rust chat_stream command] session registered: {}", session_id);
     Ok(session_id)
 }
 
@@ -295,4 +392,48 @@ mod tests {
         }
         assert!(buffer.is_empty());
     }
+
+    #[test]
+    fn deserializes_request_with_camel_case_or_snake_case_max_tokens() {
+        let json_camel = r#"{
+            "model": "qwen2.5-coder",
+            "messages": [{"role": "user", "content": "hi"}],
+            "stream": true,
+            "temperature": 0.7,
+            "maxTokens": 4096
+        }"#;
+        let req_camel: ChatStreamRequest = serde_json::from_str(json_camel).unwrap();
+        assert_eq!(req_camel.max_tokens, 4096);
+
+        let json_snake = r#"{
+            "model": "qwen2.5-coder",
+            "messages": [{"role": "user", "content": "hi"}],
+            "stream": true,
+            "temperature": 0.5,
+            "max_tokens": 1024
+        }"#;
+        let req_snake: ChatStreamRequest = serde_json::from_str(json_snake).unwrap();
+        assert_eq!(req_snake.max_tokens, 1024);
+
+        let json_defaults = r#"{
+            "model": "qwen2.5-coder",
+            "messages": []
+        }"#;
+        let req_defaults: ChatStreamRequest = serde_json::from_str(json_defaults).unwrap();
+        assert!(req_defaults.stream);
+        assert_eq!(req_defaults.temperature, 0.7);
+        assert_eq!(req_defaults.max_tokens, 2048);
+
+        let json_both = r#"{
+            "model": "qwen2.5-coder",
+            "messages": [{"role": "user", "content": "hi"}],
+            "stream": true,
+            "temperature": 0.7,
+            "max_tokens": 1024,
+            "maxTokens": 2048
+        }"#;
+        let req_both: ChatStreamRequest = serde_json::from_str(json_both).unwrap();
+        assert_eq!(req_both.max_tokens, 2048);
+    }
 }
+

@@ -410,21 +410,24 @@ export async function mockClearServerLogs(_modelId?: string): Promise<void> {
   mockLogs = [];
 }
 
+let mockSavedSettings: AppSettings = {
+  hf_token: '',
+  gateway_port: 13370,
+  default_context_size: 4096,
+  default_kv_type: 'f16',
+  models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
+  run_in_background: true,
+  auto_update_catalog: true,
+  catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
+  theme: 'dark',
+};
+
 export async function mockGetSettings(): Promise<AppSettings> {
-  return {
-    hf_token: '',
-    gateway_port: 13370,
-    default_context_size: 4096,
-    default_kv_type: 'f16',
-    models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
-    run_in_background: true,
-    auto_update_catalog: true,
-    catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
-  };
+  return { ...mockSavedSettings };
 }
 
-export async function mockSaveSettings(_settings: AppSettings): Promise<void> {
-  // no-op in mock
+export async function mockSaveSettings(settings: AppSettings): Promise<void> {
+  mockSavedSettings = { ...settings };
 }
 
 export async function mockSyncCatalog(): Promise<CatalogSyncResult> {

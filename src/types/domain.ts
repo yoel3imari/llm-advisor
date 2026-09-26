@@ -136,6 +136,8 @@ export interface LibraryReconciliation {
   orphan_files: string[];
 }
 
+export type ThemeMode = 'dark' | 'light';
+
 export interface AppSettings {
   hf_token: string;
   gateway_port: number;
@@ -145,6 +147,7 @@ export interface AppSettings {
   run_in_background?: boolean;
   auto_update_catalog?: boolean;
   catalog_endpoint?: string;
+  theme?: ThemeMode;
 }
 
 export type CatalogSyncResult =

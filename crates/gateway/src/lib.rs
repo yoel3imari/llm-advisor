@@ -166,6 +166,7 @@ async fn proxy_chat_completions(
     State(state): State<Arc<GatewayState>>,
     req: Request<Body>,
 ) -> Response<Body> {
+    // eprintln!("[DEBUG Gateway] proxy_chat_completions entered");
     proxy_to_sidecar(state, req, "/v1/chat/completions").await
 }
 
@@ -174,6 +175,7 @@ async fn proxy_completions(
     State(state): State<Arc<GatewayState>>,
     req: Request<Body>,
 ) -> Response<Body> {
+    // eprintln!("[DEBUG Gateway] proxy_completions entered");
     proxy_to_sidecar(state, req, "/v1/completions").await
 }
 
@@ -184,7 +186,9 @@ async fn proxy_to_sidecar(
     target_path: &str,
 ) -> Response<Body> {
     let running_models = state.server_manager.get_running_model_ids();
+    // eprintln!("[DEBUG Gateway] running models: {:?}", running_models);
     if running_models.is_empty() {
+        // eprintln!("[DEBUG Gateway] No running models, returning 503");
         return server_not_serving_503();
     }
 
@@ -194,6 +198,7 @@ async fn proxy_to_sidecar(
     let body_bytes = match to_bytes(body, 16 * 1024 * 1024).await {
         Ok(b) => b,
         Err(e) => {
+            // eprintln!("[DEBUG Gateway-ERROR] Failed to read request body: {}", e);
             let err_json = json!({
                 "error": {
                     "message": format!("Failed to read request body: {}", e),
@@ -224,11 +229,13 @@ async fn proxy_to_sidecar(
         Some(p) => p,
         None => {
             let req_name = requested_model.as_deref().unwrap_or("unknown");
+            // eprintln!("[DEBUG Gateway-ERROR] Model not found in pool: '{}'", req_name);
             return model_not_found_404(req_name, &running_models);
         }
     };
 
     let target_uri = format!("http://127.0.0.1:{}{}", target_port, target_path);
+    // eprintln!("[DEBUG Gateway] Routing to sidecar: {}", target_uri);
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
@@ -250,6 +257,7 @@ async fn proxy_to_sidecar(
         Ok(upstream_resp) => {
             let status = StatusCode::from_u16(upstream_resp.status().as_u16())
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            // eprintln!("[DEBUG Gateway] Upstream sidecar responded with status: {}", status);
 
             let mut builder = Response::builder().status(status);
             for (k, v) in upstream_resp.headers() {
@@ -269,6 +277,7 @@ async fn proxy_to_sidecar(
             })
         }
         Err(e) => {
+            // eprintln!("[DEBUG Gateway-ERROR] Upstream request failed: {}", e);
             let err_json = json!({
                 "error": {
                     "message": format!("Upstream inference server error: {}", e),

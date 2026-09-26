@@ -19,6 +19,7 @@ dist-ssr/
 .npm/
 .eslintcache
 *.tsbuildinfo
+*.log
 
 # ==========================================
 # Tauri Sidecars & Binaries (CRITICAL: No binaries in git)

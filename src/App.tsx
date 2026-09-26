@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sidebar, type NavTab } from './components/layout/Sidebar';
-import { ChatView } from './components/chat/ChatView';
-import { DashboardView } from './views/DashboardView';
-import { LibraryView } from './views/LibraryView';
-import { ServerView } from './views/ServerView';
-import { SettingsView } from './views/SettingsView';
+import {
+  ChatView,
+  DashboardView,
+  LibraryView,
+  ServerView,
+  SettingsView,
+} from './views';
 import { TooltipProvider } from './components/ui/Tooltip';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { listen } from '@tauri-apps/api/event';
@@ -15,8 +17,10 @@ import {
   getActiveDownloads,
   getServerState,
   cancelDownload,
+  getSettings,
 } from './ipc/commands';
 import type { HardwareProfile, ModelRecord, DownloadTask, ServerState } from './types/domain';
+import { getStoredTheme, applyTheme } from './lib/theme';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -40,8 +44,20 @@ function MainApp() {
 
   const { showToast } = useToast();
 
-  // Initial mount: load hardware profile and initial state
+  // Initial mount: load hardware profile, sync theme, and initial state
   useEffect(() => {
+    // 1. Initialize and sync theme
+    const storedTheme = getStoredTheme();
+    applyTheme(storedTheme);
+    getSettings()
+      .then((s) => {
+        if (s.theme && s.theme !== storedTheme) {
+          applyTheme(s.theme);
+        }
+      })
+      .catch(() => {});
+
+    // 2. Hardware profile
     getHardwareProfile()
       .then((p) => setProfile(p))
       .catch((e) => setError(e.toString()));
@@ -149,7 +165,7 @@ function MainApp() {
   }, [refreshDynamicState, showToast, handleNavigateToServer]);
 
   return (
-    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 antialiased overflow-hidden font-sans">
+    <div className="flex h-screen w-screen bg-obsidian-950 text-zinc-100 antialiased overflow-hidden font-sans selection:bg-telemetry-500/30 selection:text-white">
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -158,7 +174,9 @@ function MainApp() {
         onCancelDownload={handleCancelDownload}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-zinc-950 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 bg-obsidian-950 overflow-hidden relative">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blaze-500/10 rounded-full blur-3xl pointer-events-none" />
         {activeTab === 'chat' && (
           <ChatView
             modelId={

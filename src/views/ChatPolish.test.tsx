@@ -1,17 +1,18 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChatView } from './ChatView';
-import { MessageList } from './MessageBubble';
-import { chatStream, chatCancel, listLibraryModels, startServer } from '../../ipc/commands';
-import type { ChatStreamCallbacks } from '../../ipc/commands';
-import type { ChatMessage } from '../../types/chat';
+import { MessageList } from '../components/chat/MessageBubble';
+import { chatStream, chatCancel, listLibraryModels, startServer } from '../ipc/commands';
+import type { ChatStreamCallbacks } from '../ipc/commands';
+import type { ChatMessage } from '../types/chat';
 
-vi.mock('../../ipc/commands', () => ({
+vi.mock('../ipc/commands', () => ({
   chatStream: vi.fn(),
   chatCancel: vi.fn(),
   listLibraryModels: vi.fn(),
   startServer: vi.fn(),
   getServerState: vi.fn().mockResolvedValue(null),
+  getCatalog: vi.fn().mockResolvedValue([]),
 }));
 
 function mockStreamingSession(sessionId = 'sess-stream-polish') {

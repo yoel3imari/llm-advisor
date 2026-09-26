@@ -37,6 +37,10 @@ fn default_catalog_endpoint() -> String {
     catalog::DEFAULT_CATALOG_CDN_URL.to_string()
 }
 
+fn default_theme() -> String {
+    "dark".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
     pub hf_token: String,
@@ -49,6 +53,8 @@ pub struct AppSettings {
     pub auto_update_catalog: bool,
     #[serde(default = "default_catalog_endpoint")]
     pub catalog_endpoint: String,
+    #[serde(default = "default_theme")]
+    pub theme: String,
 }
 
 impl Default for AppSettings {
@@ -62,6 +68,7 @@ impl Default for AppSettings {
             run_in_background: true,
             auto_update_catalog: true,
             catalog_endpoint: default_catalog_endpoint(),
+            theme: default_theme(),
         }
     }
 }
@@ -749,6 +756,25 @@ async fn install_app_update(app: tauri::AppHandle) -> Result<bool, String> {
     }
 }
 
+#[tauri::command]
+fn log_client(level: String, message: String) {
+    eprintln!("[CLIENT {}] {}", level.to_uppercase(), message);
+    if let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("devtools.log")
+    {
+        use std::io::Write;
+        let _ = writeln!(
+            file,
+            "[{}] [CLIENT {}] {}",
+            chrono::Utc::now().to_rfc3339(),
+            level.to_uppercase(),
+            message
+        );
+    }
+}
+
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 
@@ -928,7 +954,8 @@ pub fn run() {
             check_app_update,
             install_app_update,
             chat_stream,
-            chat_cancel
+            chat_cancel,
+            log_client
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
