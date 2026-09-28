@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+}
+
+html.dark,
+html[data-theme="dark"] {
   color-scheme: dark;
 }
 
@@ -11,9 +16,15 @@ body {
   padding: 0;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   user-select: none;
-  background-color: #07080B;
-  color: #F1F5F9;
+  background-color: #F8FAFC;
+  color: #0F172A;
   letter-spacing: -0.01em;
+}
+
+html.dark body,
+html[data-theme="dark"] body {
+  background-color: #0B0F19;
+  color: #F1F5F9;
 }
 
 /* Tabular figures for numbers, timers, token counters, memory sizes */
@@ -21,26 +32,49 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Precision Hardware Cards & Panels */
+/* 3D Perspective & Isometric Utilities */
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.isometric-card {
+  transform: rotateX(4deg) rotateY(-8deg);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.isometric-card:hover {
+  transform: rotateX(2deg) rotateY(-4deg) translateY(-4px);
+}
+
+/* Corporate Trust Card & Panel Primitives */
 @layer components {
+  .corporate-card,
   .hardware-card {
-    @apply bg-obsidian-900/90 border border-white/[0.07] rounded-xl relative overflow-hidden;
+    @apply bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-xl relative overflow-hidden shadow-corporate transition-all duration-200;
   }
 
+  .corporate-card-elevated {
+    @apply corporate-card hover:-translate-y-1 hover:shadow-corporate-hover;
+  }
+
+  .corporate-card-highlight,
   .hardware-card-highlight {
-    @apply bg-gradient-to-b from-obsidian-850 to-obsidian-900 border border-white/[0.09] rounded-xl;
+    @apply bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-850 dark:to-slate-900 border border-indigo-100 dark:border-slate-700/60 rounded-xl shadow-corporate;
   }
 
+  .corporate-panel,
   .hardware-panel {
-    @apply bg-obsidian-900/80 border border-white/[0.06] rounded-xl backdrop-blur-md;
+    @apply bg-white/90 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-800 rounded-xl backdrop-blur-md shadow-bevel;
   }
 
+  .corporate-well,
   .hardware-well {
-    @apply bg-obsidian-950/80 border border-white/[0.05] rounded-lg;
+    @apply bg-slate-50 dark:bg-slate-950/80 border border-slate-200/70 dark:border-slate-800/80 rounded-lg shadow-well;
   }
 
+  .corporate-button-tactile,
   .hardware-button-tactile {
-    @apply border border-white/[0.08] transition-all duration-150 active:scale-[0.98] active:brightness-95;
+    @apply transition-all duration-200 active:scale-[0.98] active:brightness-95 hover:-translate-y-0.5;
   }
 
   .led-pulse {
@@ -52,45 +86,49 @@ body {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
-    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.7));
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6));
   }
   50% {
     opacity: 0.7;
     transform: scale(0.95);
-    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.4));
+    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.3));
   }
 }
 
 @keyframes brand-pulse {
   0%, 100% {
     opacity: 1;
-    filter: drop-shadow(0 0 8px rgba(253, 89, 0, 0.7));
+    filter: drop-shadow(0 0 8px rgba(79, 70, 229, 0.6));
   }
   50% {
     opacity: 0.7;
-    filter: drop-shadow(0 0 3px rgba(110, 22, 190, 0.5));
+    filter: drop-shadow(0 0 3px rgba(124, 58, 237, 0.4));
   }
 }
 
 .brand-gradient {
-  background: linear-gradient(135deg, #FD5900 0%, #6E16BE 100%);
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
 }
 
 .brand-gradient-text {
-  background: linear-gradient(135deg, #FD5900 0%, #B46BF5 100%);
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Precision dark custom scrollbar */
+.brand-gradient-subtle {
+  background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%);
+}
+
+/* Custom Refined Scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: rgba(79, 70, 229, 0.2) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -98,371 +136,26 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(79, 70, 229, 0.15);
   border-radius: 9999px;
+  transition: background 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(79, 70, 229, 0.3);
 }
 
-/* ==========================================================================
-   Light Mode Theme System
-   ========================================================================== */
-html.light,
-html[data-theme="light"] {
-  color-scheme: light;
+html.dark .custom-scrollbar,
+html[data-theme="dark"] .custom-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-html.light body,
-html[data-theme="light"] body {
-  background-color: #F8FAFC !important;
-  color: #0F172A !important;
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Light Mode Surfaces */
-html.light .bg-obsidian-950,
-html[data-theme="light"] .bg-obsidian-950 {
-  background-color: #F8FAFC !important;
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+html[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
-
-html.light .bg-obsidian-900,
-html.light .bg-obsidian-900\/90,
-html.light .bg-obsidian-900\/80,
-html[data-theme="light"] .bg-obsidian-900,
-html[data-theme="light"] .bg-obsidian-900\/90,
-html[data-theme="light"] .bg-obsidian-900\/80 {
-  background-color: #FFFFFF !important;
-}
-
-html.light .bg-obsidian-850,
-html[data-theme="light"] .bg-obsidian-850 {
-  background-color: #F1F5F9 !important;
-}
-
-html.light .bg-obsidian-800,
-html[data-theme="light"] .bg-obsidian-800 {
-  background-color: #E2E8F0 !important;
-}
-
-html.light .bg-zinc-950,
-html[data-theme="light"] .bg-zinc-950 {
-  background-color: #FFFFFF !important;
-}
-
-html.light .bg-zinc-900,
-html[data-theme="light"] .bg-zinc-900 {
-  background-color: #FFFFFF !important;
-}
-
-html.light .bg-zinc-850,
-html[data-theme="light"] .bg-zinc-850 {
-  background-color: #F8FAFC !important;
-}
-
-html.light .bg-zinc-800,
-html[data-theme="light"] .bg-zinc-800 {
-  background-color: #F1F5F9 !important;
-}
-
-html.light .bg-zinc-700,
-html[data-theme="light"] .bg-zinc-700 {
-  background-color: #E2E8F0 !important;
-}
-
-/* Hardware components in Light Mode */
-html.light .hardware-card,
-html[data-theme="light"] .hardware-card {
-  background-color: #FFFFFF !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
-}
-
-html.light .hardware-card-highlight,
-html[data-theme="light"] .hardware-card-highlight {
-  background: linear-gradient(to bottom, #FFFFFF, #F8FAFC) !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
-}
-
-html.light .hardware-panel,
-html[data-theme="light"] .hardware-panel {
-  background-color: rgba(255, 255, 255, 0.85) !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
-}
-
-html.light .hardware-well,
-html[data-theme="light"] .hardware-well {
-  background-color: #F1F5F9 !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
-}
-
-html.light .hardware-button-tactile,
-html[data-theme="light"] .hardware-button-tactile {
-  border-color: #CBD5E1 !important;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Light Mode Typography (preserving white text on solid colored action buttons) */
-html.light h1,
-html.light h2,
-html.light h3,
-html.light h4,
-html.light h5,
-html[data-theme="light"] h1,
-html[data-theme="light"] h2,
-html[data-theme="light"] h3,
-html[data-theme="light"] h4,
-html[data-theme="light"] h5 {
-  color: #0F172A !important;
-}
-
-html.light .text-white:not([class*="bg-red-"]):not([class*="bg-emerald-"]):not([class*="bg-indigo-"]):not([class*="bg-violet-"]):not([class*="bg-blaze-"]):not([class*="bg-telemetry-"]):not([class*="bg-amber-"]):not([class*="bg-laser-"]),
-html[data-theme="light"] .text-white:not([class*="bg-red-"]):not([class*="bg-emerald-"]):not([class*="bg-indigo-"]):not([class*="bg-violet-"]):not([class*="bg-blaze-"]):not([class*="bg-telemetry-"]):not([class*="bg-amber-"]):not([class*="bg-laser-"]) {
-  color: #0F172A !important;
-}
-
-html.light .text-zinc-100,
-html[data-theme="light"] .text-zinc-100 {
-  color: #0F172A !important;
-}
-
-html.light .text-zinc-200,
-html[data-theme="light"] .text-zinc-200 {
-  color: #1E293B !important;
-}
-
-html.light .text-zinc-300,
-html[data-theme="light"] .text-zinc-300 {
-  color: #334155 !important;
-}
-
-html.light .text-zinc-400,
-html[data-theme="light"] .text-zinc-400 {
-  color: #64748B !important;
-}
-
-html.light .text-zinc-500,
-html[data-theme="light"] .text-zinc-500 {
-  color: #94A3B8 !important;
-}
-
-/* Light Mode Borders */
-html.light .border-zinc-800,
-html.light .border-zinc-800\/80,
-html.light .border-zinc-800\/60,
-html.light .border-zinc-800\/50,
-html.light .border-zinc-750,
-html.light .border-zinc-700,
-html.light .border-zinc-700\/80,
-html.light .border-zinc-900,
-html.light .border-white\/\[0\.05\],
-html.light .border-white\/\[0\.06\],
-html.light .border-white\/\[0\.07\],
-html.light .border-white\/\[0\.08\],
-html.light .border-white\/\[0\.09\],
-html.light .border-white\/\[0\.1\],
-html.light .border-white\/\[0\.12\],
-html.light .border-white\/\[0\.15\],
-html[data-theme="light"] .border-zinc-800,
-html[data-theme="light"] .border-zinc-800\/80,
-html[data-theme="light"] .border-zinc-800\/60,
-html[data-theme="light"] .border-zinc-800\/50,
-html[data-theme="light"] .border-zinc-700,
-html[data-theme="light"] .border-white\/\[0\.07\],
-html[data-theme="light"] .border-white\/\[0\.12\] {
-  border-color: #E2E8F0 !important;
-}
-
-/* Light Mode Inputs, Textareas & Selects */
-html.light input:not([type="checkbox"]):not([type="radio"]),
-html.light textarea,
-html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
-html[data-theme="light"] textarea {
-  background-color: #FFFFFF !important;
-  border-color: #CBD5E1 !important;
-  color: #0F172A !important;
-}
-
-html.light input::placeholder,
-html.light textarea::placeholder,
-html[data-theme="light"] input::placeholder,
-html[data-theme="light"] textarea::placeholder {
-  color: #94A3B8 !important;
-}
-
-/* Light Mode Hover States */
-html.light .hover\:bg-zinc-800:hover,
-html[data-theme="light"] .hover\:bg-zinc-800:hover {
-  background-color: #F1F5F9 !important;
-}
-
-html.light .hover\:bg-zinc-700:hover,
-html[data-theme="light"] .hover\:bg-zinc-700:hover {
-  background-color: #E2E8F0 !important;
-}
-
-html.light .hover\:bg-obsidian-800:hover,
-html[data-theme="light"] .hover\:bg-obsidian-800:hover {
-  background-color: #F1F5F9 !important;
-}
-
-html.light .hover\:bg-white\/\[0\.04\]:hover,
-html[data-theme="light"] .hover\:bg-white\/\[0\.04\]:hover {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-}
-
-html.light .hover\:text-white:hover,
-html[data-theme="light"] .hover\:text-white:hover {
-  color: #0F172A !important;
-}
-
-html.light .hover\:text-zinc-200:hover,
-html.light .hover\:text-zinc-300:hover,
-html[data-theme="light"] .hover\:text-zinc-200:hover,
-html[data-theme="light"] .hover\:text-zinc-300:hover {
-  color: #0F172A !important;
-}
-
-/* Light Mode Sidebar */
-html.light aside,
-html[data-theme="light"] aside {
-  background-color: #FFFFFF !important;
-  border-color: #E2E8F0 !important;
-}
-
-html.light aside nav button.bg-obsidian-850,
-html[data-theme="light"] aside nav button.bg-obsidian-850 {
-  background-color: #F1F5F9 !important;
-  color: #0F172A !important;
-  border-color: #CBD5E1 !important;
-}
-
-/* Light Mode Badges & Tinted Containers */
-html.light .bg-telemetry-950,
-html.light .bg-blaze-950,
-html.light .bg-telemetry-950\/80,
-html.light .bg-telemetry-950\/50,
-html[data-theme="light"] .bg-telemetry-950,
-html[data-theme="light"] .bg-blaze-950,
-html[data-theme="light"] .bg-telemetry-950\/80 {
-  background-color: #FFF7ED !important;
-}
-
-html.light .text-telemetry-300,
-html.light .text-blaze-300,
-html[data-theme="light"] .text-telemetry-300,
-html[data-theme="light"] .text-blaze-300 {
-  color: #C2410C !important;
-}
-
-html.light .border-telemetry-500\/30,
-html.light .border-telemetry-500\/40,
-html.light .border-blaze-800\/60,
-html[data-theme="light"] .border-telemetry-500\/30,
-html[data-theme="light"] .border-blaze-800\/60 {
-  border-color: #FDBA74 !important;
-}
-
-html.light .bg-violet-950,
-html.light .bg-neural-950,
-html.light .bg-violet-950\/80,
-html.light .bg-violet-950\/50,
-html.light .bg-violet-950\/30,
-html[data-theme="light"] .bg-violet-950,
-html[data-theme="light"] .bg-neural-950,
-html[data-theme="light"] .bg-violet-950\/80 {
-  background-color: #F5F3FF !important;
-}
-
-html.light .text-violet-300,
-html.light .text-neural-300,
-html[data-theme="light"] .text-violet-300,
-html[data-theme="light"] .text-neural-300 {
-  color: #6D28D9 !important;
-}
-
-html.light .border-violet-500\/40,
-html.light .border-violet-800,
-html.light .border-violet-800\/60,
-html.light .border-violet-800\/80,
-html.light .border-violet-800\/50,
-html[data-theme="light"] .border-violet-500\/40,
-html[data-theme="light"] .border-violet-800 {
-  border-color: #DDD6FE !important;
-}
-
-html.light .bg-emerald-950,
-html.light .bg-emerald-950\/80,
-html.light .bg-emerald-950\/60,
-html[data-theme="light"] .bg-emerald-950,
-html[data-theme="light"] .bg-emerald-950\/80 {
-  background-color: #ECFDF5 !important;
-}
-
-html.light .text-emerald-300,
-html[data-theme="light"] .text-emerald-300 {
-  color: #047857 !important;
-}
-
-html.light .border-emerald-800,
-html.light .border-emerald-800\/60,
-html.light .border-emerald-800\/80,
-html[data-theme="light"] .border-emerald-800 {
-  border-color: #A7F3D0 !important;
-}
-
-html.light .bg-indigo-950,
-html.light .bg-indigo-950\/80,
-html[data-theme="light"] .bg-indigo-950,
-html[data-theme="light"] .bg-indigo-950\/80 {
-  background-color: #EEF2FF !important;
-}
-
-html.light .text-indigo-300,
-html[data-theme="light"] .text-indigo-300 {
-  color: #4338CA !important;
-}
-
-html.light .border-indigo-800,
-html.light .border-indigo-800\/60,
-html.light .border-indigo-800\/80,
-html[data-theme="light"] .border-indigo-800 {
-  border-color: #C7D2FE !important;
-}
-
-html.light .bg-cyan-950,
-html.light .bg-cyan-950\/80,
-html[data-theme="light"] .bg-cyan-950 {
-  background-color: #ECFEFF !important;
-}
-
-html.light .text-cyan-300,
-html[data-theme="light"] .text-cyan-300 {
-  color: #0E7490 !important;
-}
-
-html.light .border-cyan-800,
-html.light .border-cyan-800\/60,
-html[data-theme="light"] .border-cyan-800 {
-  border-color: #A5F3FC !important;
-}
-
-/* Light Mode Custom Scrollbar */
-html.light .custom-scrollbar,
-html[data-theme="light"] .custom-scrollbar {
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important;
-}
-
-html.light .custom-scrollbar::-webkit-scrollbar-thumb,
-html[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.16) !important;
-}
-
-html.light .custom-scrollbar::-webkit-scrollbar-thumb:hover,
-html[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3) !important;
-}
-

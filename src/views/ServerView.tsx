@@ -100,23 +100,24 @@ export function ServerView({
           ]
       : [];
 
-  const isModelRunning = (modelId: string) =>
-    activeInstances.some((inst) => inst.model_id === modelId);
+  const isModelRunning = (modelId: string) => {
+    return activeInstances.some((inst) => inst.model_id === modelId);
+  };
 
   const handleLaunchModel = async () => {
-    if (!selectedModel) return;
+    if (!selectedModel || busy) return;
     setBusy(true);
     try {
-      const cfg: ServeConfig = {
+      const config: ServeConfig = {
         context_size: contextSize,
         n_parallel: 1,
         kv_type: kvType,
         n_gpu_layers: null,
       };
-      await startServer(selectedModel, cfg);
+      await startServer(selectedModel, config);
       onRefreshState();
     } catch (err) {
-      console.error('Failed to launch model', err);
+      console.error('Failed to start inference server', err);
     } finally {
       setBusy(false);
     }
@@ -176,13 +177,13 @@ export function ServerView({
   const isStarting = serverState.state === 'starting';
 
   return (
-    <div className="flex-1 p-6 flex flex-col space-y-5 overflow-y-auto custom-scrollbar relative z-10">
+    <div className="flex-1 min-h-0 p-6 flex flex-col space-y-5 overflow-y-auto custom-scrollbar relative z-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            <span>Inference Server Control</span>
+          <h2 className="text-xl lg:text-2xl font-bold tracking-tight flex items-center gap-2.5">
+            <span className="brand-gradient-text">Inference Server Control</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-1 font-mono">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
             Multi-model sidecar pool with automatic request routing on localhost:13370
           </p>
         </div>
@@ -191,10 +192,10 @@ export function ServerView({
           <button
             onClick={handleStopAll}
             disabled={busy}
-            className="hardware-button-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-laser-950/80 hover:bg-laser-900 border border-laser-600/40 text-laser-200 text-xs font-semibold transition-colors self-start sm:self-auto shadow-bevel"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/80 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-200 text-xs font-semibold transition-all self-start sm:self-auto shadow-sm hover:-translate-y-0.5"
             title="Stop all running sidecars"
           >
-            <StopCircle className="w-4 h-4 text-laser-400" />
+            <StopCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
             <span>Stop All Instances ({activeInstances.length})</span>
           </button>
         )}
@@ -203,13 +204,13 @@ export function ServerView({
       {/* Active Running Instances Pool Strip */}
       {activeInstances.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-zinc-300">
-            <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-telemetry-400">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">
               <Layers className="w-4 h-4" />
               <span>Running Model Instances ({activeInstances.length})</span>
             </span>
-            <span className="text-[11px] text-zinc-400 font-mono">
-              External apps route automatically via <code className="text-telemetry-300 font-mono">"model": "&lt;id&gt;"</code>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+              External apps route automatically via <code className="text-indigo-600 dark:text-indigo-400 font-bold font-mono">"model": "&lt;id&gt;"</code>
             </span>
           </div>
 
@@ -217,20 +218,20 @@ export function ServerView({
             {activeInstances.map((inst) => (
               <div
                 key={inst.model_id}
-                className="hardware-card p-3.5 flex items-center justify-between gap-3 shadow-bevel border-white/[0.1]"
+                className="corporate-card p-3.5 flex items-center justify-between gap-3 shadow-corporate hover:shadow-corporate-hover hover:-translate-y-0.5 transition-all duration-200"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-phosphor-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-phosphor-400"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span className="font-semibold text-white text-xs truncate font-mono" title={inst.model_id}>
+                    <span className="font-bold text-slate-900 dark:text-white text-xs truncate font-mono" title={inst.model_id}>
                       {inst.model_id}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 tabular-nums">
-                    <span className="px-1.5 py-0.5 rounded bg-obsidian-950 border border-white/[0.08] text-phosphor-400 font-bold">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                    <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 font-bold">
                       :{inst.port}
                     </span>
                     <span>{inst.context_size.toLocaleString()} ctx</span>
@@ -240,7 +241,7 @@ export function ServerView({
                 <button
                   onClick={() => handleStopInstance(inst.model_id)}
                   disabled={busy}
-                  className="p-1.5 rounded-lg bg-obsidian-850 hover:bg-laser-950 hover:text-laser-300 border border-white/[0.08] hover:border-laser-600/40 text-zinc-400 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/80 hover:text-rose-600 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 text-slate-400 transition-colors shrink-0"
                   title={`Stop instance ${inst.model_id}`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -252,26 +253,26 @@ export function ServerView({
       )}
 
       {/* Model Launcher Strip */}
-      <div className="hardware-card p-5 space-y-4 shadow-bevel">
+      <div className="corporate-card p-5 space-y-4 shadow-corporate">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4 flex-1">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-400">Model to Launch</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Model to Launch</label>
               <DropdownMenu onOpenChange={(open) => { if (!open) setModelSearch(''); }}>
                 <DropdownMenuTrigger asChild>
                   <button
                     disabled={isStarting || libraryRecords.length === 0}
-                    className="flex items-center justify-between gap-3 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 font-medium focus:outline-none focus:border-indigo-500 disabled:opacity-50 min-w-64 hover:border-zinc-600 transition-colors"
+                    className="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 min-w-64 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm"
                   >
                     <span className="truncate">
                       {libraryRecords.length === 0
                         ? 'No downloaded models available'
                         : selectedModel || 'Select a model...'}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-zinc-400 opacity-80 shrink-0" />
+                    <ChevronDown className="h-4 w-4 text-slate-400 opacity-80 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-72 max-h-72">
+                <DropdownMenuContent align="start" className="min-w-72 max-h-72 shadow-corporate">
                   <DropdownMenuLabel>Downloaded Models ({libraryRecords.length})</DropdownMenuLabel>
                   {libraryRecords.length > 0 && (
                     <DropdownMenuSearchInput
@@ -288,14 +289,14 @@ export function ServerView({
                         <DropdownMenuRadioItem key={r.entry_id} value={r.entry_id}>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-zinc-200 truncate">{r.entry_id}</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{r.entry_id}</span>
                               {isRunning && (
-                                <span className="text-[9px] font-bold px-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 shrink-0">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
                                   Running
                                 </span>
                               )}
                             </div>
-                            <span className="text-[10px] text-zinc-400 font-mono">
+                            <span className="text-[10px] text-slate-400 font-mono">
                               {(r.size_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB
                             </span>
                           </div>
@@ -311,18 +312,18 @@ export function ServerView({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-400">Context Window</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Context Window</label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     disabled={isStarting}
-                    className="flex items-center justify-between gap-2 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-indigo-500 disabled:opacity-50 min-w-36 hover:border-zinc-600 transition-colors"
+                    className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 min-w-36 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm"
                   >
                     <span>{contextSize.toLocaleString()} tokens</span>
-                    <ChevronDown className="h-4 w-4 text-zinc-400 opacity-80 shrink-0" />
+                    <ChevronDown className="h-4 w-4 text-slate-400 opacity-80 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-40 max-h-60">
+                <DropdownMenuContent align="start" className="w-40 max-h-60 shadow-corporate">
                   <DropdownMenuLabel>Context Window</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup
@@ -340,13 +341,13 @@ export function ServerView({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-400">KV Quant</label>
-              <div className="flex rounded-lg border border-zinc-700 p-0.5 bg-zinc-950">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">KV Quant</label>
+              <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
                 <button
                   disabled={isStarting}
                   onClick={() => setKvType('f16')}
-                  className={`px-3 py-1 text-xs rounded font-mono font-medium ${
-                    kvType === 'f16' ? 'bg-indigo-600 text-white' : 'text-zinc-400'
+                  className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
+                    kvType === 'f16' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   F16
@@ -354,8 +355,8 @@ export function ServerView({
                 <button
                   disabled={isStarting}
                   onClick={() => setKvType('q8_0')}
-                  className={`px-3 py-1 text-xs rounded font-mono font-medium ${
-                    kvType === 'q8_0' ? 'bg-indigo-600 text-white' : 'text-zinc-400'
+                  className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
+                    kvType === 'q8_0' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   Q8_0
@@ -363,8 +364,8 @@ export function ServerView({
                 <button
                   disabled={isStarting}
                   onClick={() => setKvType('q4_0')}
-                  className={`px-3 py-1 text-xs rounded font-mono font-medium ${
-                    kvType === 'q4_0' ? 'bg-indigo-600 text-white' : 'text-zinc-400'
+                  className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
+                    kvType === 'q4_0' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   Q4_0
@@ -377,10 +378,10 @@ export function ServerView({
             <button
               onClick={handleLaunchModel}
               disabled={busy || isStarting || !selectedModel}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all ${
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm shadow-corporate-btn hover:-translate-y-0.5 active:translate-y-0 transition-all ${
                 isModelRunning(selectedModel)
-                  ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 disabled:opacity-50'
+                  ? 'bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                  : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white disabled:opacity-50'
               }`}
             >
               {isStarting ? (
@@ -390,7 +391,7 @@ export function ServerView({
                 </>
               ) : isModelRunning(selectedModel) ? (
                 <>
-                  <Cpu className="w-4 h-4 text-emerald-400" />
+                  <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <span>Select As Primary</span>
                 </>
               ) : (
@@ -404,31 +405,31 @@ export function ServerView({
         </div>
 
         {/* Endpoint Info Bar */}
-        <div className="pt-3 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-zinc-300">
-            <Globe className="w-4 h-4 text-telemetry-400" />
-            <span className="font-mono text-zinc-400 text-xs">OpenAI Gateway:</span>
-            <code className="px-2.5 py-0.5 bg-obsidian-950 border border-white/[0.08] rounded text-phosphor-400 font-mono font-bold tabular-nums">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+            <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="font-mono text-slate-500 dark:text-slate-400 text-xs">OpenAI Gateway:</span>
+            <code className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-indigo-600 dark:text-indigo-400 font-mono font-bold tabular-nums">
               {endpointUrl}
             </code>
             <button
               onClick={handleCopyEndpoint}
-              className="p-1 text-zinc-400 hover:text-white transition-colors"
+              className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors"
               title="Copy URL"
             >
-              {copied ? <Check className="w-4 h-4 text-phosphor-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
             </button>
             <button
               onClick={handleCopyCurl}
-              className="ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-[11px] font-mono text-zinc-300 border border-white/[0.08] transition-all hardware-button-tactile"
+              className="ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] font-mono text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all shadow-sm hover:-translate-y-0.5"
               title="Copy curl snippet"
             >
-              <Terminal className="w-3 h-3 text-telemetry-400" />
+              <Terminal className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               <span>{copiedCurl ? 'Copied curl!' : 'Copy cURL'}</span>
             </button>
           </div>
 
-          <div className="text-zinc-500 font-mono text-[11px]">
+          <div className="text-slate-400 font-mono text-[11px]">
             {activeInstances.length > 0
               ? `${activeInstances.length} active model(s) ready for Cursor, Continue, or Aider`
               : 'Gateway returns 503 while idle'}
@@ -438,15 +439,15 @@ export function ServerView({
 
       {/* Error state alert */}
       {serverState.state === 'error' && (
-        <div className="p-4 bg-laser-950/40 border border-laser-600/40 rounded-xl space-y-2 text-xs text-laser-200 shrink-0 shadow-bevel">
-          <div className="flex items-center gap-2 font-bold text-laser-300 min-w-0 font-mono">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl space-y-2 text-xs text-rose-800 dark:text-rose-200 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-300 min-w-0 font-mono">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
             <span className="truncate" title={serverState.reason}>
               Inference Server Error: {serverState.reason}
             </span>
           </div>
           {serverState.stderr_tail.length > 0 && (
-            <div className="font-mono bg-black/50 p-2.5 rounded-lg border border-laser-900/60 overflow-auto max-h-36 space-y-0.5 select-text cursor-text selection:bg-laser-500/40 selection:text-white">
+            <div className="font-mono bg-black/50 p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/60 overflow-auto max-h-36 space-y-0.5 select-text cursor-text selection:bg-rose-500/40 selection:text-white">
               {serverState.stderr_tail.map((line, idx) => (
                 <div key={idx} className="select-text whitespace-nowrap">
                   {line}
@@ -461,24 +462,24 @@ export function ServerView({
       <div className="flex-1 min-h-0 flex flex-col space-y-2">
         <div className="flex items-center justify-between text-xs px-1">
           <div className="flex items-center gap-2">
-            <Terminal className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="font-semibold text-zinc-300">Instance Logs</span>
+            <Terminal className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="font-bold text-slate-800 dark:text-slate-200">Instance Logs</span>
           </div>
           {activeInstances.length > 1 && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-zinc-400">Filter:</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Filter:</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center justify-between gap-1.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors">
+                  <button className="flex items-center justify-between gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors shadow-sm">
                     <span className="truncate max-w-[180px]">
                       {selectedLogModel === 'all'
                         ? 'All Models (Combined)'
                         : selectedLogModel}
                     </span>
-                    <ChevronDown className="h-3 w-3 text-zinc-400 opacity-80 shrink-0" />
+                    <ChevronDown className="h-3 w-3 text-slate-400 opacity-80 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 max-h-60">
+                <DropdownMenuContent align="end" className="w-56 max-h-60 shadow-corporate">
                   <DropdownMenuLabel>Filter Instance Logs</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup value={selectedLogModel} onValueChange={setSelectedLogModel}>
@@ -486,7 +487,7 @@ export function ServerView({
                     {activeInstances.map((inst) => (
                       <DropdownMenuRadioItem key={inst.model_id} value={inst.model_id}>
                         <span className="truncate">{inst.model_id}</span>
-                        <span className="ml-auto text-[10px] text-zinc-500 font-mono">:{inst.port}</span>
+                        <span className="ml-auto text-[10px] text-slate-400 font-mono">:{inst.port}</span>
                       </DropdownMenuRadioItem>
                     ))}
                   </DropdownMenuRadioGroup>
@@ -495,7 +496,7 @@ export function ServerView({
             </div>
           )}
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-[220px]">
           <LogViewer logs={logs} onClear={handleClearLogs} />
         </div>
       </div>

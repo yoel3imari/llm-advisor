@@ -16,8 +16,8 @@ vi.mock('@tauri-apps/api/core', async (importOriginal) => {
   };
 });
 
-import { chatStream, chatCancel } from './commands';
-import type { ChatStreamRequest } from '../types/chat';
+import { chatStream, chatCancel, chatGenerateTitle } from './commands';
+import type { ChatStreamRequest, ChatMessage } from '../types/chat';
 
 describe('chat IPC scaffold', () => {
   beforeEach(() => {
@@ -66,5 +66,19 @@ describe('chat IPC scaffold', () => {
   it('does not throw when cancelling with no active stream', async () => {
     mockInvoke.mockResolvedValue(undefined);
     await expect(chatCancel('no-such-session')).resolves.toBeUndefined();
+  });
+
+  it('invokes chat_generate_title with messages and model', async () => {
+    mockInvoke.mockResolvedValue('Rust Concurrency Patterns');
+    const messages: ChatMessage[] = [
+      { id: '1', role: 'user', content: 'Explain Rust channels', createdAt: '2026-09-27' },
+    ];
+
+    const title = await chatGenerateTitle(messages, 'test-model');
+    expect(title).toBe('Rust Concurrency Patterns');
+    expect(mockInvoke).toHaveBeenCalledWith('chat_generate_title', {
+      messages,
+      model: 'test-model',
+    });
   });
 });

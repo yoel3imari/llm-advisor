@@ -16,7 +16,7 @@ import type {
   CatalogSyncResult,
   AppUpdateInfo,
 } from '../types/domain';
-import type { ChatEvent, ChatStreamRequest } from '../types/chat';
+import type { ChatEvent, ChatMessage, ChatStreamRequest } from '../types/chat';
 import * as mock from './mock';
 
 // Detect if running inside Tauri webview or mock browser environment
@@ -201,4 +201,17 @@ export async function chatStream(
 export async function chatCancel(sessionId: string): Promise<void> {
   await invoke('chat_cancel', { sessionId });
 }
+
+export async function chatGenerateTitle(
+  messages: ChatMessage[],
+  model?: string | null
+): Promise<string> {
+  try {
+    return await invoke<string>('chat_generate_title', { messages, model: model ?? null });
+  } catch (err) {
+    if (useMock) return mock.mockChatGenerateTitle(messages, model);
+    throw err;
+  }
+}
+
 

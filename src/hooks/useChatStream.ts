@@ -19,6 +19,7 @@ export interface UseChatStreamOptions {
   params?: ChatParams;
   stallTimeoutMs?: number;
   initialMessages?: ChatMessage[];
+  onFinish?: (messages: ChatMessage[]) => void;
 }
 
 export function useChatStream({
@@ -26,6 +27,7 @@ export function useChatStream({
   params,
   stallTimeoutMs = 30000,
   initialMessages,
+  onFinish,
 }: UseChatStreamOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [status, setStatus] = useState<ChatStatus>('idle');
@@ -37,6 +39,8 @@ export function useChatStream({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   messagesRef.current = messages;
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
   const activeRef = useRef(false);
 
   const clearStall = useCallback(() => {
@@ -135,6 +139,7 @@ export function useChatStream({
               sessionRef.current = null;
               clearStall();
               setStatus('done');
+              onFinishRef.current?.(messagesRef.current);
             },
             onError: (code: string, message: string) => {
               // console.error('[DEBUG 4c-ERROR: useChatStream.onError] stream error:', { code, message });

@@ -14,6 +14,7 @@ import type {
   CatalogSyncResult,
   AppUpdateInfo,
 } from '../types/domain';
+import { generateHeuristicTitle, type ChatMessage } from '../types/chat';
 import { version as appVersion } from '../../package.json';
 
 export const MOCK_PROFILE: HardwareProfile = {
@@ -504,4 +505,13 @@ export async function mockInstallAppUpdate(): Promise<boolean> {
   await new Promise((r) => setTimeout(r, 200));
   return true;
 }
+
+export async function mockChatGenerateTitle(
+  messages: ChatMessage[],
+  _model?: string | null
+): Promise<string> {
+  await new Promise((r) => setTimeout(r, 50));
+  return generateHeuristicTitle(messages);
+}
+
 

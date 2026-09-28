@@ -50,27 +50,27 @@ export function DeleteConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-in fade-in-0 duration-200" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl z-50 text-zinc-100 animate-in fade-in-0 zoom-in-95 duration-200 focus:outline-none">
+        <Dialog.Overlay className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 animate-in fade-in-0 duration-200" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-corporate-hover z-50 text-slate-900 dark:text-slate-100 animate-in fade-in-0 zoom-in-95 duration-200 focus:outline-none">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-red-950/80 border border-red-800/80 flex items-center justify-center shrink-0 text-red-400">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800/80 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0 space-y-2">
-              <Dialog.Title className="text-base font-bold text-white tracking-tight">
+              <Dialog.Title className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
                 {title}
               </Dialog.Title>
-              <Dialog.Description className="text-xs text-zinc-400 leading-relaxed">
+              <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {description}
               </Dialog.Description>
 
               {/* Model identifier card */}
-              <div className="mt-3 p-3 rounded-lg bg-zinc-950 border border-zinc-800/80 space-y-1.5">
-                <div className="font-mono text-xs font-semibold text-zinc-200 break-all">
+              <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800/80 space-y-1.5">
+                <div className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 break-all">
                   {modelId}
                 </div>
                 {sizeBytes !== undefined && sizeBytes > 0 && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
                     <HardDrive className="w-3.5 h-3.5" />
                     <span>Reclaims {formatBytes(sizeBytes)} of disk space</span>
                   </div>
@@ -79,20 +79,20 @@ export function DeleteConfirmDialog({
 
               {/* Warning if actively serving */}
               {isServing && (
-                <div className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/60 text-amber-300 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
                   <span>This model is currently running. Deleting it will automatically stop the inference server.</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/60">
+          <div className="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
             <button
               type="button"
               disabled={loading}
               onClick={() => onOpenChange(false)}
-              className="px-3.5 py-2 rounded-lg text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 transition-colors disabled:opacity-50"
+              className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -100,7 +100,7 @@ export function DeleteConfirmDialog({
               type="button"
               disabled={loading}
               onClick={handleConfirm}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors shadow-sm disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 transition-all shadow-sm hover:-translate-y-0.5 disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -118,7 +118,7 @@ export function DeleteConfirmDialog({
 
           <Dialog.Close asChild>
             <button
-              className="absolute top-4 right-4 p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+              className="absolute top-4 right-4 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

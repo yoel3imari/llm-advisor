@@ -328,14 +328,14 @@ export function SettingsView({ onSettingsChanged }: Props) {
   };
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
+    <div className="flex-1 min-h-0 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
       {/* Top Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <span>Application Settings</span>
+          <h2 className="text-xl lg:text-2xl font-extrabold tracking-tight flex items-center gap-2">
+            <span className="brand-gradient-text">Application Settings</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-1 font-mono">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
             Configure inference defaults, OpenAI gateway (:13370), background execution, and automated uninstallation
           </p>
         </div>
@@ -343,11 +343,11 @@ export function SettingsView({ onSettingsChanged }: Props) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="hardware-button-tactile flex items-center gap-2 px-5 py-2.5 rounded-xl bg-telemetry-500 hover:bg-telemetry-400 text-obsidian-950 text-xs font-bold shadow-glow-cyan transition-all disabled:opacity-50"
+          className="corporate-btn flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-corporate-btn transition-all disabled:opacity-50 hover:-translate-y-0.5 active:translate-y-0"
         >
           {saved ? (
             <>
-              <Check className="w-4 h-4 text-obsidian-950 stroke-[3]" />
+              <Check className="w-4 h-4 stroke-[3]" />
               <span>Preferences Saved!</span>
             </>
           ) : (
@@ -362,49 +362,49 @@ export function SettingsView({ onSettingsChanged }: Props) {
       {/* Action Notification Banner */}
       {actionNotice && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 animate-in fade-in-0 duration-200 ${
+          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 animate-in fade-in-0 duration-200 shadow-sm ${
             actionNotice.type === 'success'
-              ? 'bg-emerald-950/80 border-emerald-800 text-emerald-300'
-              : 'bg-indigo-950/80 border-indigo-800 text-indigo-300'
+              ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+              : 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300'
           }`}
         >
           {actionNotice.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           ) : (
-            <Info className="w-4 h-4 text-indigo-400 shrink-0" />
+            <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
           )}
-          <span className="font-medium">{actionNotice.text}</span>
+          <span className="font-semibold">{actionNotice.text}</span>
         </div>
       )}
 
       <div className="space-y-6 text-sm">
         {/* Section: Appearance & Theme Mode */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-blaze-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-blaze-950/80 border border-blaze-800/80 flex items-center justify-center">
+            <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center shrink-0">
                 {settings.theme === 'light' ? (
-                  <Sun className="w-4 h-4 text-blaze-400" />
+                  <Sun className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 ) : (
-                  <Moon className="w-4 h-4 text-blaze-400" />
+                  <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 )}
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Appearance & Theme Mode</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
-                  Toggle interface appearance between dark obsidian contrast and clean daylight mode
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Appearance & Theme Mode</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
+                  Toggle interface appearance between crisp daylight mode and dark obsidian contrast
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono bg-blaze-950 text-blaze-300 border border-blaze-800/60 px-2.5 py-1 rounded-md uppercase">
+            <span className="text-[11px] font-mono bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-1 rounded-md font-medium uppercase">
               {settings.theme === 'light' ? 'Light Mode' : 'Dark Mode'}
             </span>
           </div>
 
-          <div className="pt-1 border-t border-zinc-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <div className="text-xs font-medium text-zinc-200">Color Theme</div>
-              <p className="text-[11px] text-zinc-400">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">Color Theme</div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Switches the application theme and persists your choice across application restarts.
               </p>
             </div>
@@ -413,7 +413,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <div
               role="radiogroup"
               aria-label="Theme mode switcher"
-              className="flex items-center p-1 rounded-xl bg-zinc-950 border border-zinc-800/80 shrink-0 self-start sm:self-auto"
+              className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shrink-0 self-start sm:self-auto shadow-inner"
             >
               <button
                 type="button"
@@ -422,8 +422,8 @@ export function SettingsView({ onSettingsChanged }: Props) {
                 onClick={() => handleThemeChange('dark')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   settings.theme !== 'light'
-                    ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-slate-800 text-white shadow-corporate border border-slate-700'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -437,11 +437,11 @@ export function SettingsView({ onSettingsChanged }: Props) {
                 onClick={() => handleThemeChange('light')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   settings.theme === 'light'
-                    ? 'bg-white text-zinc-950 shadow-sm border border-zinc-300 font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-white text-indigo-900 shadow-corporate border border-indigo-200 font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <Sun className="w-3.5 h-3.5 text-blaze-500" />
+                <Sun className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Light</span>
               </button>
             </div>
@@ -449,25 +449,25 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 1: Background Execution & System Tray */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-indigo-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-800/80 flex items-center justify-center">
-                <Minimize2 className="w-4 h-4 text-indigo-400" />
+            <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center shrink-0">
+                <Minimize2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Background Execution & System Tray</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Background Execution & System Tray</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Keep active model servers available for external developer tools
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-2.5 py-1 rounded-md">
+            <span className="text-[11px] font-mono bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-1 rounded-md font-medium">
               Tray Supervised
             </span>
           </div>
 
-          <div className="pt-1 border-t border-zinc-800/60">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <CheckboxField
               checked={settings.run_in_background ?? true}
               onCheckedChange={(checked) =>
@@ -480,29 +480,29 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 2: Inference & Serving Defaults */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-violet-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-violet-950/80 border border-violet-800/80 flex items-center justify-center">
-                <SlidersHorizontal className="w-4 h-4 text-violet-400" />
+            <div className="flex items-center gap-2.5 text-violet-600 dark:text-violet-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/80 border border-violet-100 dark:border-violet-900/60 flex items-center justify-center shrink-0">
+                <SlidersHorizontal className="w-4 h-4 text-violet-600 dark:text-violet-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Inference & Serving Defaults</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Inference & Serving Defaults</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Default parameters applied when launching models from dashboard or library
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono bg-violet-950 text-violet-300 border border-violet-800/60 px-2.5 py-1 rounded-md">
+            <span className="text-[11px] font-mono bg-violet-50 dark:bg-violet-950/80 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60 px-2.5 py-1 rounded-md font-medium">
               llama-server
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 border-t border-zinc-800/60">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
             {/* Default Context Size */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-violet-400" />
+              <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
                 <span>Default Context Window</span>
               </label>
               <Select
@@ -511,7 +511,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   setSettings({ ...settings, default_context_size: parseInt(val) || 4096 })
                 }
               >
-                <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 h-9">
+                <SelectTrigger className="w-full bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 h-9 rounded-xl focus:ring-2 focus:ring-violet-500">
                   <SelectValue placeholder="Select context size" />
                 </SelectTrigger>
                 <SelectContent>
@@ -522,15 +522,15 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Determines default KV cache buffer allocated at model startup.
               </p>
             </div>
 
             {/* Default KV Cache Quantization */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                <HardDrive className="w-3.5 h-3.5 text-violet-400" />
+              <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <HardDrive className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
                 <span>Default KV Cache Quantization</span>
               </label>
               <Select
@@ -539,7 +539,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   setSettings({ ...settings, default_kv_type: val as KvType })
                 }
               >
-                <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 h-9">
+                <SelectTrigger className="w-full bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 h-9 rounded-xl focus:ring-2 focus:ring-violet-500">
                   <SelectValue placeholder="Select KV type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -548,7 +548,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   <SelectItem value="q4_0">Q4_0 - 4-bit Quantized (~75% VRAM Savings)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Quantized KV types allow serving significantly larger contexts on constrained hardware.
               </p>
             </div>
@@ -556,55 +556,55 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 3: Hugging Face Access Token */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-indigo-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-800/80 flex items-center justify-center">
-                <KeyRound className="w-4 h-4 text-indigo-400" />
+            <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center shrink-0">
+                <KeyRound className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Hugging Face Access Token</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Hugging Face Access Token</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Authenticate for gated repositories such as Meta Llama 3.1 & 3.3
                 </p>
               </div>
             </div>
             {settings.hf_token ? (
-              <span className="text-[11px] font-medium text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2.5 py-1 rounded-md flex items-center gap-1">
+              <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-md flex items-center gap-1">
                 <Check className="w-3 h-3" /> Token Set
               </span>
             ) : (
-              <span className="text-[11px] font-medium text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-md">
+              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
                 Optional
               </span>
             )}
           </div>
 
-          <div className="space-y-2 pt-1 border-t border-zinc-800/60">
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="relative flex items-center">
               <Input
                 type={showToken ? 'text' : 'password'}
                 placeholder="hf_..."
                 value={settings.hf_token}
                 onChange={(e) => setSettings({ ...settings, hf_token: e.target.value })}
-                className="w-full rounded-xl pl-3.5 pr-10 py-2 font-mono text-xs placeholder:text-zinc-600 focus-visible:border-indigo-500"
+                className="w-full rounded-xl pl-3.5 pr-10 py-2 font-mono text-xs placeholder:text-slate-400 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:border-indigo-500"
               />
               <button
                 type="button"
                 onClick={() => setShowToken(!showToken)}
-                className="absolute right-3 text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="absolute right-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
                 title={showToken ? 'Hide token' : 'Show token'}
               >
                 {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-zinc-400">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span>Token is stored securely in local OS application storage and never shared.</span>
               <a
                 href="https://huggingface.co/settings/tokens"
                 target="_blank"
                 rel="noreferrer"
-                className="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors"
               >
                 <span>Get Token</span>
                 <ExternalLink className="w-3 h-3" />
@@ -614,29 +614,29 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 4: Gateway & Network Configuration */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-cyan-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-800/80 flex items-center justify-center">
-                <Network className="w-4 h-4 text-cyan-400" />
+            <div className="flex items-center gap-2.5 text-cyan-600 dark:text-cyan-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-100 dark:border-cyan-900/60 flex items-center justify-center shrink-0">
+                <Network className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">OpenAI-Compatible Gateway Network</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">OpenAI-Compatible Gateway Network</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Local zero-buffering reverse proxy serving OpenAI completions
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800/60 px-2.5 py-1 rounded-md">
+            <span className="text-[11px] font-mono bg-cyan-50 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 px-2.5 py-1 rounded-md font-medium">
               ADR-3a Strict Port
             </span>
           </div>
 
-          <div className="space-y-3 pt-1 border-t border-zinc-800/60">
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <div className="text-xs font-medium text-zinc-200">Gateway Port</div>
-                <p className="text-[11px] text-zinc-400">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">Gateway Port</div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Standard OpenAI tools hardcode port 13370. Strict loopback binding prevents collisions.
                 </p>
               </div>
@@ -646,27 +646,27 @@ export function SettingsView({ onSettingsChanged }: Props) {
                 onChange={(e) =>
                   setSettings({ ...settings, gateway_port: parseInt(e.target.value) || 13370 })
                 }
-                className="w-28 rounded-xl px-3 py-1.5 font-mono text-xs text-right focus-visible:ring-cyan-500 focus-visible:border-cyan-500"
+                className="w-28 rounded-xl px-3 py-1.5 font-mono text-xs text-right bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-cyan-500 focus-visible:border-cyan-500"
               />
             </div>
 
             {/* Quick Endpoint Copy Box */}
-            <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800/80 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
               <div className="space-y-0.5">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
                   OpenAI Base URL Endpoint
                 </span>
-                <div className="font-mono text-xs text-cyan-300">
+                <div className="font-mono text-xs font-semibold text-cyan-700 dark:text-cyan-300">
                   http://127.0.0.1:{settings.gateway_port}/v1
                 </div>
               </div>
               <button
                 onClick={handleCopyEndpoint}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs text-zinc-200 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 shadow-sm transition-colors"
               >
                 {copiedPort ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>Copied!</span>
                   </>
                 ) : (
@@ -681,15 +681,15 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 5: Model Catalog Synchronization */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-sky-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-sky-950/80 border border-sky-800/80 flex items-center justify-center">
-                <Globe className="w-4 h-4 text-sky-400" />
+            <div className="flex items-center gap-2.5 text-sky-600 dark:text-sky-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/80 border border-sky-100 dark:border-sky-900/60 flex items-center justify-center shrink-0">
+                <Globe className="w-4 h-4 text-sky-600 dark:text-sky-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Model Catalog Synchronization</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Model Catalog Synchronization</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Automatically discover and verify newly released open-source models on startup
                 </p>
               </div>
@@ -697,14 +697,14 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <button
               onClick={handleManualSyncCatalog}
               disabled={syncingCatalog}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncingCatalog ? 'animate-spin text-sky-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingCatalog ? 'animate-spin text-sky-600 dark:text-sky-400' : ''}`} />
               <span>{syncingCatalog ? 'Checking...' : 'Check for Updates Now'}</span>
             </button>
           </div>
 
-          <div className="space-y-4 pt-1 border-t border-zinc-800/60">
+          <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
             {/* Auto-update Toggle */}
             <div className="pt-1">
               <CheckboxField
@@ -721,15 +721,15 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 6: Application Updates & Version Lifecycle */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-violet-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-violet-950/80 border border-violet-800/80 flex items-center justify-center">
-                <ArrowUpCircle className="w-4 h-4 text-violet-400" />
+            <div className="flex items-center gap-2.5 text-violet-600 dark:text-violet-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/80 border border-violet-100 dark:border-violet-900/60 flex items-center justify-center shrink-0">
+                <ArrowUpCircle className="w-4 h-4 text-violet-600 dark:text-violet-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Application Updates & Version</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Application Updates & Version</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Manage native application releases, sidecar updates, and engine improvements
                 </p>
               </div>
@@ -737,29 +737,29 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <button
               onClick={handleCheckAppUpdate}
               disabled={checkingAppUpdate || installingAppUpdate}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${checkingAppUpdate ? 'animate-spin text-violet-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${checkingAppUpdate ? 'animate-spin text-violet-600 dark:text-violet-400' : ''}`} />
               <span>{checkingAppUpdate ? 'Checking...' : 'Check for App Updates'}</span>
             </button>
           </div>
 
-          <div className="space-y-3 pt-1 border-t border-zinc-800/60">
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between text-xs py-1">
-              <span className="text-zinc-400">Current Installed Version:</span>
-              <span className="font-mono text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded text-[11px] border border-zinc-700">
+              <span className="text-slate-500 dark:text-slate-400">Current Installed Version:</span>
+              <span className="font-mono text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-[11px] border border-slate-200 dark:border-slate-700 font-semibold">
                 v{appUpdateInfo?.current_version ?? installedVersion ?? '...'}
               </span>
             </div>
 
             {appUpdateNotice && (
               <div
-                className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                className={`p-3 rounded-xl text-xs flex items-center gap-2 shadow-sm ${
                   appUpdateNotice.type === 'success'
-                    ? 'bg-emerald-950/60 border border-emerald-800/80 text-emerald-300'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300'
                     : appUpdateNotice.type === 'error'
-                    ? 'bg-rose-950/60 border border-rose-800/80 text-rose-300'
-                    : 'bg-zinc-800/80 border border-zinc-700/80 text-zinc-300'
+                    ? 'bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-300'
+                    : 'bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <Info className="w-4 h-4 shrink-0" />
@@ -768,14 +768,14 @@ export function SettingsView({ onSettingsChanged }: Props) {
             )}
 
             {appUpdateInfo?.update_available && (
-              <div className="bg-violet-950/30 border border-violet-800/50 rounded-xl p-3.5 space-y-2.5">
+              <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/50 rounded-xl p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-semibold text-violet-200">
+                    <div className="text-xs font-bold text-violet-900 dark:text-violet-200">
                       Version {appUpdateInfo.latest_version} Ready
                     </div>
                     {appUpdateInfo.pub_date && (
-                      <div className="text-[10px] text-zinc-400">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
                         Released: {new Date(appUpdateInfo.pub_date).toLocaleDateString()}
                       </div>
                     )}
@@ -783,14 +783,14 @@ export function SettingsView({ onSettingsChanged }: Props) {
                   <button
                     onClick={handleInstallAppUpdate}
                     disabled={installingAppUpdate}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-corporate-btn transition-all disabled:opacity-50"
                   >
                     <ArrowDownToLine className={`w-3.5 h-3.5 ${installingAppUpdate ? 'animate-bounce' : ''}`} />
                     <span>{installingAppUpdate ? 'Installing & Relaunching...' : 'Update & Restart'}</span>
                   </button>
                 </div>
                 {appUpdateInfo.release_notes && (
-                  <div className="bg-zinc-950/80 border border-zinc-800/80 rounded-lg p-2.5 text-[11px] text-zinc-300 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
+                  <div className="bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 rounded-lg p-2.5 text-[11px] text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
                     {appUpdateInfo.release_notes}
                   </div>
                 )}
@@ -800,73 +800,73 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
 
         {/* Section 7: Model Storage Location & Reclaim */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-emerald-400 font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-800/80 flex items-center justify-center">
-                <Folder className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
+                <Folder className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-white text-sm font-semibold">Models Storage Directory & Reclaim</h3>
-                <p className="text-[11px] text-zinc-400 font-normal">
+                <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Models Storage Directory & Reclaim</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                   Location of downloaded GGUF weights, disk metrics, and orphan pruning
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2.5 py-1 rounded-md">
+            <span className="text-[11px] font-mono bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md font-medium">
               {formatGb(totalBytes)} GB Used
             </span>
           </div>
 
-          <div className="space-y-4 pt-1 border-t border-zinc-800/60">
+          <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
             {/* Storage Path Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">Models Storage Path</label>
+              <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">Models Storage Path</label>
               <div className="flex items-center gap-2">
                 <Input
                   type="text"
                   value={settings.models_dir}
                   onChange={(e) => setSettings({ ...settings, models_dir: e.target.value })}
-                  className="flex-1 rounded-xl px-3.5 py-2 font-mono text-xs focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
+                  className="flex-1 rounded-xl px-3.5 py-2 font-mono text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
                 />
                 <button
                   onClick={handleCopyDir}
-                  className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors shrink-0"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors shrink-0"
                   title="Copy directory path"
                 >
-                  {copiedDir ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copiedDir ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             {/* Storage Utilization Card */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1">
-                <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                  <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                  <HardDrive className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Library Size</span>
                 </div>
-                <div className="text-base font-bold font-mono text-white">
+                <div className="text-base font-extrabold font-mono text-slate-900 dark:text-white">
                   {formatGb(totalBytes)} GB
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1">
-                <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                  <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                   <span>Installed Models</span>
                 </div>
-                <div className="text-base font-bold font-mono text-white">
+                <div className="text-base font-extrabold font-mono text-slate-900 dark:text-white">
                   {records.length} {records.length === 1 ? 'model' : 'models'}
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1">
-                <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                  <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                  <HardDrive className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                   <span>Drive Free Space</span>
                 </div>
-                <div className="text-base font-bold font-mono text-white">
+                <div className="text-base font-extrabold font-mono text-slate-900 dark:text-white">
                   {profile ? formatGb(profile.disk_free_bytes) : '240.00'} GB
                 </div>
               </div>
@@ -877,49 +877,49 @@ export function SettingsView({ onSettingsChanged }: Props) {
               <button
                 onClick={handleReconcile}
                 disabled={reconciling}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all"
               >
-                <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${reconciling ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 ${reconciling ? 'animate-spin' : ''}`} />
                 <span>Reconcile & Prune Orphans</span>
               </button>
 
               <button
                 onClick={() => setPurgeOpen(true)}
                 disabled={records.length === 0}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                 <span>Purge All Model Weights ({records.length})</span>
               </button>
 
               <button
                 onClick={() => setResetOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold shadow-sm transition-all"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-red-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-rose-500" />
                 <span>Factory Reset State</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Section 6: Automated Deep Clean & Uninstaller (Replaces manual guide!) */}
-        <div className="bg-gradient-to-br from-red-950/30 via-zinc-900/60 to-zinc-900 border border-red-900/40 rounded-2xl p-6 space-y-4 shadow-xl">
+        {/* Section 8: Automated Deep Clean & Uninstaller */}
+        <div className="bg-gradient-to-br from-rose-50/70 via-white to-slate-50 dark:from-rose-950/20 dark:via-slate-900/60 dark:to-slate-900 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 space-y-4 shadow-corporate">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-950 border border-red-800 flex items-center justify-center shrink-0 text-red-400 shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400 shadow-sm">
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-white text-base font-bold tracking-tight">
+                  <h3 className="text-slate-900 dark:text-white text-base font-extrabold tracking-tight">
                     Automated Application Uninstaller & Cleaner
                   </h3>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider bg-red-900/70 text-red-200 px-2 py-0.5 rounded-full border border-red-700/60">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider bg-rose-100 dark:bg-rose-900/70 text-rose-700 dark:text-rose-200 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-700/60">
                     Zero-Residue
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
                   Standard OS uninstallers leave multi-gigabyte GGUF models, cache files, and API keys intact on disk. Click the button below to run an automated, one-click deep cleanup that safely purges all data before deleting the application.
                 </p>
               </div>
@@ -928,7 +928,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <button
               type="button"
               onClick={() => setUninstallOpen(true)}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-950/60 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-bold shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 shrink-0"
             >
               <Sparkles className="w-4 h-4" />
               <span>Launch Automated Cleaner</span>

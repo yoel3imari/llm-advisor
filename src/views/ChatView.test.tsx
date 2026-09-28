@@ -1,13 +1,20 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChatView } from './ChatView';
-import { chatStream, chatCancel, listLibraryModels, startServer } from '../ipc/commands';
+import {
+  chatStream,
+  chatCancel,
+  chatGenerateTitle,
+  listLibraryModels,
+  startServer,
+} from '../ipc/commands';
 import type { ChatStreamCallbacks } from '../ipc/commands';
 import type { ModelRecord } from '../types/domain';
 
 vi.mock('../ipc/commands', () => ({
   chatStream: vi.fn(),
   chatCancel: vi.fn(),
+  chatGenerateTitle: vi.fn().mockResolvedValue('Mock Dynamic Title'),
   listLibraryModels: vi.fn(),
   startServer: vi.fn(),
   getServerState: vi.fn().mockResolvedValue(null),
@@ -48,6 +55,8 @@ describe('ChatView Component', () => {
     vi.mocked(chatStream).mockReset();
     vi.mocked(chatCancel).mockReset();
     vi.mocked(chatCancel).mockResolvedValue(undefined);
+    vi.mocked(chatGenerateTitle).mockReset();
+    vi.mocked(chatGenerateTitle).mockResolvedValue('Dynamic GQA Architecture');
   });
 
   it('renders header and empty state', () => {
@@ -178,6 +187,34 @@ describe('ChatView Component', () => {
     // Sidebar should have history
     await waitFor(() => {
       expect(screen.getAllByTestId(/history-item-/).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('dynamically generates conversation title upon stream completion', async () => {
+    const session = mockStreamingSession();
+    render(<ChatView modelId="llama-3-8b" />);
+
+    const input = screen.getByLabelText('Chat input') as HTMLTextAreaElement;
+    fireEvent.change(input, {
+      target: { value: 'Can you please explain how Grouped-Query Attention works in Llama 3?' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /send/i }));
+    });
+
+    // Stream assistant response
+    act(() => {
+      session.callbacks().onToken('GQA optimizes memory bandwidth.');
+    });
+
+    await act(async () => {
+      session.callbacks().onDone();
+    });
+
+    await waitFor(() => {
+      expect(chatGenerateTitle).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Dynamic GQA Architecture')).toBeDefined();
     });
   });
 });

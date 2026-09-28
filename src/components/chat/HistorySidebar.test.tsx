@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { HistorySidebar } from './HistorySidebar';
 import type { ChatSession } from '../../types/chat';
@@ -49,7 +49,7 @@ describe('HistorySidebar Component', () => {
     expect(screen.getByRole('button', { name: /new chat/i })).toBeDefined();
   });
 
-  it('renders a list of sessions with title, model, and message snippet', () => {
+  it('renders a list of sessions showing title only (without snippet or model ID)', () => {
     const sessions = [
       createMockSession('sess-1', { title: 'First Session', modelId: 'llama-3-8b' }),
       createMockSession('sess-2', { title: 'Second Session', modelId: 'qwen-2.5-7b' }),
@@ -67,9 +67,9 @@ describe('HistorySidebar Component', () => {
 
     expect(screen.getByText('First Session')).toBeDefined();
     expect(screen.getByText('Second Session')).toBeDefined();
-    expect(screen.getByText('llama-3-8b')).toBeDefined();
-    expect(screen.getByText('qwen-2.5-7b')).toBeDefined();
-    expect(screen.getByText(/First message of session sess-1/)).toBeDefined();
+    expect(screen.queryByText('llama-3-8b')).toBeNull();
+    expect(screen.queryByText('qwen-2.5-7b')).toBeNull();
+    expect(screen.queryByText(/First message of session sess-1/)).toBeNull();
   });
 
   it('calls onNewChat when clicking the New Chat button', () => {
@@ -128,7 +128,7 @@ describe('HistorySidebar Component', () => {
     expect(activeItem.className).toContain('bg-zinc-800');
   });
 
-  it('opens delete confirmation dialog and cancels without deleting', async () => {
+  it('turns delete button red on first click without deleting', () => {
     const onDeleteSession = vi.fn();
     const sessions = [
       createMockSession('sess-1', { title: 'Session To Delete' }),
@@ -144,25 +144,16 @@ describe('HistorySidebar Component', () => {
     );
 
     const deleteBtn = screen.getByTitle('Delete Chat');
+    expect(deleteBtn.className).not.toContain('bg-rose-600');
+
+    // First click arms confirmation and turns button red
     fireEvent.click(deleteBtn);
 
-    // Dialog should be open
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /delete chat/i })).toBeDefined();
-      expect(screen.getByText('Cancel')).toBeDefined();
-    });
-
-    // Click Cancel
-    fireEvent.click(screen.getByText('Cancel'));
-
-    await waitFor(() => {
-      expect(screen.queryByText('Cancel')).toBeNull();
-    });
-
+    expect(deleteBtn.className).toContain('bg-rose-600');
     expect(onDeleteSession).not.toHaveBeenCalled();
   });
 
-  it('confirms delete and calls onDeleteSession with session id', async () => {
+  it('confirms delete on second click and calls onDeleteSession with session id', () => {
     const onDeleteSession = vi.fn();
     const sessions = [
       createMockSession('sess-1', { title: 'Session To Delete' }),
@@ -178,18 +169,143 @@ describe('HistorySidebar Component', () => {
     );
 
     const deleteBtn = screen.getByTitle('Delete Chat');
+
+    // First click: turns button red
     fireEvent.click(deleteBtn);
+    expect(deleteBtn.className).toContain('bg-rose-600');
+    expect(onDeleteSession).not.toHaveBeenCalled();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /delete chat/i })).toBeDefined();
-    });
+    // Second click: performs delete
+    fireEvent.click(deleteBtn);
+    expect(onDeleteSession).toHaveBeenCalledWith('sess-1');
+  });
 
-    // Click confirm Delete Chat button in dialog
-    const confirmBtn = screen.getByRole('button', { name: /delete chat/i });
-    fireEvent.click(confirmBtn);
+  it('cancels delete confirmation if clicking session item or pressing Escape', () => {
+    const onDeleteSession = vi.fn();
+    const onSelectSession = vi.fn();
+    const sessions = [
+      createMockSession('sess-1', { title: 'Session 1' }),
+      createMockSession('sess-2', { title: 'Session 2' }),
+    ];
 
-    await waitFor(() => {
-      expect(onDeleteSession).toHaveBeenCalledWith('sess-1');
-    });
+    render(
+      <HistorySidebar
+        sessions={sessions}
+        onSelectSession={onSelectSession}
+        onDeleteSession={onDeleteSession}
+        onNewChat={vi.fn()}
+      />
+    );
+
+    const deleteBtn = screen.getByTestId('delete-session-sess-1');
+
+    // First click turns red
+    fireEvent.click(deleteBtn);
+    expect(deleteBtn.className).toContain('bg-rose-600');
+
+    // Press Escape -> resets
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(deleteBtn.className).not.toContain('bg-rose-600');
+    expect(onDeleteSession).not.toHaveBeenCalled();
+
+    // Click 1 turns red again
+    fireEvent.click(deleteBtn);
+    expect(deleteBtn.className).toContain('bg-rose-600');
+
+    // Clicking session row cancels confirmation and selects session
+    fireEvent.click(screen.getByText('Session 1'));
+    expect(deleteBtn.className).not.toContain('bg-rose-600');
+    expect(onSelectSession).toHaveBeenCalledWith('sess-1');
+    expect(onDeleteSession).not.toHaveBeenCalled();
+  });
+
+  it('allows renaming a session via inline input', () => {
+    const onRenameSession = vi.fn();
+    const sessions = [createMockSession('sess-1', { title: 'Old Title' })];
+
+    render(
+      <HistorySidebar
+        sessions={sessions}
+        onSelectSession={vi.fn()}
+        onDeleteSession={vi.fn()}
+        onNewChat={vi.fn()}
+        onRenameSession={onRenameSession}
+      />
+    );
+
+    const renameBtn = screen.getByTestId('rename-session-sess-1');
+    fireEvent.click(renameBtn);
+
+    const input = screen.getByTestId('rename-input-sess-1') as HTMLInputElement;
+    expect(input).toBeDefined();
+    expect(input.value).toBe('Old Title');
+
+    fireEvent.change(input, { target: { value: 'New Custom Title' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onRenameSession).toHaveBeenCalledWith('sess-1', 'New Custom Title');
+  });
+
+  it('cancels renaming when pressing Escape', () => {
+    const onRenameSession = vi.fn();
+    const sessions = [createMockSession('sess-1', { title: 'Old Title' })];
+
+    render(
+      <HistorySidebar
+        sessions={sessions}
+        onSelectSession={vi.fn()}
+        onDeleteSession={vi.fn()}
+        onNewChat={vi.fn()}
+        onRenameSession={onRenameSession}
+      />
+    );
+
+    const renameBtn = screen.getByTestId('rename-session-sess-1');
+    fireEvent.click(renameBtn);
+
+    const input = screen.getByTestId('rename-input-sess-1') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Discarded Title' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(onRenameSession).not.toHaveBeenCalled();
+    expect(screen.getByText('Old Title')).toBeDefined();
+  });
+
+  it('calls onRegenerateTitle when clicking the regenerate title button', () => {
+    const onRegenerateTitle = vi.fn();
+    const sessions = [createMockSession('sess-1', { title: 'Old Title' })];
+
+    render(
+      <HistorySidebar
+        sessions={sessions}
+        onSelectSession={vi.fn()}
+        onDeleteSession={vi.fn()}
+        onNewChat={vi.fn()}
+        onRegenerateTitle={onRegenerateTitle}
+      />
+    );
+
+    const regenBtn = screen.getByTestId('regenerate-title-sess-1');
+    fireEvent.click(regenBtn);
+
+    expect(onRegenerateTitle).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('shows loading animation when regenerating title', () => {
+    const sessions = [createMockSession('sess-1', { title: 'Old Title' })];
+
+    const { container } = render(
+      <HistorySidebar
+        sessions={sessions}
+        onSelectSession={vi.fn()}
+        onDeleteSession={vi.fn()}
+        onNewChat={vi.fn()}
+        onRegenerateTitle={vi.fn()}
+        regeneratingSessionId="sess-1"
+      />
+    );
+
+    const spinner = container.querySelector('.animate-spin');
+    expect(spinner).not.toBeNull();
   });
 });

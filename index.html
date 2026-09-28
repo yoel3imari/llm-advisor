@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/app-icon.png" />
@@ -11,21 +11,21 @@
     <script>
       (function() {
         try {
-          var theme = localStorage.getItem('llm_advisor_theme');
-          if (theme === 'light') {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-            document.documentElement.setAttribute('data-theme', 'light');
-          } else {
+          var theme = localStorage.getItem('llm_advisor_theme') || 'light';
+          if (theme === 'dark') {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');
             document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+            document.documentElement.setAttribute('data-theme', 'light');
           }
         } catch (e) {}
       })();
     </script>
   </head>
-  <body class="bg-[#07080B] text-zinc-100 antialiased min-h-screen overflow-hidden font-sans">
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen overflow-hidden font-sans">
     <div id="root" class="h-screen w-screen flex"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

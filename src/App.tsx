@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar, type NavTab } from './components/layout/Sidebar';
 import {
   ChatView,
@@ -41,8 +41,16 @@ function MainApp() {
   const [serverState, setServerState] = useState<ServerState>({ state: 'stopped' });
   const [targetServerModel, setTargetServerModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
   const { showToast } = useToast();
+
+  // Reset main container scroll position on tab change to prevent any offset retention
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
 
   // Initial mount: load hardware profile, sync theme, and initial state
   useEffect(() => {
@@ -165,7 +173,7 @@ function MainApp() {
   }, [refreshDynamicState, showToast, handleNavigateToServer]);
 
   return (
-    <div className="flex h-screen w-screen bg-obsidian-950 text-zinc-100 antialiased overflow-hidden font-sans selection:bg-telemetry-500/30 selection:text-white">
+    <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased overflow-hidden font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-white">
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -174,16 +182,22 @@ function MainApp() {
         onCancelDownload={handleCancelDownload}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 bg-obsidian-950 overflow-hidden relative">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blaze-500/10 rounded-full blur-3xl pointer-events-none" />
-        {activeTab === 'chat' && (
+      <main ref={mainRef} className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-24 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 left-1/3 w-[420px] h-[420px] bg-violet-500/10 dark:bg-violet-600/15 rounded-full blur-3xl" />
+        </div>
+        <div
+          className={`h-full w-full flex flex-col min-h-0 ${activeTab === 'chat' ? '' : 'hidden'}`}
+          aria-hidden={activeTab !== 'chat'}
+        >
           <ChatView
             modelId={
               serverState.state === 'serving' ? serverState.model_id : null
             }
+            isActive={activeTab === 'chat'}
           />
-        )}
+        </div>
         {activeTab === 'dashboard' && (
           <DashboardView
             profile={profile}

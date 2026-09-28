@@ -113,7 +113,7 @@ export function ModelSelector({
         <SelectTrigger
           aria-label="Select model"
           className={cn(
-            'h-8 rounded-xl px-2.5 text-xs bg-obsidian-850/90 border border-white/[0.08] hover:border-white/[0.18] transition-colors min-w-[120px] max-w-[200px] truncate',
+            'h-8 rounded-xl px-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-sm hover:border-indigo-300 dark:hover:border-slate-600 transition-colors min-w-[120px] max-w-[200px] truncate',
             triggerClassName
           )}
         >

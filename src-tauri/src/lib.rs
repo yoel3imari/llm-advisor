@@ -18,7 +18,7 @@ use tauri_plugin_updater::UpdaterExt;
 use tokio_util::sync::CancellationToken;
 
 pub mod chat;
-use chat::{chat_cancel, chat_stream};
+use chat::{chat_cancel, chat_generate_title, chat_stream};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppUpdateInfo {
@@ -955,6 +955,7 @@ pub fn run() {
             install_app_update,
             chat_stream,
             chat_cancel,
+            chat_generate_title,
             log_client
         ])
         .run(tauri::generate_context!())

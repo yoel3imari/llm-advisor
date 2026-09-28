@@ -771,20 +771,20 @@ export function ModelsTable({
 
   return (
     <div className="space-y-4">
-      <div className="hardware-card overflow-hidden shadow-bevel">
+      <div className="corporate-card overflow-hidden shadow-corporate">
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[960px]">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-white/[0.08] bg-obsidian-950 text-xs">
+                <tr key={headerGroup.id} className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 text-xs">
                   {headerGroup.headers.map((header) => {
                     const isActions = header.id === 'actions';
                     return (
                       <th
                         key={header.id}
-                        className={`px-3.5 py-3 font-semibold text-zinc-300 font-mono text-[11px] uppercase tracking-wider ${
+                        className={`px-3.5 py-3 font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider ${
                           isActions
-                            ? 'sticky right-0 z-20 bg-obsidian-950 shadow-[-6px_0_12px_rgba(0,0,0,0.5)] border-l border-white/[0.08] text-right'
+                            ? 'sticky right-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-[-4px_0_8px_rgba(0,0,0,0.04)] border-l border-slate-200 dark:border-slate-800 text-right'
                             : ''
                         }`}
                       >
@@ -797,10 +797,10 @@ export function ModelsTable({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-white/[0.05] text-xs">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-12 text-center text-zinc-400 font-mono text-xs">
+                  <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
                     No models matching the selected filters.
                   </td>
                 </tr>
@@ -808,7 +808,7 @@ export function ModelsTable({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-white/[0.03] transition-colors group"
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group"
                   >
                     {row.getVisibleCells().map((cell) => {
                       const isActions = cell.column.id === 'actions';
@@ -817,7 +817,7 @@ export function ModelsTable({
                           key={cell.id}
                           className={`px-3.5 py-2.5 ${
                             isActions
-                              ? 'sticky right-0 z-10 bg-obsidian-900 group-hover:bg-obsidian-850 shadow-[-6px_0_12px_rgba(0,0,0,0.5)] border-l border-white/[0.06] text-right transition-colors'
+                              ? 'sticky right-0 z-10 bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/50 shadow-[-4px_0_8px_rgba(0,0,0,0.04)] border-l border-slate-200/80 dark:border-slate-800 text-right transition-colors'
                               : ''
                           }`}
                         >
@@ -834,36 +834,36 @@ export function ModelsTable({
 
         {/* Table Footer with Pagination */}
         {table.getPageCount() > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.07] bg-obsidian-950/80 text-xs text-zinc-400 font-mono tabular-nums">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-xs text-slate-600 dark:text-slate-400 font-mono tabular-nums">
             <div>
               Showing{' '}
-              <span className="font-semibold text-zinc-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
                 {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
               </span>{' '}
               to{' '}
-              <span className="font-semibold text-zinc-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
                 {Math.min(
                   (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                   filteredData.length
                 )}
               </span>{' '}
-              of <span className="font-semibold text-zinc-100">{filteredData.length}</span> models
+              of <span className="font-semibold text-slate-900 dark:text-slate-100">{filteredData.length}</span> models
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="px-2.5 py-1 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-zinc-200 border border-white/[0.08] disabled:opacity-40 disabled:hover:bg-obsidian-850 transition-all font-mono"
+                className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 disabled:opacity-40 transition-all font-mono shadow-sm"
               >
                 Previous
               </button>
-              <span className="font-mono text-zinc-300">
+              <span className="font-mono text-slate-700 dark:text-slate-300">
                 {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
               </span>
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="px-2.5 py-1 rounded-lg bg-obsidian-850 hover:bg-obsidian-800 text-zinc-200 border border-white/[0.08] disabled:opacity-40 disabled:hover:bg-obsidian-850 transition-all font-mono"
+                className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 disabled:opacity-40 transition-all font-mono shadow-sm"
               >
                 Next
               </button>

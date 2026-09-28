@@ -16,7 +16,7 @@ export function getStoredTheme(): ThemeMode {
   } catch {
     // Ignore localStorage access failures in restricted environments
   }
-  return 'dark';
+  return 'light';
 }
 
 /**

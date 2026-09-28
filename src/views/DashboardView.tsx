@@ -211,11 +211,11 @@ export function DashboardView({
   if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-        <div className="w-14 h-14 rounded-full bg-amber-950/80 border border-amber-800 flex items-center justify-center text-amber-400">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-corporate">
           <AlertTriangle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-white">Hardware Profiling Error</h2>
-        <p className="text-sm text-zinc-400 max-w-md">{error}</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Hardware Profiling Error</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">{error}</p>
       </div>
     );
   }
@@ -223,7 +223,7 @@ export function DashboardView({
   if (!profile) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -238,19 +238,19 @@ export function DashboardView({
   const hostBudget = Math.min(profile.metal_working_set_bytes, profile.total_ram_bytes);
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
+    <div className="flex-1 min-h-0 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
       {/* Top Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3.5">
           <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              <span>Dashboard & Recommendations</span>
-              <span className="inline-flex items-center gap-1.5 text-xs  font-thin font-mono font-semibold px-2.5 py-0.5 rounded-full bg-telemetry-950/80 text-telemetry-300 border border-telemetry-500/40 shadow-glow-cyan">
-                <span className="w-1.5 h-1.5 rounded-full bg-telemetry-400 animate-pulse"></span>
+            <h2 className="text-xl lg:text-2xl font-bold tracking-tight flex items-center gap-2.5">
+              <span className="brand-gradient-text">Dashboard & Recommendations</span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800 shadow-sm font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
                 {profile.accelerator_backend || 'Live Fit'}
               </span>
             </h2>
-            <p className="text-xs text-zinc-400 mt-1 font-mono">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
               Host silicon telemetry · Mathematical KV fit verification · Ephemeral port binding
             </p>
           </div>
@@ -258,26 +258,28 @@ export function DashboardView({
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="hardware-button-tactile flex items-center gap-2 px-3.5 py-2 rounded-xl bg-obsidian-900 hover:bg-obsidian-850 text-zinc-200 text-xs font-semibold border border-white/[0.08] transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 shadow-sm hover:-translate-y-0.5 transition-all disabled:opacity-50"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-telemetry-400' : 'text-zinc-400'}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`} />
           <span>Refresh Hardware</span>
         </button>
       </div>
 
-      {/* 1. Asymmetric Bento Telemetry Deck */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 1. Asymmetric Bento Telemetry Deck with Dimensional Depth */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 perspective-2000">
         {/* Hero Card: Unified Memory / VRAM Radar (Span 2 cols on lg) */}
-        <div className="lg:col-span-2 hardware-card p-5 space-y-3.5">
+        <div className="lg:col-span-2 corporate-card p-5 space-y-3.5 hover:shadow-corporate-hover hover:-translate-y-1 transition-all duration-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-telemetry-400">
-              <Layers className="w-4 h-4" />
-              <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-100 font-mono">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
+                <Layers className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">
                 {profile.has_unified_memory ? 'Unified Memory Architecture (UMA)' : 'Host System Memory'}
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-telemetry-950/80 text-telemetry-300 border border-telemetry-500/30 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800 font-bold">
                 {workingSetPct}% Usable Working Set
               </span>
             </div>
@@ -285,105 +287,109 @@ export function DashboardView({
 
           <div className="flex items-baseline justify-between">
             <div className="font-mono tabular-nums">
-              <span className="text-2xl font-bold text-white tracking-tight">{workingSetGb}</span>
-              <span className="text-xs text-zinc-400 ml-1">GB Usable Headroom</span>
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{workingSetGb}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5 font-medium">GB Usable Headroom</span>
             </div>
-            <div className="text-xs font-mono text-zinc-400 tabular-nums">
-              Total RAM: <span className="text-zinc-200 font-semibold">{hostRamGb} GB</span>
+            <div className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+              Total RAM: <span className="text-slate-800 dark:text-slate-200 font-bold">{hostRamGb} GB</span>
             </div>
           </div>
 
           {/* Precision Multi-Segment Bar */}
           <div className="space-y-1.5">
-            <div className="w-full h-2.5 bg-obsidian-950 rounded-full overflow-hidden border border-white/[0.08] p-[1px] shadow-well flex">
+            <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/80 dark:border-slate-700 p-[1px] flex shadow-inner">
               <div
                 style={{ width: `${workingSetPct}%` }}
-                className="h-full bg-gradient-to-r from-blaze-500 via-blaze-500 to-violet-500 rounded-full transition-all duration-500 shadow-glow-orange"
+                className="h-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 rounded-full transition-all duration-500 shadow-sm"
               />
             </div>
-            <div className="flex justify-between text-[10px] font-mono text-zinc-400 tabular-nums">
+            <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
               <span>0 GB</span>
-              <span>Safe Inference Ceiling: {workingSetGb} GB</span>
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400">Safe Inference Ceiling: {workingSetGb} GB</span>
               <span>{hostRamGb} GB Total</span>
             </div>
           </div>
 
-          <div className="pt-1 text-[11px] text-zinc-400 flex items-center justify-between border-t border-white/[0.05]">
+          <div className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80">
             <span>
               {profile.has_unified_memory
                 ? 'Zero-copy high-bandwidth unified bus shared with Metal GPU'
                 : 'Host system RAM available for CPU inference & partial offload'}
             </span>
-            <span className="text-telemetry-400 font-mono text-[10px] uppercase font-semibold">Zero-OOM Cap</span>
+            <span className="text-indigo-600 dark:text-indigo-400 font-mono text-[10px] uppercase font-bold">Zero-OOM Cap</span>
           </div>
         </div>
 
         {/* Card 2: Silicon Engine (1 Col) */}
-        <div className="hardware-card p-4 space-y-2.5 flex flex-col justify-between hover:border-violet-500/30 transition-colors">
+        <div className="corporate-card p-4 space-y-2.5 flex flex-col justify-between hover:shadow-corporate-hover hover:-translate-y-1 transition-all duration-200">
           <div>
-            <div className="flex items-center justify-between text-zinc-400">
-              <div className="flex items-center gap-2 text-violet-400">
-                <Cpu className="w-4 h-4" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-200 font-mono">Silicon Engine</h3>
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/80 text-violet-600 dark:text-violet-400 flex items-center justify-center shadow-sm">
+                  <Cpu className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">Silicon Engine</h3>
               </div>
-              <span className="text-[10px] font-mono text-zinc-400 uppercase">{profile.arch}</span>
+              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 uppercase font-semibold">{profile.arch}</span>
             </div>
-            <div className="font-bold text-sm text-zinc-100 mt-2 truncate" title={profile.cpu_name}>
+            <div className="font-bold text-sm text-slate-900 dark:text-slate-100 mt-2 truncate" title={profile.cpu_name}>
               {profile.cpu_name}
             </div>
-            <div className="text-xs text-zinc-400 font-mono mt-1">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
               {profile.cpu_physical_cores} Physical · {profile.cpu_logical_cores} Threads
             </div>
           </div>
 
-          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
-            <span className="text-zinc-400 font-mono text-[10px]">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500 dark:text-slate-400 font-mono text-[10px]">
               {gpuVramGb > 0 ? `VRAM (${gpuVramGb} GB):` : 'ACCELERATOR:'}
             </span>
-            <span className="font-mono text-violet-300 font-semibold truncate max-w-[120px]">
+            <span className="font-mono text-violet-600 dark:text-violet-300 font-bold truncate max-w-[120px]">
               {profile.gpu_name || profile.accelerator_backend || (profile.has_unified_memory ? 'Metal GPU' : 'CPU')}
             </span>
           </div>
         </div>
 
         {/* Card 3: High-Speed Storage (1 Col) */}
-        <div className="hardware-card p-4 space-y-2.5 flex flex-col justify-between">
+        <div className="corporate-card p-4 space-y-2.5 flex flex-col justify-between hover:shadow-corporate-hover hover:-translate-y-1 transition-all duration-200">
           <div>
-            <div className="flex items-center justify-between text-phosphor-400">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <HardDrive className="w-4 h-4" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-200 font-mono">NVMe Storage</h3>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm">
+                  <HardDrive className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">NVMe Storage</h3>
               </div>
-              <span className="text-[10px] font-mono text-phosphor-400 font-bold">READY</span>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">READY</span>
             </div>
-            <div className="font-bold text-sm text-zinc-100 mt-2 font-mono tabular-nums">
-              {diskFreeGb} GB <span className="text-xs font-normal text-zinc-400">Available</span>
+            <div className="font-bold text-sm text-slate-900 dark:text-slate-100 mt-2 font-mono tabular-nums">
+              {diskFreeGb} GB <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Available</span>
             </div>
-            <div className="text-xs text-zinc-400 truncate mt-1" title={profile.os_version}>
+            <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1" title={profile.os_version}>
               {profile.os_version}
             </div>
           </div>
 
-          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
-            <span className="text-zinc-400 font-mono text-[10px]">GGUF WEIGHTS:</span>
-            <span className="font-mono text-phosphor-300 font-semibold">{libraryRecords.length} Saved</span>
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500 dark:text-slate-400 font-mono text-[10px]">GGUF WEIGHTS:</span>
+            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{libraryRecords.length} Saved</span>
           </div>
         </div>
       </div>
 
       {/* 2. Hardware Synthesizer Parameter Console & Filters */}
-      <div className="hardware-panel p-4 space-y-4 shadow-bevel">
+      <div className="corporate-panel p-4 space-y-4 shadow-corporate">
         {/* Search & Filter Top Bar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/[0.06] pb-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[220px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             <Input
               type="text"
               placeholder="Search model, family (Llama, Qwen, DeepSeek), or quant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-8 pr-3 text-xs bg-obsidian-950/90 border-white/[0.08] focus:border-telemetry-500/60 focus:ring-1 focus:ring-telemetry-500/40 rounded-lg text-zinc-100 placeholder:text-zinc-400"
+              className="h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
             />
           </div>
 
@@ -392,23 +398,23 @@ export function DashboardView({
             {/* Family Filter Dropdown */}
             <DropdownMenu onOpenChange={(open) => { if (!open) setFamilySearch(''); }}>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-obsidian-950 px-2.5 py-1 text-xs text-zinc-200 shadow-bevel hover:border-white/[0.15] transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 min-w-[125px]">
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]">
                   <span className="truncate">
                     {familyFilter === 'all'
                       ? 'All Families'
                       : familyFilter.charAt(0).toUpperCase() + familyFilter.slice(1)}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[185px] max-h-72 bg-obsidian-900 border-white/[0.09] shadow-2xl">
-                <DropdownMenuLabel className="text-zinc-400 font-mono text-[10px] uppercase">Filter Family ({uniqueFamilies.length})</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-[185px] max-h-72 shadow-corporate">
+                <DropdownMenuLabel>Filter Family ({uniqueFamilies.length})</DropdownMenuLabel>
                 <DropdownMenuSearchInput
                   value={familySearch}
                   onChange={(e) => setFamilySearch(e.target.value)}
                   placeholder="Search families..."
                 />
-                <DropdownMenuSeparator className="bg-white/[0.06]" />
+                <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={familyFilter} onValueChange={setFamilyFilter}>
                   {!familySearch && (
                     <DropdownMenuRadioItem value="all">All Families</DropdownMenuRadioItem>
@@ -432,7 +438,7 @@ export function DashboardView({
             {/* Verdict Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-obsidian-950 px-2.5 py-1 text-xs text-zinc-200 shadow-bevel hover:border-white/[0.15] transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 min-w-[125px]">
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]">
                   <span className="truncate">
                     {verdictFilter === 'all'
                       ? 'All Verdicts'
@@ -442,12 +448,12 @@ export function DashboardView({
                       ? 'Tight Fit'
                       : 'No Fit'}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px] max-h-60 bg-obsidian-900 border-white/[0.09] shadow-2xl">
-                <DropdownMenuLabel className="text-zinc-400 font-mono text-[10px] uppercase">Filter Verdict</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/[0.06]" />
+              <DropdownMenuContent align="start" className="w-[140px] max-h-60 shadow-corporate">
+                <DropdownMenuLabel>Filter Verdict</DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={verdictFilter} onValueChange={setVerdictFilter}>
                   <DropdownMenuRadioItem value="all">All Verdicts</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="fits">Fits Only</DropdownMenuRadioItem>
@@ -460,7 +466,7 @@ export function DashboardView({
             {/* Status Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-white/[0.08] bg-obsidian-950 px-2.5 py-1 text-xs text-zinc-200 shadow-bevel hover:border-white/[0.15] transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 min-w-[135px]">
+                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[135px]">
                   <span className="truncate">
                     {statusFilter === 'all'
                       ? 'All Statuses'
@@ -468,12 +474,12 @@ export function DashboardView({
                       ? 'Downloaded (Ready)'
                       : 'Available to Download'}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 opacity-80 shrink-0" />
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[175px] max-h-60 bg-obsidian-900 border-white/[0.09] shadow-2xl">
-                <DropdownMenuLabel className="text-zinc-400 font-mono text-[10px] uppercase">Filter Status</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/[0.06]" />
+              <DropdownMenuContent align="start" className="w-[175px] max-h-60 shadow-corporate">
+                <DropdownMenuLabel>Filter Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
                   <DropdownMenuRadioItem value="all">All Statuses</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="downloaded">
@@ -491,11 +497,11 @@ export function DashboardView({
               onClick={handleSyncCatalog}
               disabled={syncingCatalog}
               title="Check remote catalog for newly released open-source models"
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-obsidian-950 px-3 py-1 text-xs text-zinc-300 shadow-bevel hover:border-white/[0.15] hover:text-white transition-colors focus:outline-none focus:ring-1 focus:ring-telemetry-500 disabled:opacity-50"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 hover:-translate-y-0.5"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${
-                  syncingCatalog ? 'animate-spin text-telemetry-400' : 'text-zinc-400'
+                  syncingCatalog ? 'animate-spin text-indigo-600 dark:text-indigo-400' : 'text-slate-400'
                 }`}
               />
               <span className="hidden sm:inline font-mono">
@@ -512,11 +518,11 @@ export function DashboardView({
         <div className="flex flex-wrap items-center justify-between gap-4 text-xs pt-1">
           {/* Context Stepper Rack */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5 text-telemetry-400 font-mono text-xs font-semibold">
+            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-mono text-xs font-bold">
               <Sliders className="w-3.5 h-3.5" />
               <span>CONTEXT:</span>
             </div>
-            <span className="font-mono text-telemetry-300 font-bold tabular-nums w-12 text-sm">{config.context_size}</span>
+            <span className="font-mono text-indigo-700 dark:text-indigo-300 font-bold tabular-nums w-12 text-sm">{config.context_size}</span>
             <Slider
               min={512}
               max={32768}
@@ -526,15 +532,15 @@ export function DashboardView({
               className="w-28 cursor-pointer"
             />
             {/* Quick Context Presets */}
-            <div className="flex items-center gap-1 bg-obsidian-950 p-1 rounded-lg border border-white/[0.05]">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
               {[2048, 4096, 8192, 16384, 32768].map((size) => (
                 <button
                   key={size}
                   onClick={() => setConfig({ ...config, context_size: size })}
                   className={`px-2 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all ${
                     config.context_size === size
-                      ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
                   }`}
                 >
                   {size >= 1024 ? `${size / 1024}k` : size}
@@ -545,14 +551,14 @@ export function DashboardView({
 
           {/* KV Cache Quant & Parallel Slots Rockers */}
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-1.5 bg-obsidian-950 p-1 rounded-lg border border-white/[0.05]">
-              <span className="font-mono text-[10px] text-zinc-400 uppercase px-1">KV:</span>
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase px-1">KV:</span>
               <button
                 onClick={() => setConfig({ ...config, kv_type: 'f16' })}
                 className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                   config.kv_type === 'f16'
-                    ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
                 }`}
                 title="F16: Baseline memory footprint"
               >
@@ -562,8 +568,8 @@ export function DashboardView({
                 onClick={() => setConfig({ ...config, kv_type: 'q8_0' })}
                 className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                   config.kv_type === 'q8_0'
-                    ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
                 }`}
                 title="Q8_0: -50% KV cache VRAM requirement"
               >
@@ -573,8 +579,8 @@ export function DashboardView({
                 onClick={() => setConfig({ ...config, kv_type: 'q4_0' })}
                 className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                   config.kv_type === 'q4_0'
-                    ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
                 }`}
                 title="Q4_0: -75% KV cache VRAM requirement"
               >
@@ -582,16 +588,16 @@ export function DashboardView({
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-obsidian-950 p-1 rounded-lg border border-white/[0.05]">
-              <span className="font-mono text-[10px] text-zinc-400 uppercase px-1">Slots:</span>
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase px-1">Slots:</span>
               {[1, 2, 4].map((n) => (
                 <button
                   key={n}
                   onClick={() => setConfig({ ...config, n_parallel: n })}
                   className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
                     config.n_parallel === n
-                      ? 'bg-telemetry-500 text-obsidian-950 font-bold shadow-glow-cyan'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
                   }`}
                 >
                   {n}x
@@ -605,7 +611,7 @@ export function DashboardView({
       {/* 3. Models Table */}
       {loadingResults && results.length === 0 ? (
         <div className="flex items-center justify-center p-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
       ) : (
         <ModelsTable

@@ -55,7 +55,7 @@ export function PromptForm({
   return (
     <div
       className={cn(
-        'relative rounded-2xl bg-obsidian-900/90 backdrop-blur-xl border border-white/[0.12] p-3 focus-within:border-telemetry-500/50 focus-within:ring-1 focus-within:ring-telemetry-500/20 transition-all',
+        'relative rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-3 shadow-corporate focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all',
         className
       )}
     >
@@ -70,10 +70,10 @@ export function PromptForm({
         }
         disabled={!hasModel || isSending}
         rows={2}
-        className="max-h-[200px] resize-none bg-transparent border-0 focus-visible:ring-0 text-zinc-100 placeholder:text-zinc-500 p-1 text-sm leading-relaxed outline-none"
+        className="max-h-[200px] resize-none bg-transparent border-0 focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 p-1 text-sm leading-relaxed outline-none shadow-none"
       />
 
-      <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between gap-2 select-none">
+      <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 select-none">
         <div className="flex items-center gap-2 min-w-0">
           {modelSelector}
           {onOpenParams && (
@@ -82,18 +82,18 @@ export function PromptForm({
               onClick={onOpenParams}
               aria-label="Parameters"
               title="Parameters"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white bg-obsidian-850 hover:bg-obsidian-800 border border-white/[0.08] hover:border-white/[0.18] transition-all hardware-button-tactile shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:-translate-y-0.5 shrink-0"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-telemetry-400" />
+              <SlidersHorizontal className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
             </button>
           )}
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <span className="hidden sm:inline text-[10px] text-zinc-500 font-mono">
+          <span className="hidden sm:inline text-[10px] text-slate-400 font-mono">
             ⏎ send · ⇧⏎ newline
           </span>
-          <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
+          <span className="text-[10px] text-slate-400 font-mono tabular-nums">
             {value.length} chars
           </span>
           {isSending ? (
@@ -102,7 +102,7 @@ export function PromptForm({
               onClick={onCancel}
               aria-label="Stop generating"
               title="Stop generating"
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-laser-600 hover:bg-laser-500 text-white hardware-button-tactile shrink-0 transition-all"
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-rose-600 hover:bg-rose-500 text-white shadow-sm hover:-translate-y-0.5 shrink-0 transition-all"
             >
               <Square className="h-3.5 w-3.5 fill-white" />
             </button>
@@ -113,7 +113,7 @@ export function PromptForm({
               disabled={!canSend}
               aria-label="Send message"
               title="Send message"
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-telemetry-500 hover:bg-telemetry-400 text-obsidian-950 font-bold disabled:opacity-30 disabled:cursor-not-allowed hardware-button-tactile shrink-0 transition-all"
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow-corporate-btn hover:-translate-y-0.5 active:translate-y-0 shrink-0 transition-all"
             >
               <ArrowRight className="h-4 w-4 stroke-[2.5]" />
             </button>

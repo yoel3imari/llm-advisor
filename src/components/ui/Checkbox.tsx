@@ -8,7 +8,7 @@ const Checkbox = React.forwardRef<
 >(({ className = '', ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
-    className={`peer h-4 w-4 shrink-0 rounded border border-zinc-700 bg-zinc-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 data-[state=checked]:text-white transition-colors ${className}`}
+    className={`peer h-4 w-4 shrink-0 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 data-[state=checked]:text-white transition-all ${className}`}
     {...props}
   >
     <CheckboxPrimitive.Indicator
@@ -56,13 +56,13 @@ export function CheckboxField({
       <div className="flex-1 min-w-0">
         <label
           htmlFor={inputId}
-          className={`flex items-center gap-2 text-xs font-medium text-zinc-200 cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
+          className={`flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
         >
           <span>{label}</span>
           {badge}
         </label>
         {description && (
-          <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
             {description}
           </p>
         )}

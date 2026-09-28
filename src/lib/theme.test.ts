@@ -14,8 +14,8 @@ describe('Theme utilities', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('defaults to dark when localStorage is empty', () => {
-    expect(getStoredTheme()).toBe('dark');
+  it('defaults to light when localStorage is empty', () => {
+    expect(getStoredTheme()).toBe('light');
   });
 
   it('reads light theme from localStorage if previously stored', () => {

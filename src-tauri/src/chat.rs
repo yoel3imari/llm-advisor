@@ -346,6 +346,306 @@ pub async fn chat_cancel(
     Ok(())
 }
 
+pub fn clean_llm_title(raw: &str) -> String {
+    let mut cleaned = raw.trim();
+
+    // Strip markdown code fences if present
+    if cleaned.starts_with("```") {
+        if let Some(pos) = cleaned.find('\n') {
+            cleaned = &cleaned[pos + 1..];
+        }
+        if let Some(pos) = cleaned.rfind("```") {
+            cleaned = &cleaned[..pos];
+        }
+        cleaned = cleaned.trim();
+    }
+
+    // Strip leading markdown headers like "### " or "# "
+    while cleaned.starts_with('#') {
+        cleaned = cleaned.trim_start_matches('#').trim_start();
+    }
+
+    // Strip prefixes like "title:", "topic:", "subject:", "conversation title:" (case-insensitive)
+    let lower = cleaned.to_lowercase();
+    for prefix in &["title:", "topic:", "subject:", "conversation title:"] {
+        if lower.starts_with(prefix) {
+            cleaned = cleaned[prefix.len()..].trim_start();
+            break;
+        }
+    }
+
+    // Strip surrounding quotes
+    cleaned = cleaned
+        .trim_matches(|c| matches!(c, '"' | '\'' | '“' | '”' | '‘' | '’' | '«' | '»' | '`'))
+        .trim();
+
+    // Strip trailing punctuation
+    cleaned = cleaned.trim_end_matches(|c| matches!(c, '.' | ':' | '!' | '?' | ';' | ',')).trim();
+
+    // Collapse multiple internal spaces
+    let words: Vec<&str> = cleaned.split_whitespace().collect();
+    let mut result = words.join(" ");
+
+    if result.is_empty() {
+        return "New Chat".to_string();
+    }
+
+    // Truncate at word boundary if exceeding 50 chars
+    if result.len() > 50 {
+        if let Some(cut_idx) = result[..50].rfind(' ') {
+            if cut_idx > 20 {
+                result.truncate(cut_idx);
+            } else {
+                result.truncate(50);
+            }
+        } else {
+            result.truncate(50);
+        }
+        result = format!("{}...", result.trim_end());
+    }
+
+    result
+}
+
+pub fn extract_heuristic_title(messages: &[ChatMessage]) -> String {
+    let first_user = messages.iter().find(|m| m.role.eq_ignore_ascii_case("user"));
+    let content = match first_user {
+        Some(m) if !m.content.trim().is_empty() => m.content.trim(),
+        _ => return "New Chat".to_string(),
+    };
+
+    // Remove code blocks
+    let mut text = content.to_string();
+    while let Some(start) = text.find("```") {
+        if let Some(end) = text[start + 3..].find("```") {
+            text.replace_range(start..start + 3 + end + 3, " ");
+        } else {
+            text.truncate(start);
+            break;
+        }
+    }
+
+    // Collapse whitespace
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let mut normalized = words.join(" ");
+
+    // Remove common prefixes
+    let lower = normalized.to_lowercase();
+    let prefixes = [
+        "can you please explain how ",
+        "can you please explain ",
+        "can you please help me with ",
+        "can you please help me ",
+        "can you please ",
+        "can you explain how ",
+        "can you explain ",
+        "can you help me with ",
+        "can you help me ",
+        "can you write a ",
+        "can you write ",
+        "could you please explain ",
+        "could you please help me ",
+        "could you please ",
+        "could you explain ",
+        "could you help me ",
+        "how do i fix ",
+        "how do i ",
+        "how can i ",
+        "how to ",
+        "what is the difference between ",
+        "what is the ",
+        "what is ",
+        "what are the ",
+        "what are ",
+        "tell me about ",
+        "explain how to ",
+        "explain to me ",
+        "explain how ",
+        "explain ",
+        "write a python script to ",
+        "write a python script for ",
+        "write a script to ",
+        "write a function to ",
+        "write a ",
+        "write ",
+        "help me with ",
+    ];
+
+    for p in &prefixes {
+        if lower.starts_with(p) {
+            normalized = normalized[p.len()..].trim_start().to_string();
+            break;
+        }
+    }
+
+    // Strip leading punctuation
+    let trimmed = normalized
+        .trim_start_matches(|c| matches!(c, '-' | '*' | '#' | ':' | ';' | ',' | '.'))
+        .trim_end_matches(|c| matches!(c, '?' | '!' | '.' | ':' | ';' | ','))
+        .trim();
+
+    if trimmed.is_empty() {
+        return "New Chat".to_string();
+    }
+
+    // Capitalize first character
+    let mut chars = trimmed.chars();
+    let first_char = match chars.next() {
+        Some(c) => c.to_uppercase().collect::<String>(),
+        None => return "New Chat".to_string(),
+    };
+    let mut result = format!("{}{}", first_char, chars.as_str());
+
+    // Truncate at natural word boundary if longer than 38 chars
+    if result.len() > 38 {
+        if let Some(cut_idx) = result[..38].rfind(' ') {
+            if cut_idx > 15 {
+                result.truncate(cut_idx);
+            } else {
+                result.truncate(38);
+            }
+        } else {
+            result.truncate(38);
+        }
+        result = format!("{}...", result.trim_end());
+    }
+
+    result
+}
+
+#[tauri::command]
+pub async fn chat_generate_title(
+    messages: Vec<ChatMessage>,
+    model: Option<String>,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    if messages.is_empty() {
+        return Ok("New Chat".to_string());
+    }
+
+    let heuristic = extract_heuristic_title(&messages);
+
+    // Resolve target model: explicit model -> active model -> running instance
+    let target_model = if let Some(m) = model.filter(|s| !s.trim().is_empty()) {
+        Some(m)
+    } else if let Some(m) = state.server_manager.get_active_model_id() {
+        Some(m)
+    } else {
+        state.server_manager.get_running_model_ids().into_iter().next()
+    };
+
+    let target_model = match target_model {
+        Some(m) => m,
+        None => {
+            // No model is currently serving; return heuristic fallback
+            return Ok(heuristic);
+        }
+    };
+
+    let gateway_port = state
+        .settings
+        .read()
+        .map(|s| s.gateway_port)
+        .unwrap_or(13370);
+
+    // Build concise conversation excerpt for the prompt
+    let mut excerpt = String::new();
+    let mut user_turn = String::new();
+    let mut assistant_turn = String::new();
+
+    for m in &messages {
+        if m.role.eq_ignore_ascii_case("user") && user_turn.is_empty() {
+            let clean = m.content.trim();
+            user_turn = if clean.len() > 300 {
+                clean[..300].to_string()
+            } else {
+                clean.to_string()
+            };
+        } else if m.role.eq_ignore_ascii_case("assistant") && assistant_turn.is_empty() {
+            let clean = m.content.trim();
+            assistant_turn = if clean.len() > 300 {
+                clean[..300].to_string()
+            } else {
+                clean.to_string()
+            };
+        }
+        if !user_turn.is_empty() && !assistant_turn.is_empty() {
+            break;
+        }
+    }
+
+    excerpt.push_str(&format!("User: {}\n", user_turn));
+    if !assistant_turn.is_empty() {
+        excerpt.push_str(&format!("Assistant: {}\n", assistant_turn));
+    }
+
+    let url = format!("http://127.0.0.1:{}/v1/chat/completions", gateway_port);
+    let body = serde_json::json!({
+        "model": target_model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a concise conversation title generator. Output ONLY a concise title (3 to 6 words) summarizing the main topic of the conversation. Never use quotes, markdown formatting, prefixes like 'Title:', or punctuation at the end."
+            },
+            {
+                "role": "user",
+                "content": format!("Summarize this conversation into a concise 3-6 word title:\n\n{}", excerpt.trim())
+            }
+        ],
+        "stream": false,
+        "temperature": 0.3,
+        "max_tokens": 24
+    });
+
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(6))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return Ok(heuristic),
+    };
+
+    let resp = match client
+        .post(&url)
+        .header("Content-Type", "application/json")
+        .body(body.to_string())
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(_) => return Ok(heuristic),
+    };
+
+    if !resp.status().is_success() {
+        return Ok(heuristic);
+    }
+
+    let resp_json: serde_json::Value = match resp.json().await {
+        Ok(v) => v,
+        Err(_) => return Ok(heuristic),
+    };
+
+    let raw_title = resp_json
+        .get("choices")
+        .and_then(|c| c.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|first| first.get("message"))
+        .and_then(|msg| msg.get("content"))
+        .and_then(|cnt| cnt.as_str());
+
+    match raw_title {
+        Some(t) if !t.trim().is_empty() => {
+            let cleaned = clean_llm_title(t);
+            if cleaned.eq_ignore_ascii_case("new chat") || cleaned.len() < 3 {
+                Ok(heuristic)
+            } else {
+                Ok(cleaned)
+            }
+        }
+        _ => Ok(heuristic),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -434,6 +734,57 @@ mod tests {
         }"#;
         let req_both: ChatStreamRequest = serde_json::from_str(json_both).unwrap();
         assert_eq!(req_both.max_tokens, 2048);
+    }
+
+    #[test]
+    fn cleans_llm_title_output() {
+        assert_eq!(
+            clean_llm_title(r#""Grouped Query Attention in Llama 3""#),
+            "Grouped Query Attention in Llama 3"
+        );
+        assert_eq!(
+            clean_llm_title("Title: Rust Concurrency Patterns."),
+            "Rust Concurrency Patterns"
+        );
+        assert_eq!(
+            clean_llm_title("```\nFastAPI Docker Setup\n```"),
+            "FastAPI Docker Setup"
+        );
+        assert_eq!(
+            clean_llm_title("### Exploring Vector Databases!"),
+            "Exploring Vector Databases"
+        );
+        assert_eq!(clean_llm_title(""), "New Chat");
+    }
+
+    #[test]
+    fn extracts_heuristic_title_from_messages() {
+        let msgs = vec![
+            ChatMessage {
+                role: "user".to_string(),
+                content: "Can you please explain how Grouped-Query Attention works?".to_string(),
+            },
+            ChatMessage {
+                role: "assistant".to_string(),
+                content: "GQA works by...".to_string(),
+            },
+        ];
+        assert_eq!(
+            extract_heuristic_title(&msgs),
+            "Grouped-Query Attention works"
+        );
+
+        let code_msgs = vec![ChatMessage {
+            role: "user".to_string(),
+            content: "How do I fix ```rust fn main() {}``` compiler error?".to_string(),
+        }];
+        assert_eq!(
+            extract_heuristic_title(&code_msgs),
+            "Compiler error"
+        );
+
+        let empty_msgs: Vec<ChatMessage> = vec![];
+        assert_eq!(extract_heuristic_title(&empty_msgs), "New Chat");
     }
 }
 
