@@ -160,15 +160,15 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Model & Family
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -179,24 +179,24 @@ export function ModelsTable({
           return (
             <div className="flex flex-col py-0.5 min-w-[170px]">
               <div className="flex items-center gap-1.5 whitespace-nowrap">
-                <span className="font-semibold text-zinc-100">{entry.id}</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{entry.id}</span>
                 {entry.gated && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Lock className="w-3.5 h-3.5 text-amber-400 cursor-help shrink-0" />
+                      <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 cursor-help shrink-0" />
                     </TooltipTrigger>
                     <TooltipContent>HuggingFace Token required</TooltipContent>
                   </Tooltip>
                 )}
                 {inLibrary && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 shrink-0">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60 shrink-0">
                     <CheckCircle2 className="w-2.5 h-2.5" />
                     Ready
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400">
-                <span className="capitalize px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/50">
+              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="capitalize px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700/50">
                   {entry.family}
                 </span>
               </div>
@@ -210,25 +210,25 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Params (B)
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
         cell: ({ row }) => {
           const entry = row.original.entry;
           return (
-            <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+            <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
               {entry.params_billions}B
               {entry.active_params_b && (
-                <span className="text-zinc-500 text-[10px] ml-1">({entry.active_params_b}B act)</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[10px] ml-1">({entry.active_params_b}B act)</span>
               )}
             </span>
           );
@@ -240,20 +240,20 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Quant
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-200 border border-zinc-700/40 whitespace-nowrap">
+          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-zinc-700/40 whitespace-nowrap font-medium">
             {row.original.entry.quant}
           </span>
         ),
@@ -273,16 +273,16 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
-            <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Award className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
             Benchmarks
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -292,7 +292,7 @@ export function ModelsTable({
             !b ||
             (!b.swe_bench && !b.livecodebench && !b.mmlu_pro && !b.arena_elo && !b.human_eval)
           ) {
-            return <span className="text-zinc-600 text-xs font-mono">—</span>;
+            return <span className="text-slate-400 dark:text-slate-500 text-xs font-mono">—</span>;
           }
 
           return (
@@ -300,22 +300,22 @@ export function ModelsTable({
               <TooltipTrigger asChild>
                 <div className="flex flex-wrap items-center gap-1 cursor-help max-w-[210px]">
                   {b.swe_bench !== undefined && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">
                       SWE {b.swe_bench}%
                     </span>
                   )}
                   {b.livecodebench !== undefined && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-cyan-50 text-cyan-700 border border-cyan-200/80 dark:bg-cyan-950/80 dark:text-cyan-300 dark:border-cyan-800/60 whitespace-nowrap">
                       LCB {b.livecodebench}
                     </span>
                   )}
                   {b.mmlu_pro !== undefined && !b.swe_bench && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-violet-950/80 text-violet-300 border border-violet-800/60 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-violet-50 text-violet-700 border border-violet-200/80 dark:bg-violet-950/80 dark:text-violet-300 dark:border-violet-800/60 whitespace-nowrap">
                       MMLU {b.mmlu_pro}%
                     </span>
                   )}
                   {b.arena_elo !== undefined && !b.swe_bench && !b.livecodebench && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-950/80 text-amber-300 border border-amber-800/60 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/60 whitespace-nowrap">
                       Elo {b.arena_elo}
                     </span>
                   )}
@@ -350,7 +350,7 @@ export function ModelsTable({
                     <span className="font-bold text-zinc-100">{b.human_eval}% pass@1</span>
                   </div>
                 )}
-                <div className="text-[10px] text-zinc-500 pt-1 border-t border-zinc-800/60">
+                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800/60">
                   Real-world benchmarks (SWE-bench, LiveCodeBench, LMSYS Arena).
                 </div>
               </TooltipContent>
@@ -364,20 +364,20 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Disk
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+          <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
             {formatDiskSize(row.original.entry.file_size_bytes)}
           </span>
         ),
@@ -388,15 +388,15 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Verdict
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -418,15 +418,15 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             RAM Needed (GB)
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -441,7 +441,7 @@ export function ModelsTable({
           return (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-mono text-xs font-semibold text-zinc-100 cursor-help underline decoration-dotted decoration-zinc-600 underline-offset-2">
+                <span className="font-mono text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-help underline decoration-dotted decoration-slate-400 dark:decoration-zinc-600 underline-offset-2">
                   {totalGb}
                 </span>
               </TooltipTrigger>
@@ -470,15 +470,15 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Usable Ctx
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -497,13 +497,13 @@ export function ModelsTable({
                   {isConstrained ? (
                     <span className={`font-mono text-xs px-1.5 py-0.5 rounded border whitespace-nowrap ${
                       usable < 4096
-                        ? 'bg-amber-950/60 text-amber-300 border-amber-800/50 font-semibold'
-                        : 'bg-zinc-800/80 text-zinc-200 border-zinc-700/50'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/50 font-semibold'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-zinc-700/50 font-medium'
                     }`}>
-                      {usableK} <span className="text-zinc-500 font-normal">→ {nativeK}</span>
+                      {usableK} <span className="text-slate-400 dark:text-zinc-500 font-normal">→ {nativeK}</span>
                     </span>
                   ) : (
-                    <span className="font-mono text-xs text-zinc-300 whitespace-nowrap">
+                    <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       {nativeK}
                     </span>
                   )}
@@ -536,16 +536,16 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
-            <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <Layers className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
             GPU Layers
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -555,10 +555,10 @@ export function ModelsTable({
           const total = res.entry.n_layers;
 
           if (layers === 0) {
-            return <span className="text-[11px] text-zinc-400 font-mono whitespace-nowrap">0 / {total} (CPU)</span>;
+            return <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">0 / {total} (CPU)</span>;
           }
           return (
-            <span className="font-mono text-xs text-purple-300 font-semibold whitespace-nowrap">
+            <span className="font-mono text-xs text-purple-700 dark:text-purple-300 font-semibold whitespace-nowrap">
               {layers} / {total}
             </span>
           );
@@ -570,16 +570,16 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
-            <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
             Speed (TPS)
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -596,7 +596,7 @@ export function ModelsTable({
           return (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-mono text-xs font-semibold text-cyan-300 cursor-help underline decoration-dotted decoration-cyan-700/60 underline-offset-2 whitespace-nowrap">
+                <span className="font-mono text-xs font-semibold text-cyan-700 dark:text-cyan-300 cursor-help underline decoration-dotted decoration-cyan-400 dark:decoration-cyan-700/60 underline-offset-2 whitespace-nowrap">
                   {res.speed_tps_estimate.toFixed(1)}
                 </span>
               </TooltipTrigger>
@@ -625,15 +625,15 @@ export function ModelsTable({
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-zinc-300 hover:text-white whitespace-nowrap"
+            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
           >
             Score (/10)
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500 opacity-60" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
             )}
           </button>
         ),
@@ -642,7 +642,11 @@ export function ModelsTable({
           return (
             <span
               className={`font-mono font-bold text-xs whitespace-nowrap ${
-                score >= 8 ? 'text-emerald-400' : score >= 5 ? 'text-amber-400' : 'text-zinc-400'
+                score >= 8
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : score >= 5
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-slate-500 dark:text-zinc-400'
               }`}
             >
               {score.toFixed(1)}
@@ -652,9 +656,11 @@ export function ModelsTable({
       },
       {
         id: 'actions',
-        header: () => <span className="font-semibold text-zinc-300">
-          <MoreVerticalIcon className="w-3 h-3 text-zinc-400 ml-0.5 shrink-0" />
-        </span>,
+        header: () => (
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
+            <MoreVerticalIcon className="w-3 h-3 text-slate-400 dark:text-slate-500 ml-0.5 shrink-0" />
+          </span>
+        ),
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = downloadedIds.has(entry.id);
@@ -663,7 +669,7 @@ export function ModelsTable({
           if (isCurrentDownloading) {
             return (
               <div className="flex items-center justify-end pr-1">
-                <LoaderIcon className="animate-spin text-indigo-400" size={16} />
+                <LoaderIcon className="animate-spin text-indigo-600 dark:text-indigo-400" size={16} />
               </div>
             );
           }
@@ -672,7 +678,7 @@ export function ModelsTable({
             <div className="flex items-center justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <MoreVerticalIcon className="cursor-pointer w-3 h-3 text-zinc-400 ml-0.5 shrink-0 hover:text-zinc-200 transition-colors" />
+                  <MoreVerticalIcon className="cursor-pointer w-3.5 h-3.5 text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200 ml-0.5 shrink-0 transition-colors" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>Model Actions</DropdownMenuLabel>
@@ -680,7 +686,7 @@ export function ModelsTable({
                   {inLibrary ? (
                     <>
                       <DropdownMenuItem onClick={() => onNavigateToServer(entry.id)}>
-                        <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                        <Play className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600 dark:fill-emerald-400" />
                         Start Serving Model
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -688,11 +694,11 @@ export function ModelsTable({
                           openExternalUrl(`https://huggingface.co/${entry.repo_id}`)
                         }
                       >
-                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
                         View on HuggingFace
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
-                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                        <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
                         Copy Repo ID
                       </DropdownMenuItem>
                       {onDeleteFromLibrary && (
@@ -707,7 +713,7 @@ export function ModelsTable({
                               })
                             }
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                            <Trash2 className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
                             Delete from Library
                           </DropdownMenuItem>
                         </>
@@ -716,7 +722,7 @@ export function ModelsTable({
                   ) : (
                     <>
                       <DropdownMenuItem onClick={() => onDownload(entry.id)}>
-                        <Download className="w-3.5 h-3.5 text-indigo-400" />
+                        <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                         Download GGUF ({gb(entry.file_size_bytes)} GB)
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -724,11 +730,11 @@ export function ModelsTable({
                           openExternalUrl(`https://huggingface.co/${entry.repo_id}`)
                         }
                       >
-                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
                         View on HuggingFace
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
-                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                        <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
                         Copy Repo ID
                       </DropdownMenuItem>
                     </>
@@ -797,7 +803,7 @@ export function ModelsTable({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs text-slate-700 dark:text-slate-300">
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
