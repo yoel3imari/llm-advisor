@@ -159,3 +159,160 @@ html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover,
 html[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* Code Syntax Highlighting Theme (Light & Dark) */
+.hljs {
+  color: #1E293B;
+  background: transparent;
+}
+html.dark .hljs,
+html[data-theme="dark"] .hljs {
+  color: #E2E8F0;
+  background: transparent;
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #4F46E5;
+  font-weight: 600;
+}
+html.dark .hljs-keyword,
+html.dark .hljs-selector-tag,
+html[data-theme="dark"] .hljs-keyword,
+html[data-theme="dark"] .hljs-selector-tag {
+  color: #818CF8;
+}
+
+.hljs-title.function_,
+.hljs-title.function_.invoke__ {
+  color: #0284C7;
+  font-weight: 600;
+}
+html.dark .hljs-title.function_,
+html.dark .hljs-title.function_.invoke__,
+html[data-theme="dark"] .hljs-title.function_,
+html[data-theme="dark"] .hljs-title.function_.invoke__ {
+  color: #38BDF8;
+}
+
+.hljs-title.class_,
+.hljs-type {
+  color: #7C3AED;
+  font-weight: 600;
+}
+html.dark .hljs-title.class_,
+html.dark .hljs-type,
+html[data-theme="dark"] .hljs-title.class_,
+html[data-theme="dark"] .hljs-type {
+  color: #A78BFA;
+}
+
+.hljs-string,
+.hljs-template-variable {
+  color: #059669;
+}
+html.dark .hljs-string,
+html.dark .hljs-template-variable,
+html[data-theme="dark"] .hljs-string,
+html[data-theme="dark"] .hljs-template-variable {
+  color: #34D399;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-symbol {
+  color: #D97706;
+}
+html.dark .hljs-number,
+html.dark .hljs-literal,
+html.dark .hljs-symbol,
+html[data-theme="dark"] .hljs-number,
+html[data-theme="dark"] .hljs-literal,
+html[data-theme="dark"] .hljs-symbol {
+  color: #FBBF24;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #94A3B8;
+  font-style: italic;
+}
+html.dark .hljs-comment,
+html.dark .hljs-quote,
+html[data-theme="dark"] .hljs-comment,
+html[data-theme="dark"] .hljs-quote {
+  color: #64748B;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-property {
+  color: #0D9488;
+}
+html.dark .hljs-attr,
+html.dark .hljs-attribute,
+html.dark .hljs-property,
+html[data-theme="dark"] .hljs-attr,
+html[data-theme="dark"] .hljs-attribute,
+html[data-theme="dark"] .hljs-property {
+  color: #2DD4BF;
+}
+
+.hljs-built_in {
+  color: #DB2777;
+}
+html.dark .hljs-built_in,
+html[data-theme="dark"] .hljs-built_in {
+  color: #F472B6;
+}
+
+.hljs-tag {
+  color: #64748B;
+}
+html.dark .hljs-tag,
+html[data-theme="dark"] .hljs-tag {
+  color: #94A3B8;
+}
+
+.hljs-name {
+  color: #DC2626;
+  font-weight: 600;
+}
+html.dark .hljs-name,
+html[data-theme="dark"] .hljs-name {
+  color: #FB7185;
+}
+
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: #64748B;
+  font-weight: normal;
+}
+html.dark .hljs-meta,
+html.dark .hljs-meta .hljs-keyword,
+html[data-theme="dark"] .hljs-meta,
+html[data-theme="dark"] .hljs-meta .hljs-keyword {
+  color: #94A3B8;
+}
+
+.hljs-punctuation,
+.hljs-operator {
+  color: #64748B;
+}
+html.dark .hljs-punctuation,
+html.dark .hljs-operator,
+html[data-theme="dark"] .hljs-punctuation,
+html[data-theme="dark"] .hljs-operator {
+  color: #94A3B8;
+}
+
+.hljs-params,
+.hljs-variable {
+  color: #0F172A;
+}
+html.dark .hljs-params,
+html.dark .hljs-variable,
+html[data-theme="dark"] .hljs-params,
+html[data-theme="dark"] .hljs-variable {
+  color: #F1F5F9;
+}

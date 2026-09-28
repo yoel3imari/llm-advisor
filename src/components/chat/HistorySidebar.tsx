@@ -15,6 +15,8 @@ export interface HistorySidebarProps {
   onRegenerateTitle?: (id: string) => void;
   regeneratingSessionId?: string | null;
   onToggleCollapse?: () => void;
+  /** Collapses the panel in place (width + opacity) rather than unmounting it. */
+  isOpen?: boolean;
   className?: string;
 }
 
@@ -27,6 +29,7 @@ export function HistorySidebar({
   onRenameSession,
   onRegenerateTitle,
   regeneratingSessionId,
+  isOpen = true,
   className,
 }: HistorySidebarProps) {
   const [confirmingSessionId, setConfirmingSessionId] = useState<string | null>(null);
@@ -60,13 +63,22 @@ export function HistorySidebar({
 
   return (
     <aside
+      aria-label="Session history"
+      data-testid="history-sidebar"
+      data-open={isOpen ? 'true' : 'false'}
       className={cn(
-        'flex flex-col h-full bg-slate-50/70 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 w-64 select-none shrink-0 relative z-10 transition-colors',
+        'flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 select-none shrink-0 relative z-10 transition-[width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden will-change-[width]',
+        isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 border-transparent pointer-events-none',
         className
       )}
     >
       {/* New Session Header */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+      <div
+        className={cn(
+          'p-3 border-b border-slate-200 dark:border-slate-800 min-w-[256px] shrink-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          isOpen ? 'opacity-100 delay-75' : 'opacity-0'
+        )}
+      >
         <Button
           onClick={() => {
             setConfirmingSessionId(null);
@@ -79,7 +91,12 @@ export function HistorySidebar({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 custom-scrollbar">
+      <ScrollArea
+        className={cn(
+          'flex-1 min-h-0 min-w-[256px] shrink-0 custom-scrollbar transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          isOpen ? 'opacity-100 delay-75' : 'opacity-0'
+        )}
+      >
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 px-4 text-center text-slate-400">
             <Terminal className="w-8 h-8 mb-2 stroke-[1.5] text-slate-300 dark:text-slate-600" />
@@ -111,8 +128,8 @@ export function HistorySidebar({
                     cn(
                       'group relative flex items-center justify-between gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all text-left border mx-1',
                       isActive
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 shadow-sm font-semibold'
-                        : 'border-transparent hover:bg-white/80 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                        ? 'bg-indigo-50/80 dark:bg-slate-800 text-indigo-950 dark:text-white border-indigo-100 dark:border-slate-700 shadow-sm font-semibold'
+                        : 'border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                     ) + (isActive ? ' bg-zinc-800/0' : '')
                   }
                 >

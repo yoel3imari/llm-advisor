@@ -3,9 +3,9 @@ import {
   MessageSquare,
   SlidersHorizontal,
   ArrowDown,
-  PanelLeftClose,
-  PanelLeftOpen,
   X,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { ScrollArea } from '../components/ui/ScrollArea';
@@ -342,60 +342,60 @@ export function ChatView({
   };
 
   return (
-    <div className="flex h-full w-full bg-obsidian-950 overflow-hidden relative z-10">
+    <div className="flex h-full w-full bg-transparent overflow-hidden relative z-10">
       {/* Session History Sidebar with Toggle */}
-      {sidebarOpen && (
-        <HistorySidebar
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onSelectSession={handleSelectSession}
-          onDeleteSession={handleDeleteSession}
-          onNewChat={handleNewChat}
-          onRenameSession={handleRenameSession}
-          onRegenerateTitle={handleRegenerateTitle}
-          regeneratingSessionId={regeneratingSessionId}
-        />
-      )}
+      <HistorySidebar
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+        onNewChat={handleNewChat}
+        onRenameSession={handleRenameSession}
+        onRegenerateTitle={handleRegenerateTitle}
+        regeneratingSessionId={regeneratingSessionId}
+        isOpen={sidebarOpen}
+      />
 
       {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 h-full min-w-0 bg-transparent relative overflow-hidden">
+      <div className="flex flex-col flex-1 h-full min-w-0 bg-transparent relative overflow-hidden bg-transparent">
         {/* Floating Sidebar Toggle Button & Chat Header Tag */}
         <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2">
           <button
             type="button"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Open sidebar'}
+            aria-expanded={sidebarOpen}
             title={sidebarOpen ? 'Collapse sidebar' : 'Open sidebar'}
             className="w-8 h-8 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white border border-slate-200 dark:border-slate-800 flex items-center justify-center transition-all shadow-sm hover:-translate-y-0.5 backdrop-blur-md"
           >
             {sidebarOpen ? (
-              <PanelLeftClose className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <ChevronLeftIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <PanelLeftOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <ChevronRightIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             )}
           </button>
-          {messages.length > 0 && (
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-sans tracking-tight">Chat</span>
-          )}
+          
         </div>
 
         {messages.length === 0 ? (
           /* Empty Conversation: Prompt Input Centered in Middle */
           <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-0 relative select-none">
             <div className="flex flex-col items-center gap-2 mb-6 text-center max-w-md select-none">
-              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-50 to-violet-50 dark:from-slate-800 dark:to-slate-850 border border-indigo-100 dark:border-slate-700 shadow-corporate flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-1 overflow-hidden group">
+              {/* <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-50 to-violet-50 dark:from-slate-800 dark:to-slate-850 border border-indigo-100 dark:border-slate-700 shadow-corporate flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-1 overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/10 via-violet-600/10 to-transparent pointer-events-none" />
                 <MessageSquare className="h-7 w-7 stroke-[1.5]" />
-              </div>
+              </div> */}
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight font-sans">Chat</h2>
                 {activeModelId && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
-                    {activeModelId}
+                 <span className='flex items-center'>
+                    <span className='text-xl font-bold text-slate-900 dark:text-white tracking-tight font-sans me-2' >with</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
+                      {activeModelId}
+                    </span>
                   </span>
                 )}
               </div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 font-sans">Start a conversation</p>
               {!activeModelId ? (
                 <p className="text-xs text-slate-400 font-mono">Select a model to begin</p>
               ) : (
@@ -433,7 +433,7 @@ export function ChatView({
           </div>
         ) : (
           /* Active Conversation: Message List & Floating Prompt Input at Bottom */
-          <div className="relative flex-1 min-h-0 flex flex-col pt-12">
+          <div className="relative flex-1 min-h-0 flex flex-col">
             <ScrollArea
               className="flex-1 px-4 py-4 custom-scrollbar"
               viewportRef={viewportRef}

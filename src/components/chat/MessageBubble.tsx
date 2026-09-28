@@ -119,7 +119,7 @@ export function MessageBubble({
         }
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap text-xs leading-relaxed">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">
             {message.content}
           </p>
         ) : (

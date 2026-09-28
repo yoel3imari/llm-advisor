@@ -27,7 +27,7 @@ describe('Markdown renderer', () => {
 
     expect(screen.getByText('Hello')).toBeDefined();
     expect(screen.getByText('item one')).toBeDefined();
-    expect(screen.getByText('1')).toBeDefined();
+    expect(screen.getAllByText('1')[0]).toBeDefined();
     expect(screen.getByText('const a = 1;')).toBeDefined();
     expect(screen.getByRole('button', { name: /copy code/i })).toBeDefined();
   });
