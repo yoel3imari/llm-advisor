@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn test_load_bundled_catalog() {
         let catalog = load_bundled_catalog().expect("Bundled catalog must parse cleanly");
-        assert_eq!(catalog.len(), 53);
+        assert_eq!(catalog.len(), 76);
 
         // Verify specific models
 
@@ -325,12 +325,12 @@ mod tests {
     fn test_load_active_catalog_fallback() {
         // None directory falls back to bundled
         let cat_none = load_active_catalog(None).unwrap();
-        assert_eq!(cat_none.len(), 53);
+        assert_eq!(cat_none.len(), 76);
 
         // Missing catalog directory falls back to bundled
         let tmp = tempfile::tempdir().unwrap();
         let cat_empty = load_active_catalog(Some(tmp.path())).unwrap();
-        assert_eq!(cat_empty.len(), 53);
+        assert_eq!(cat_empty.len(), 76);
 
         // Corrupted catalog in cache falls back to bundled
         let cat_dir = tmp.path().join("catalog");
@@ -338,7 +338,7 @@ mod tests {
         std::fs::write(cat_dir.join("catalog.json"), "invalid json content").unwrap();
 
         let cat_corrupt = load_active_catalog(Some(tmp.path())).unwrap();
-        assert_eq!(cat_corrupt.len(), 53);
+        assert_eq!(cat_corrupt.len(), 76);
     }
 
     #[test]
