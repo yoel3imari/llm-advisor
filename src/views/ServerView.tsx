@@ -12,9 +12,11 @@ import {
   X,
   Layers,
 } from 'lucide-react';
-import type { ModelRecord, ServerState, ServeConfig, KvType, RunningInstanceInfo } from '../types/domain';
-import { startServer, stopServer, stopInstance, getServerLogs, clearServerLogs } from '../ipc/commands';
+import type { AppSettings, ModelRecord, ServerState, ServeConfig, KvType, RunningInstanceInfo } from '../types/domain';
+import { startServer, stopServer, stopInstance, getServerLogs, clearServerLogs, getSettings } from '../ipc/commands';
 import { LogViewer } from '../components/common/LogViewer';
+import { listen } from '@tauri-apps/api/event';
+import { isTauriEnvironment } from '../lib/utils';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -27,11 +29,12 @@ import {
   DropdownMenuEmpty,
 } from '../components/ui/DropdownMenu';
 
-interface Props {
+export interface ServerViewProps {
   serverState: ServerState;
   libraryRecords: ModelRecord[];
   initialSelectedModelId?: string | null;
   onRefreshState: () => void;
+  gatewayPort?: number;
 }
 
 export function ServerView({
@@ -39,7 +42,41 @@ export function ServerView({
   libraryRecords,
   initialSelectedModelId,
   onRefreshState,
-}: Props) {
+  gatewayPort: propGatewayPort,
+}: ServerViewProps) {
+  const [internalGatewayPort, setInternalGatewayPort] = useState<number>(propGatewayPort || 13370);
+
+  useEffect(() => {
+    if (propGatewayPort) {
+      setInternalGatewayPort(propGatewayPort);
+    }
+  }, [propGatewayPort]);
+
+  useEffect(() => {
+    getSettings()
+      .then((s) => {
+        if (s?.gateway_port) {
+          setInternalGatewayPort(s.gateway_port);
+        }
+      })
+      .catch(() => {});
+
+    if (isTauriEnvironment()) {
+      let unlisten: (() => void) | undefined;
+      listen<AppSettings>('settings-changed', (event) => {
+        if (event.payload?.gateway_port) {
+          setInternalGatewayPort(event.payload.gateway_port);
+        }
+      }).then((fn) => {
+        unlisten = fn;
+      }).catch(() => {});
+
+      return () => {
+        unlisten?.();
+      };
+    }
+  }, []);
+
   const [selectedModel, setSelectedModel] = useState<string>(
     initialSelectedModelId || (libraryRecords[0]?.entry_id ?? '')
   );
@@ -157,8 +194,9 @@ export function ServerView({
     }
   };
 
-  const endpointUrl = 'http://127.0.0.1:13370/v1';
-  const curlSnippet = `curl -N http://127.0.0.1:13370/v1/chat/completions \\
+  const activePort = propGatewayPort || internalGatewayPort || 13370;
+  const endpointUrl = `http://127.0.0.1:${activePort}/v1`;
+  const curlSnippet = `curl -N http://127.0.0.1:${activePort}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -d '{"model":"${selectedModel || 'default'}","messages":[{"role":"user","content":"Hello!"}],"stream":true}'`;
 
@@ -184,7 +222,7 @@ export function ServerView({
             <span className="brand-gradient-text">Inference Server Control</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
-            Multi-model sidecar pool with automatic request routing on localhost:13370
+            Multi-model sidecar pool with automatic request routing on localhost:{activePort}
           </p>
         </div>
 

@@ -36,17 +36,20 @@ import {
 import { loadSessions, saveSessions } from '../lib/chat-store';
 import { checkContextLimit, truncateHistoryForContext } from '../lib/token-estimate';
 import { startServer, chatGenerateTitle } from '../ipc/commands';
+import type { ModelRecord } from '../types/domain';
 
 export interface ChatViewProps {
   modelId?: string | null;
   initialSessions?: ChatSession[];
   isActive?: boolean;
+  libraryRecords?: ModelRecord[];
 }
 
 export function ChatView({
   modelId: propModelId = null,
   initialSessions,
   isActive = true,
+  libraryRecords = [],
 }: ChatViewProps) {
   const [activeModelId, setActiveModelId] = React.useState<string | null>(propModelId);
   const [runningModelId, setRunningModelId] = React.useState<string | null>(propModelId);
@@ -86,6 +89,17 @@ export function ChatView({
       setRunningModelId(propModelId);
     }
   }, [propModelId]);
+
+  // Set default model if none selected and models are available in library
+  React.useEffect(() => {
+    if (!activeModelId && libraryRecords && libraryRecords.length > 0) {
+      const defaultModel =
+        runningModelId && libraryRecords.some((r) => r.entry_id === runningModelId)
+          ? runningModelId
+          : libraryRecords[0].entry_id;
+      setActiveModelId(defaultModel);
+    }
+  }, [activeModelId, libraryRecords, runningModelId]);
 
   const handleStreamFinish = React.useCallback(
     async (finalMessages: ChatMessage[]) => {
@@ -395,6 +409,7 @@ export function ChatView({
                   </span>
                 )}
               </div>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 font-sans">Start a conversation</p>
               {!activeModelId ? (
                 <p className="text-xs text-slate-400 font-mono">Select a model to begin</p>
               ) : (
@@ -425,6 +440,7 @@ export function ChatView({
                     isStreaming={isSending}
                     contextSize={params.contextSize}
                     onSelect={handleModelSelect}
+                    models={libraryRecords}
                   />
                 }
               />
@@ -484,6 +500,7 @@ export function ChatView({
                     isStreaming={isSending}
                     contextSize={params.contextSize}
                     onSelect={handleModelSelect}
+                    models={libraryRecords}
                   />
                 }
               />

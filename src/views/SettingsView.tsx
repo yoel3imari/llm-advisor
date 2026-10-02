@@ -25,9 +25,12 @@ import {
   ArrowDownToLine,
   Sun,
   Moon,
+  AlertTriangle,
 } from 'lucide-react';
 import type { AppSettings, ModelRecord, KvType, HardwareProfile, AppUpdateInfo } from '../types/domain';
 import { getStoredTheme, applyTheme } from '../lib/theme';
+import { listen } from '@tauri-apps/api/event';
+import { isTauriEnvironment } from '../lib/utils';
 import {
   getSettings,
   saveSettings,
@@ -105,7 +108,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
 
   const [actionNotice, setActionNotice] = useState<{
     text: string;
-    type: 'success' | 'info';
+    type: 'success' | 'info' | 'error';
   } | null>(null);
 
   const loadData = async () => {
@@ -222,6 +225,21 @@ export function SettingsView({ onSettingsChanged }: Props) {
 
   useEffect(() => {
     loadData();
+
+    if (isTauriEnvironment()) {
+      let unlisten: (() => void) | undefined;
+      listen<AppSettings>('settings-changed', (event) => {
+        if (event.payload) {
+          setSettings(event.payload);
+        }
+      }).then((fn) => {
+        unlisten = fn;
+      }).catch(() => {});
+
+      return () => {
+        unlisten?.();
+      };
+    }
   }, []);
 
   const totalBytes = records.reduce((acc, r) => acc + (r.size_bytes || 0), 0);
@@ -241,8 +259,12 @@ export function SettingsView({ onSettingsChanged }: Props) {
         setActionNotice(null);
       }, 3000);
       onSettingsChanged?.();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to save settings', err);
+      setActionNotice({
+        text: `Failed to save settings: ${String(err)}`,
+        type: 'error',
+      });
     } finally {
       setSaving(false);
     }
@@ -336,7 +358,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <span className="brand-gradient-text">Application Settings</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
-            Configure inference defaults, OpenAI gateway (:13370), background execution, and automated uninstallation
+            Configure inference defaults, OpenAI gateway (:{settings.gateway_port}), background execution, and automated uninstallation
           </p>
         </div>
 
@@ -365,11 +387,15 @@ export function SettingsView({ onSettingsChanged }: Props) {
           className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 animate-in fade-in-0 duration-200 shadow-sm ${
             actionNotice.type === 'success'
               ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+              : actionNotice.type === 'error'
+              ? 'bg-rose-50 dark:bg-rose-950/70 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
               : 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300'
           }`}
         >
           {actionNotice.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          ) : actionNotice.type === 'error' ? (
+            <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
           ) : (
             <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
           )}

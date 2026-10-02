@@ -44,7 +44,6 @@ describe('Sidebar Component', () => {
     expect(screen.getByText('Server Control')).toBeDefined();
     expect(screen.getByText('Settings')).toBeDefined();
     expect(screen.getByText('Daemon')).toBeDefined();
-    expect(screen.getByText(':13370/v1')).toBeDefined();
   });
 
   it('toggles to collapsed mode when clicking the collapse button', () => {
@@ -142,10 +141,11 @@ describe('Sidebar Component', () => {
     // Collapse
     fireEvent.click(screen.getByTestId('main-sidebar-toggle'));
 
-    // Should have active downloads icon button in bottom dock
+    // Should have active downloads progress circle in bottom dock
     const dlBtn = screen.getByRole('button', { name: 'Active downloads' });
     expect(dlBtn).toBeDefined();
     expect(dlBtn.textContent).toContain('1');
+    expect(dlBtn.textContent).toContain('50%');
   });
 
   it('displays ON indicator when server state is serving in collapsed mode', () => {
@@ -168,25 +168,6 @@ describe('Sidebar Component', () => {
 
     const daemonBtn = screen.getByRole('button', { name: 'Daemon: serving' });
     expect(daemonBtn).toBeDefined();
-  });
-
-  it('copies endpoint to clipboard in collapsed mode', async () => {
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: writeTextMock,
-      },
-    });
-
-    renderSidebar();
-
-    // Collapse
-    fireEvent.click(screen.getByTestId('main-sidebar-toggle'));
-
-    const copyBtn = screen.getByRole('button', { name: 'Copy local endpoint' });
-    fireEvent.click(copyBtn);
-
-    expect(writeTextMock).toHaveBeenCalledWith('http://127.0.0.1:13370/v1');
   });
 
   it('respects controlled isCollapsed and onToggleCollapse props', () => {

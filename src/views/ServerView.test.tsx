@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ServerView } from './ServerView';
 import type { ServerState, ModelRecord } from '../types/domain';
 
@@ -129,5 +129,44 @@ describe('ServerView UI & Error Handling', () => {
     await waitFor(() => {
       expect(screen.getByText(/Cleared!|Clear Logs/i)).toBeDefined();
     });
+  });
+
+  it('synchronizes endpoint URL and curl snippet with custom gatewayPort', async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    const serverState: ServerState = { state: 'stopped' };
+
+    render(
+      <ServerView
+        serverState={serverState}
+        libraryRecords={mockLibraryRecords}
+        onRefreshState={() => {}}
+        gatewayPort={13385}
+      />
+    );
+
+    await waitFor(() => {
+      // Verify subheader has custom port
+      expect(screen.getByText(/localhost:13385/i)).toBeDefined();
+      // Verify code block displays custom port
+      expect(screen.getByText('http://127.0.0.1:13385/v1')).toBeDefined();
+    });
+
+    // Copy endpoint URL
+    const copyUrlBtn = screen.getByTitle('Copy URL');
+    fireEvent.click(copyUrlBtn);
+    expect(writeTextMock).toHaveBeenCalledWith('http://127.0.0.1:13385/v1');
+
+    // Copy cURL
+    const copyCurlBtn = screen.getByTitle('Copy curl snippet');
+    fireEvent.click(copyCurlBtn);
+    expect(writeTextMock).toHaveBeenCalledWith(
+      expect.stringContaining('http://127.0.0.1:13385/v1/chat/completions')
+    );
   });
 });

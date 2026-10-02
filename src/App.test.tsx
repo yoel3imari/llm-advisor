@@ -5,6 +5,8 @@ import {
   getServerState,
   chatStream,
   chatCancel,
+  checkAppUpdate,
+  installAppUpdate,
   type ChatStreamCallbacks,
 } from './ipc/commands';
 
@@ -15,6 +17,8 @@ vi.mock('./ipc/commands', async (importOriginal) => {
     getServerState: vi.fn(),
     chatStream: vi.fn(),
     chatCancel: vi.fn(),
+    checkAppUpdate: vi.fn(),
+    installAppUpdate: vi.fn(),
   };
 });
 
@@ -26,6 +30,14 @@ describe('LLM Advisor App UI', () => {
     vi.mocked(chatStream).mockReset();
     vi.mocked(chatCancel).mockReset();
     vi.mocked(chatCancel).mockResolvedValue(undefined);
+    vi.mocked(checkAppUpdate).mockReset();
+    vi.mocked(checkAppUpdate).mockResolvedValue({
+      current_version: '0.2.1',
+      latest_version: '0.2.1',
+      update_available: false,
+    });
+    vi.mocked(installAppUpdate).mockReset();
+    vi.mocked(installAppUpdate).mockResolvedValue(true);
   });
 
   it('renders app shell with navigation sidebar and chat as default view', async () => {
@@ -135,5 +147,87 @@ describe('LLM Advisor App UI', () => {
     expect(
       screen.getByText(/Quantum computing uses qubits to perform calculations in parallel\./)
     ).toBeDefined();
+  });
+
+  it('checks for new version on startup and opens update modal when update is available', async () => {
+    vi.mocked(checkAppUpdate).mockResolvedValue({
+      current_version: '0.2.1',
+      latest_version: '0.3.0',
+      update_available: true,
+      release_notes: '- Multi-model routing improvements\n- Faster prompt processing',
+      pub_date: '2026-10-01T12:00:00Z',
+    });
+
+    render(<App />);
+
+    // Startup check should be executed
+    await waitFor(() => {
+      expect(checkAppUpdate).toHaveBeenCalled();
+      expect(screen.getByText('New Version Available')).toBeDefined();
+    });
+
+    expect(screen.getByText('v0.2.1')).toBeDefined();
+    expect(screen.getByText('v0.3.0')).toBeDefined();
+    expect(screen.getByText(/- Multi-model routing improvements/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Update & Restart/i })).toBeDefined();
+  });
+
+  it('closes update modal when user clicks Dismiss', async () => {
+    vi.mocked(checkAppUpdate).mockResolvedValue({
+      current_version: '0.2.1',
+      latest_version: '0.3.0',
+      update_available: true,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('New Version Available')).toBeDefined();
+    });
+
+    const dismissBtn = screen.getByRole('button', { name: 'Dismiss' });
+    fireEvent.click(dismissBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText('New Version Available')).toBeNull();
+    });
+  });
+
+  it('triggers installAppUpdate when user clicks Update & Restart', async () => {
+    vi.mocked(checkAppUpdate).mockResolvedValue({
+      current_version: '0.2.1',
+      latest_version: '0.3.0',
+      update_available: true,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('New Version Available')).toBeDefined();
+    });
+
+    const updateBtn = screen.getByRole('button', { name: /Update & Restart/i });
+    fireEvent.click(updateBtn);
+
+    await waitFor(() => {
+      expect(installAppUpdate).toHaveBeenCalled();
+    });
+  });
+
+  it('does not open update modal when update_available is false on startup', async () => {
+    vi.mocked(checkAppUpdate).mockResolvedValue({
+      current_version: '0.2.1',
+      latest_version: '0.2.1',
+      update_available: false,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(checkAppUpdate).toHaveBeenCalled();
+    });
+
+    expect(screen.queryByText('New Version Available')).toBeNull();
   });
 });

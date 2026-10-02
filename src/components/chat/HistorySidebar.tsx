@@ -68,14 +68,14 @@ export function HistorySidebar({
       data-open={isOpen ? 'true' : 'false'}
       className={cn(
         'flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 select-none shrink-0 relative z-10 transition-[width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden will-change-[width]',
-        isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 border-transparent pointer-events-none',
+        isOpen ? 'w-64 max-w-[80vw] opacity-100' : 'w-0 opacity-0 border-transparent pointer-events-none',
         className
       )}
     >
       {/* New Session Header */}
       <div
         className={cn(
-          'p-3 border-b border-slate-200 dark:border-slate-800 min-w-[256px] shrink-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'p-3 border-b border-slate-200 dark:border-slate-800 w-full overflow-hidden shrink-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
           isOpen ? 'opacity-100 delay-75' : 'opacity-0'
         )}
       >
@@ -93,7 +93,7 @@ export function HistorySidebar({
 
       <ScrollArea
         className={cn(
-          'flex-1 min-h-0 min-w-[256px] shrink-0 custom-scrollbar transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'flex-1 min-h-0 w-full overflow-hidden custom-scrollbar transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] [&>div>div]:!block [&>div>div]:!w-full [&>div>div]:!min-w-0',
           isOpen ? 'opacity-100 delay-75' : 'opacity-0'
         )}
       >
@@ -104,7 +104,7 @@ export function HistorySidebar({
             <p className="text-[11px] text-slate-400 mt-0.5 font-mono">Start a new chat to begin</p>
           </div>
         ) : (
-          <div className="py-2 px-1.5 space-y-1">
+          <div className="py-2 px-1.5 space-y-1 w-full min-w-0 max-w-full overflow-hidden">
             {sessions.map((session) => {
               const title = session.title || generateHeuristicTitle(session.messages) || 'New Chat';
               const isActive = activeSessionId === session.id;
@@ -124,14 +124,12 @@ export function HistorySidebar({
                       onSelectSession(session.id);
                     }
                   }}
-                  className={
-                    cn(
-                      'group relative flex items-center justify-between gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all text-left border mx-1',
-                      isActive
-                        ? 'bg-indigo-50/80 dark:bg-slate-800 text-indigo-950 dark:text-white border-indigo-100 dark:border-slate-700 shadow-sm font-semibold'
-                        : 'border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                    ) + (isActive ? ' bg-zinc-800/0' : '')
-                  }
+                  className={cn(
+                    'group relative flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-all text-left border w-full min-w-0 max-w-full overflow-hidden',
+                    isActive
+                      ? 'bg-indigo-50/80 dark:bg-slate-800 text-indigo-950 dark:text-white border-indigo-100 dark:border-slate-700 shadow-sm font-semibold bg-zinc-800/0'
+                      : 'border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                  )}
                 >
                   {isActive && (
                     <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-indigo-600 to-violet-600 shadow-corporate-btn" />
@@ -139,7 +137,7 @@ export function HistorySidebar({
 
                   {isEditing ? (
                     <div
-                      className="flex items-center gap-1 flex-1 min-w-0"
+                      className="flex items-center gap-1 flex-1 min-w-0 w-full overflow-hidden"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <input
@@ -161,7 +159,7 @@ export function HistorySidebar({
                         }}
                         data-testid={`rename-input-${session.id}`}
                         aria-label="Rename conversation"
-                        className="text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-indigo-500 rounded px-1.5 py-0.5 w-full outline-none font-medium"
+                        className="text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-indigo-500 rounded px-1.5 py-0.5 min-w-0 flex-1 outline-none font-medium"
                       />
                       <button
                         type="button"
@@ -175,7 +173,7 @@ export function HistorySidebar({
                         }}
                         title="Save Title"
                         aria-label="Save Title"
-                        className="p-1 rounded text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                        className="p-1 rounded text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -188,7 +186,7 @@ export function HistorySidebar({
                         }}
                         title="Cancel Rename"
                         aria-label="Cancel Rename"
-                        className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -196,7 +194,7 @@ export function HistorySidebar({
                   ) : (
                     <>
                       <span
-                        className="text-xs font-semibold truncate flex-1 min-w-0"
+                        className="text-xs font-semibold truncate flex-1 min-w-0 overflow-hidden"
                         title={title}
                         onDoubleClick={(e) => {
                           e.stopPropagation();
@@ -208,7 +206,7 @@ export function HistorySidebar({
                       </span>
 
                       <div
-                        className="flex items-center gap-0.5 shrink-0"
+                        className="flex items-center gap-0.5 shrink-0 ml-1"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {onRenameSession && !isConfirming && (
@@ -220,7 +218,7 @@ export function HistorySidebar({
                               setEditingSessionId(session.id);
                               setEditTitle(title);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 p-1.5 rounded-lg transition-all"
+                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 p-1.5 rounded-lg transition-all shrink-0"
                             title="Rename Chat"
                             aria-label="Rename Chat"
                           >
@@ -238,7 +236,7 @@ export function HistorySidebar({
                               onRegenerateTitle(session.id);
                             }}
                             className={cn(
-                              'p-1.5 rounded-lg transition-all',
+                              'p-1.5 rounded-lg transition-all shrink-0',
                               isRegenerating
                                 ? 'opacity-100 text-indigo-500'
                                 : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none'

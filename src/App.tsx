@@ -18,19 +18,15 @@ import {
   getServerState,
   cancelDownload,
   getSettings,
+  checkAppUpdate,
 } from './ipc/commands';
-import type { HardwareProfile, ModelRecord, DownloadTask, ServerState } from './types/domain';
+import type { HardwareProfile, ModelRecord, DownloadTask, ServerState, AppSettings, AppUpdateInfo } from './types/domain';
 import { getStoredTheme, applyTheme } from './lib/theme';
+import { isTauriEnvironment } from './lib/utils';
+import { UpdateDialog } from './components/ui/UpdateDialog';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
-}
-
-function isTauriEnvironment(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    Boolean((window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__)
-  );
 }
 
 function MainApp() {
@@ -40,7 +36,10 @@ function MainApp() {
   const [activeDownloads, setActiveDownloads] = useState<DownloadTask[]>([]);
   const [serverState, setServerState] = useState<ServerState>({ state: 'stopped' });
   const [targetServerModel, setTargetServerModel] = useState<string | null>(null);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [availableUpdate, setAvailableUpdate] = useState<AppUpdateInfo | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   const { showToast } = useToast();
@@ -52,13 +51,14 @@ function MainApp() {
     }
   }, [activeTab]);
 
-  // Initial mount: load hardware profile, sync theme, and initial state
+  // Initial mount: load hardware profile, sync theme, check for updates, and initial state
   useEffect(() => {
-    // 1. Initialize and sync theme
+    // 1. Initialize and sync theme & settings
     const storedTheme = getStoredTheme();
     applyTheme(storedTheme);
     getSettings()
       .then((s) => {
+        setSettings(s);
         if (s.theme && s.theme !== storedTheme) {
           applyTheme(s.theme);
         }
@@ -69,6 +69,18 @@ function MainApp() {
     getHardwareProfile()
       .then((p) => setProfile(p))
       .catch((e) => setError(e.toString()));
+
+    // 3. Check for application update on startup
+    checkAppUpdate()
+      .then((info) => {
+        if (info && info.update_available) {
+          setAvailableUpdate(info);
+          setShowUpdateModal(true);
+        }
+      })
+      .catch((e) => {
+        console.debug('Startup update check skipped or failed:', e);
+      });
 
     // Request notification permission if running inside Tauri
     if (isTauriEnvironment()) {
@@ -88,15 +100,19 @@ function MainApp() {
 
   const refreshDynamicState = useCallback(async () => {
     try {
-      const [lib, dl, srv] = await Promise.all([
+      const [lib, dl, srv, sett] = await Promise.all([
         listLibraryModels().catch(() => []),
         getActiveDownloads().catch(() => []),
         getServerState().catch(() => ({ state: 'stopped' as const })),
+        getSettings().catch(() => null),
       ]);
 
       setLibraryRecords((prev) => (isDeepEqual(prev, lib) ? prev : lib));
       setActiveDownloads((prev) => (isDeepEqual(prev, dl) ? prev : dl));
       setServerState((prev) => (isDeepEqual(prev, srv) ? prev : srv));
+      if (sett) {
+        setSettings((prev) => (isDeepEqual(prev, sett) ? prev : sett));
+      }
     } catch (err: unknown) {
       setError(String(err));
     }
@@ -130,6 +146,7 @@ function MainApp() {
 
     let unlistenComplete: (() => void) | undefined;
     let unlistenFailed: (() => void) | undefined;
+    let unlistenSettings: (() => void) | undefined;
 
     (async () => {
       try {
@@ -161,6 +178,15 @@ function MainApp() {
             durationMs: 10000,
           });
         });
+
+        unlistenSettings = await listen<AppSettings>('settings-changed', (event) => {
+          if (event.payload) {
+            setSettings((prev) => (isDeepEqual(prev, event.payload) ? prev : event.payload));
+            if (event.payload.theme) {
+              applyTheme(event.payload.theme);
+            }
+          }
+        });
       } catch (err) {
         console.debug('Tauri event listeners inactive in mock context:', err);
       }
@@ -169,6 +195,7 @@ function MainApp() {
     return () => {
       unlistenComplete?.();
       unlistenFailed?.();
+      unlistenSettings?.();
     };
   }, [refreshDynamicState, showToast, handleNavigateToServer]);
 
@@ -196,6 +223,7 @@ function MainApp() {
               serverState.state === 'serving' ? serverState.model_id : null
             }
             isActive={activeTab === 'chat'}
+            libraryRecords={libraryRecords}
           />
         </div>
         {activeTab === 'dashboard' && (
@@ -223,12 +251,19 @@ function MainApp() {
             libraryRecords={libraryRecords}
             initialSelectedModelId={targetServerModel}
             onRefreshState={refreshDynamicState}
+            gatewayPort={settings?.gateway_port ?? 13370}
           />
         )}
         {activeTab === 'settings' && (
           <SettingsView onSettingsChanged={refreshDynamicState} />
         )}
       </main>
+
+      <UpdateDialog
+        open={showUpdateModal}
+        onOpenChange={setShowUpdateModal}
+        updateInfo={availableUpdate}
+      />
     </div>
   );
 }

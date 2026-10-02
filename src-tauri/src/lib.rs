@@ -99,6 +99,7 @@ pub struct AppState {
     pub app_data_dir: PathBuf,
     pub active_downloads: Arc<Mutex<HashMap<String, (DownloadTask, CancellationToken)>>>,
     pub chat_sessions: Arc<chat::ChatSessionManager>,
+    pub gateway_handle: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
 }
 
 fn load_or_init_settings(
@@ -199,8 +200,35 @@ async fn purge_all_models(state: State<'_, AppState>) -> Result<u64, String> {
     state.library_store.purge_all().map_err(|e| e.to_string())
 }
 
+async fn restart_gateway_internal(
+    app: &tauri::AppHandle,
+    server_manager: Arc<ServerManager>,
+    gateway_handle: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
+    new_port: u16,
+) -> Result<(), String> {
+    let (bound_port, new_handle) = gateway::start_gateway(server_manager, new_port)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut lock = gateway_handle.lock().await;
+    if let Some(old_handle) = lock.take() {
+        old_handle.abort();
+    }
+    *lock = Some(new_handle);
+
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let _ = tray.set_tooltip(Some(format!("LLM Advisor (:{})", bound_port)));
+    }
+
+    tracing::info!("Axum gateway successfully switched to port {}", bound_port);
+    Ok(())
+}
+
 #[tauri::command]
-async fn factory_reset(state: State<'_, AppState>) -> Result<bool, String> {
+async fn factory_reset(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<bool, String> {
     // 1. Stop server
     let _ = state.server_manager.stop_server().await;
 
@@ -225,17 +253,29 @@ async fn factory_reset(state: State<'_, AppState>) -> Result<bool, String> {
             .to_string(),
         ..Default::default()
     };
+    let old_port = state.settings.read().unwrap().gateway_port;
+    if default_settings.gateway_port != old_port {
+        let _ = restart_gateway_internal(
+            &app,
+            state.server_manager.clone(),
+            state.gateway_handle.clone(),
+            default_settings.gateway_port,
+        )
+        .await;
+    }
     let _ = save_settings_to_file(&state.settings_path, &default_settings);
     {
         let mut s = state.settings.write().unwrap();
-        *s = default_settings;
+        *s = default_settings.clone();
     }
 
+    let _ = app.emit("settings-changed", &default_settings);
     Ok(true)
 }
 
 #[tauri::command]
 async fn clean_uninstall(
+    app: tauri::AppHandle,
     state: State<'_, AppState>,
     options: Option<CleanUninstallOptions>,
 ) -> Result<UninstallResult, String> {
@@ -277,11 +317,22 @@ async fn clean_uninstall(
                 .to_string(),
             ..Default::default()
         };
+        let old_port = state.settings.read().unwrap().gateway_port;
+        if default_settings.gateway_port != old_port {
+            let _ = restart_gateway_internal(
+                &app,
+                state.server_manager.clone(),
+                state.gateway_handle.clone(),
+                default_settings.gateway_port,
+            )
+            .await;
+        }
         let _ = save_settings_to_file(&state.settings_path, &default_settings);
         {
             let mut s = state.settings.write().unwrap();
-            *s = default_settings;
+            *s = default_settings.clone();
         }
+        let _ = app.emit("settings-changed", &default_settings);
     }
 
     // 6. Clear cache if requested
@@ -556,9 +607,30 @@ async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String>
 }
 
 #[tauri::command]
-async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Result<(), String> {
+async fn save_settings(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    settings: AppSettings,
+) -> Result<(), String> {
+    let old_port = state.settings.read().unwrap().gateway_port;
+    let is_running = {
+        let lock = state.gateway_handle.lock().await;
+        lock.is_some()
+    };
+    if settings.gateway_port != old_port || !is_running {
+        restart_gateway_internal(
+            &app,
+            state.server_manager.clone(),
+            state.gateway_handle.clone(),
+            settings.gateway_port,
+        )
+        .await?;
+    }
+
     save_settings_to_file(&state.settings_path, &settings)?;
-    *state.settings.write().unwrap() = settings;
+    *state.settings.write().unwrap() = settings.clone();
+
+    let _ = app.emit("settings-changed", &settings);
     Ok(())
 }
 
@@ -750,6 +822,11 @@ async fn install_app_update(app: tauri::AppHandle) -> Result<bool, String> {
             .download_and_install(|_chunk, _total| {}, || {})
             .await
             .map_err(|e| e.to_string())?;
+        let app_handle = app.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+            app_handle.restart();
+        });
         Ok(true)
     } else {
         Ok(false)
@@ -810,12 +887,22 @@ pub fn run() {
                 load_or_init_settings(&app_data_dir, &library_store);
             let settings = Arc::new(RwLock::new(settings_val.clone()));
 
+            let gateway_handle = Arc::new(tokio::sync::Mutex::new(None));
+
             // Launch Axum gateway in background
             let sm_clone = server_manager.clone();
             let gateway_port = settings.read().unwrap().gateway_port;
+            let gh_clone = gateway_handle.clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = start_gateway(sm_clone, gateway_port).await {
-                    tracing::error!("Failed to launch Axum gateway on {}: {}", gateway_port, e);
+                match start_gateway(sm_clone, gateway_port).await {
+                    Ok((bound_port, handle)) => {
+                        let mut lock = gh_clone.lock().await;
+                        *lock = Some(handle);
+                        tracing::info!("Axum gateway bound to port {}", bound_port);
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to launch Axum gateway on {}: {}", gateway_port, e);
+                    }
                 }
             });
 
@@ -829,7 +916,7 @@ pub fn run() {
                 .build()?;
 
             let tray_builder = TrayIconBuilder::with_id("main-tray")
-                .tooltip("LLM Advisor (:13370)")
+                .tooltip(format!("LLM Advisor (:{})", gateway_port))
                 .menu(&tray_menu)
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| match event.id().as_ref() {
@@ -901,6 +988,7 @@ pub fn run() {
                 app_data_dir,
                 active_downloads: Arc::new(Mutex::new(HashMap::new())),
                 chat_sessions: Arc::new(chat::ChatSessionManager::new()),
+                gateway_handle,
             });
 
             Ok(())

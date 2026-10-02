@@ -411,7 +411,7 @@ export async function mockClearServerLogs(_modelId?: string): Promise<void> {
   mockLogs = [];
 }
 
-let mockSavedSettings: AppSettings = {
+const DEFAULT_MOCK_SETTINGS: AppSettings = {
   hf_token: '',
   gateway_port: 13370,
   default_context_size: 4096,
@@ -422,6 +422,8 @@ let mockSavedSettings: AppSettings = {
   catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
   theme: 'dark',
 };
+
+let mockSavedSettings: AppSettings = { ...DEFAULT_MOCK_SETTINGS };
 
 export async function mockGetSettings(): Promise<AppSettings> {
   return { ...mockSavedSettings };
@@ -453,6 +455,7 @@ export async function mockFactoryReset(): Promise<boolean> {
   mockDownloads = [];
   mockServerState = { state: 'stopped' };
   mockLogs = [];
+  mockSavedSettings = { ...DEFAULT_MOCK_SETTINGS };
   return true;
 }
 
@@ -465,7 +468,7 @@ export async function mockCleanUninstall(options?: CleanUninstallOptions): Promi
     mockDownloads = [];
   }
   if (options?.clear_configs !== false) {
-    // Reset configuration
+    mockSavedSettings = { ...DEFAULT_MOCK_SETTINGS };
   }
   if (options?.clear_cache !== false) {
     mockLogs = [];
@@ -490,14 +493,38 @@ export async function mockAppVersion(): Promise<string> {
   return appVersion;
 }
 
+let mockUpdateAvailable = false;
+let mockLatestVersion = appVersion;
+let mockReleaseNotes: string | undefined = undefined;
+let mockPubDate: string | undefined = undefined;
+
+export function setMockAppUpdate(update: {
+  update_available: boolean;
+  latest_version?: string;
+  release_notes?: string;
+  pub_date?: string;
+}) {
+  mockUpdateAvailable = update.update_available;
+  if (update.latest_version) mockLatestVersion = update.latest_version;
+  mockReleaseNotes = update.release_notes;
+  mockPubDate = update.pub_date;
+}
+
+export function resetMockAppUpdate() {
+  mockUpdateAvailable = false;
+  mockLatestVersion = appVersion;
+  mockReleaseNotes = undefined;
+  mockPubDate = undefined;
+}
+
 export async function mockCheckAppUpdate(): Promise<AppUpdateInfo> {
   await new Promise((r) => setTimeout(r, 150));
   return {
     current_version: appVersion,
-    latest_version: appVersion,
-    update_available: false,
-    release_notes: undefined,
-    pub_date: undefined,
+    latest_version: mockLatestVersion,
+    update_available: mockUpdateAvailable,
+    release_notes: mockReleaseNotes,
+    pub_date: mockPubDate,
   };
 }
 

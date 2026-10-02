@@ -33,6 +33,7 @@ export function ModelSelector({
   onSelect,
   onServerStarted,
   triggerClassName,
+  models: propModels,
 }: {
   selectedModelId: string | null;
   runningModelId?: string | null;
@@ -41,34 +42,35 @@ export function ModelSelector({
   onSelect: (modelId: string) => void;
   onServerStarted?: () => void;
   triggerClassName?: string;
+  models?: ModelRecord[];
 }) {
-  const [models, setModels] = React.useState<ModelRecord[]>([]);
+  const [internalModels, setInternalModels] = React.useState<ModelRecord[]>([]);
   const [catalogMap, setCatalogMap] = React.useState<Record<string, CatalogEntry>>({});
   const [warming, setWarming] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let active = true;
-    Promise.all([
-      listLibraryModels(),
-      getCatalog().catch(() => [] as CatalogEntry[]),
-    ])
-      .then(([records, catalogEntries]) => {
-        if (!active) return;
-        setModels(records);
-        const map: Record<string, CatalogEntry> = {};
-        for (const entry of catalogEntries) {
-          map[entry.id] = entry;
-        }
-        setCatalogMap(map);
-      })
-      .catch((e) => {
-        if (active) setLoadError(String(e));
-      });
-    return () => {
-      active = false;
-    };
+  const fetchModels = React.useCallback(async () => {
+    try {
+      const [records, catalogEntries] = await Promise.all([
+        listLibraryModels(),
+        getCatalog().catch(() => [] as CatalogEntry[]),
+      ]);
+      setInternalModels(records);
+      const map: Record<string, CatalogEntry> = {};
+      for (const entry of catalogEntries) {
+        map[entry.id] = entry;
+      }
+      setCatalogMap(map);
+    } catch (e) {
+      setLoadError(String(e));
+    }
   }, []);
+
+  React.useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
+
+  const models = propModels !== undefined ? propModels : internalModels;
 
   const busy = warming || isStreaming;
 
@@ -106,8 +108,11 @@ export function ModelSelector({
   return (
     <div className="flex items-center gap-2">
       <Select
-        value={selectedModelId ?? undefined}
+        value={selectedModelId ?? ''}
         onValueChange={handleChange}
+        onOpenChange={(open) => {
+          if (open) fetchModels();
+        }}
         disabled={busy}
       >
         <SelectTrigger

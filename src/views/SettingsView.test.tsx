@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { SettingsView } from './SettingsView';
 
 describe('SettingsView UI & Automated Uninstaller', () => {
@@ -144,6 +144,30 @@ describe('SettingsView UI & Automated Uninstaller', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Preferences saved successfully.')).toBeDefined();
+    });
+  });
+
+  it('updates gateway port in settings and triggers onSettingsChanged', async () => {
+    const onSettingsChanged = vi.fn();
+    render(<SettingsView onSettingsChanged={onSettingsChanged} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('OpenAI-Compatible Gateway Network')).toBeDefined();
+    });
+
+    const portInput = screen.getByDisplayValue('13370');
+    fireEvent.change(portInput, { target: { value: '13390' } });
+
+    // Header and endpoint copy box should reflect new port
+    expect(screen.getByText(/OpenAI gateway \(:13390\)/)).toBeDefined();
+    expect(screen.getByText('http://127.0.0.1:13390/v1')).toBeDefined();
+
+    // Save preferences
+    fireEvent.click(screen.getByText('Save Preferences'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Preferences saved successfully.')).toBeDefined();
+      expect(onSettingsChanged).toHaveBeenCalled();
     });
   });
 });

@@ -6,9 +6,6 @@ import {
   PlayCircle,
   Settings,
   X,
-  Terminal,
-  Check,
-  Copy,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from 'lucide-react';
@@ -77,8 +74,6 @@ export function Sidebar({
   const [internalCollapsed, setInternalCollapsed] = useState<boolean>(getStoredCollapsed);
   const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : internalCollapsed;
 
-  const [copiedPort, setCopiedPort] = useState(false);
-
   const handleToggle = useCallback(() => {
     if (onToggleCollapse) {
       onToggleCollapse();
@@ -135,14 +130,10 @@ export function Sidebar({
     { id: 'settings' as NavTab, label: 'Settings', icon: Settings, badge: null },
   ];
 
-  const handleCopyEndpoint = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('http://127.0.0.1:13370/v1');
-    }
-    setCopiedPort(true);
-    setTimeout(() => setCopiedPort(false), 2000);
-  };
+  const totalBytesDone = activeDownloads.reduce((sum, d) => sum + d.bytes_done, 0);
+  const totalBytes = activeDownloads.reduce((sum, d) => sum + d.bytes_total, 0);
+  const overallDownloadPct =
+    totalBytes > 0 ? Math.min(100, Math.round((totalBytesDone / totalBytes) * 100)) : 0;
 
   return (
     <aside
@@ -305,13 +296,13 @@ export function Sidebar({
                       <span
                         aria-hidden={isCollapsed}
                         className={cn(
-                          'px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold overflow-hidden whitespace-nowrap transition-all ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-auto',
+                          'overflow-hidden whitespace-nowrap transition-all ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-auto',
                           isCollapsed
                             ? `max-w-0 opacity-0 scale-75 pointer-events-none px-0 ${FADE_OUT}`
-                            : `max-w-[40px] opacity-100 scale-100 ${FADE_IN}`,
+                            : `opacity-100 scale-100 ${FADE_IN}`,
                           item.badge === 'ON'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60'
-                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800/60 animate-pulse'
+                            ? 'px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold max-w-[40px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60'
+                            : 'px-1.5 min-w-[18px] h-4.5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800/60 animate-pulse'
                         )}
                       >
                         {item.badge}
@@ -327,7 +318,7 @@ export function Sidebar({
                           isCollapsed ? `opacity-100 scale-100 ${FADE_OUT}` : `opacity-0 scale-50 pointer-events-none ${FADE_IN}`,
                           item.badge === 'ON'
                             ? 'top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]'
-                            : '-top-1 -right-1 px-1 min-w-[16px] h-4 rounded-full bg-indigo-600 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-pulse shadow-sm'
+                            : 'top-1 right-1 px-1 min-w-[16px] h-4 rounded-full bg-indigo-600 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-pulse shadow-sm'
                         )}
                       >
                         {item.badge !== 'ON' ? item.badge : null}
@@ -363,7 +354,7 @@ export function Sidebar({
         {/* Active Downloads Section */}
         {activeDownloads.length > 0 && (
           <>
-            {/* Collapsed Active Downloads Icon Button */}
+            {/* Collapsed Active Downloads Progress Circle */}
             <div
               aria-hidden={!isCollapsed}
               className={cn(
@@ -380,15 +371,42 @@ export function Sidebar({
                     aria-label="Active downloads"
                     className="w-10 h-10 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 relative transition-all hover:scale-105"
                   >
-                    <FolderDown className="w-4 h-4 animate-bounce" />
-                    <span className="absolute -top-1 -right-1 px-1 min-w-[14px] h-3.5 rounded-full bg-indigo-600 text-white font-mono text-[8px] font-bold flex items-center justify-center">
-                      {activeDownloads.length}
+                    <svg className="w-8 h-8 -rotate-90" viewBox="0 0 36 36">
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="text-slate-200 dark:text-slate-800"
+                      />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray={87.96}
+                        strokeDashoffset={87.96 - (87.96 * overallDownloadPct) / 100}
+                        strokeLinecap="round"
+                        className="text-indigo-600 dark:text-indigo-400 transition-all duration-300"
+                      />
+                    </svg>
+                    <span className="absolute text-[8px] font-mono font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {overallDownloadPct}%
                     </span>
+                    {activeDownloads.length > 0 && (
+                      <span className="absolute -top-1 -right-1 px-1 min-w-[13px] h-3.5 rounded-full bg-indigo-600 text-white font-mono text-[8px] font-bold flex items-center justify-center shadow-sm">
+                        {activeDownloads.length}
+                      </span>
+                    )}
                   </button>
                 </TooltipTrigger>
                 {isCollapsed && (
                   <TooltipContent side="right" sideOffset={8}>
-                    {activeDownloads.length} active download{activeDownloads.length > 1 ? 's' : ''} (Click to open Library)
+                    {activeDownloads.length} active download{activeDownloads.length > 1 ? 's' : ''}: {overallDownloadPct}% ({formatDownloadSize(totalBytesDone)} / {formatDownloadSize(totalBytes)}) (Click to open Library)
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -512,62 +530,6 @@ export function Sidebar({
           </>
         )}
 
-        {/* Local Gateway Port Dock */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={handleCopyEndpoint}
-              aria-label={isCollapsed ? 'Copy local endpoint' : undefined}
-              className="h-10 w-full justify-start rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-slate-600 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center cursor-pointer group shadow-sm overflow-hidden select-none"
-              title={!isCollapsed ? 'Click to copy local OpenAI endpoint (127.0.0.1:13370/v1)' : undefined}
-            >
-              <div className="flex items-center min-w-0 flex-1">
-                <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-                  {copiedPort ? (
-                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 transition-transform scale-110" />
-                  ) : (
-                    <Terminal className="w-4 h-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-200" />
-                  )}
-                </div>
-                <span
-                  aria-hidden={isCollapsed}
-                  className={cn(
-                    'text-[11px] font-mono text-slate-600 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-all ease-[cubic-bezier(0.16,1,0.3,1)] font-semibold tabular-nums overflow-hidden whitespace-nowrap min-w-0',
-                    isCollapsed
-                      ? `max-w-0 opacity-0 -translate-x-2 pointer-events-none ${FADE_OUT}`
-                      : `max-w-[90px] opacity-100 translate-x-0 ${FADE_IN}`
-                  )}
-                >
-                  :13370/v1
-                </span>
-              </div>
-
-              <div
-                aria-hidden={isCollapsed}
-                className={cn(
-                  'flex items-center overflow-hidden whitespace-nowrap transition-all ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-auto pr-2.5',
-                  isCollapsed
-                    ? `max-w-0 opacity-0 pointer-events-none ${FADE_OUT}`
-                    : `max-w-[60px] opacity-100 ${FADE_IN}`
-                )}
-              >
-                {copiedPort ? (
-                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Copied
-                  </span>
-                ) : (
-                  <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors" />
-                )}
-              </div>
-            </button>
-          </TooltipTrigger>
-          {isCollapsed && (
-            <TooltipContent side="right" sideOffset={8}>
-              {copiedPort ? 'Copied :13370/v1!' : 'Click to copy endpoint (127.0.0.1:13370/v1)'}
-            </TooltipContent>
-          )}
-        </Tooltip>
 
         {/* Server Status Pill */}
         <Tooltip>
