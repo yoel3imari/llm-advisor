@@ -1476,7 +1476,7 @@
     "context_train": 262144,
     "quant": "Q4_K_M",
     "file_size_bytes": 18556686752,
-    "sha256": "e38a47898a0949b2369c4abd63cbde89fc5946cc9a45c9d2078bc321ddc20c25",
+    "sha256": "6c997b8af17debdfb01d890214400ccbab00db6acc0ba8da5de1cc906c4774d0",
     "gated": false,
     "quality_tier": 4,
     "tags": [
@@ -1667,7 +1667,13 @@
       "phi-4-mini",
       "reasoning",
       "efficient"
-    ]
+    ],
+    "benchmarks": {
+      "livecodebench": 45.8,
+      "human_eval": 88.0,
+      "mmlu_pro": 39.3,
+      "arena_elo": 1300
+    }
   },
   {
     "id": "devstral-small-2505-q4_k_m",
@@ -1857,7 +1863,7 @@
     "n_layers": 52,
     "n_kv_heads": 2,
     "head_dim": 128,
-    "context_train": 262144,
+    "context_train": 131072,
     "quant": "Q4_K_M",
     "file_size_bytes": 24515129536,
     "sha256": "e3efd3f173538eef6a422cfb20f273413348adfd75e14b846acf36943894ef43",
