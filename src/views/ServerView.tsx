@@ -86,6 +86,7 @@ export function ServerView({
   const [selectedLogModel, setSelectedLogModel] = useState<string>('all');
   const [copied, setCopied] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
+  const [copiedModelId, setCopiedModelId] = useState(false);
   const [busy, setBusy] = useState(false);
   const [modelSearch, setModelSearch] = useState('');
 
@@ -210,6 +211,20 @@ export function ServerView({
     navigator.clipboard.writeText(curlSnippet);
     setCopiedCurl(true);
     setTimeout(() => setCopiedCurl(false), 2000);
+  };
+
+  const copyableModelId =
+    selectedModel || activeInstances[0]?.model_id || libraryRecords[0]?.entry_id || '';
+
+  const handleCopyModelId = async () => {
+    if (!copyableModelId) return;
+    try {
+      await navigator.clipboard.writeText(copyableModelId);
+      setCopiedModelId(true);
+      setTimeout(() => setCopiedModelId(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy model ID', err);
+    }
   };
 
   const isStarting = serverState.state === 'starting';
@@ -444,7 +459,7 @@ export function ServerView({
 
         {/* Endpoint Info Bar */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+          <div className="flex flex-wrap items-center gap-2 text-slate-700 dark:text-slate-300">
             <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span className="font-mono text-slate-500 dark:text-slate-400 text-xs">OpenAI Gateway:</span>
             <code className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-indigo-600 dark:text-indigo-400 font-mono font-bold tabular-nums">
@@ -465,6 +480,24 @@ export function ServerView({
               <Terminal className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               <span>{copiedCurl ? 'Copied curl!' : 'Copy cURL'}</span>
             </button>
+            <div className="ml-2 flex items-center gap-1.5 min-w-0">
+              <span className="font-mono text-slate-500 dark:text-slate-400 text-[11px]">Model ID:</span>
+              <code
+                className="max-w-[160px] truncate px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-slate-700 dark:text-slate-300 font-mono font-bold text-[11px]"
+                title={copyableModelId || 'No model selected'}
+              >
+                {copyableModelId || 'none'}
+              </code>
+              <button
+                onClick={handleCopyModelId}
+                disabled={!copyableModelId}
+                className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 transition-colors"
+                title="Copy model ID"
+                aria-label={`Copy model ID: ${copyableModelId}`}
+              >
+                {copiedModelId ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="text-slate-400 font-mono text-[11px]">

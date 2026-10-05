@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { FolderDown, Trash2, CheckCircle, RefreshCw, AlertCircle, PlayCircle, XCircle } from 'lucide-react';
+import { FolderDown, Trash2, CheckCircle, RefreshCw, AlertCircle, PlayCircle, XCircle, Copy } from 'lucide-react';
 import type { ModelRecord, DownloadTask, LibraryReconciliation } from '../types/domain';
 import { deleteLibraryModel, reconcileLibrary, cancelDownload } from '../ipc/commands';
 import { DeleteConfirmDialog } from '../components/ui/DeleteConfirmDialog';
+import { useToast } from '../components/ui/Toast';
 
 interface Props {
   records: ModelRecord[];
@@ -20,6 +21,25 @@ export function LibraryView({
   const [reconciliation, setReconciliation] = useState<LibraryReconciliation | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ModelRecord | null>(null);
+  const { showToast } = useToast();
+
+  const handleCopyModelId = async (entryId: string) => {
+    try {
+      await navigator.clipboard.writeText(entryId);
+      showToast({
+        type: 'success',
+        title: 'Model ID Copied',
+        description: entryId,
+      });
+    } catch (err) {
+      console.error('Failed to copy model ID to clipboard', err);
+      showToast({
+        type: 'error',
+        title: 'Copy Failed',
+        description: 'Could not copy the model ID to the clipboard.',
+      });
+    }
+  };
 
   const handleDelete = async (entryId: string) => {
     try {
@@ -232,6 +252,14 @@ export function LibraryView({
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow-corporate-btn hover:-translate-y-0.5 active:translate-y-0 transition-all"
                         >
                           <PlayCircle className="w-3.5 h-3.5" /> Serve
+                        </button>
+                        <button
+                          onClick={() => handleCopyModelId(rec.entry_id)}
+                          className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-corporate-btn hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                          title="Copy model ID"
+                          aria-label={`Copy model ID ${rec.entry_id}`}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(rec)}

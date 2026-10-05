@@ -55,6 +55,10 @@ interface Props {
   statusFilter: string;
 }
 
+function resolveModelId(entry: FitResult['entry']): string {
+  return entry.id || entry.repo_id;
+}
+
 export function ModelsTable({
   results,
   hostBudget,
@@ -701,6 +705,10 @@ export function ModelsTable({
                         <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
                         Copy Repo ID
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigator.clipboard.writeText(resolveModelId(entry))}>
+                        <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+                        Copy Model ID
+                      </DropdownMenuItem>
                       {onDeleteFromLibrary && (
                         <>
                           <DropdownMenuSeparator />
@@ -736,6 +744,10 @@ export function ModelsTable({
                       <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entry.repo_id)}>
                         <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
                         Copy Repo ID
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigator.clipboard.writeText(resolveModelId(entry))}>
+                        <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+                        Copy Model ID
                       </DropdownMenuItem>
                     </>
                   )}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Terminal, Pencil, Sparkles, Check, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/ScrollArea';
 import { Button } from '../ui/Button';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/Tooltip';
 import { type ChatSession, generateHeuristicTitle } from '../../types/chat';
 import { cn } from '../../lib/utils';
 
@@ -61,6 +62,12 @@ export function HistorySidebar({
     };
   }, [confirmingSessionId]);
 
+  // The active session is a freshly created chat with no messages yet, so another
+  // new chat would only add an empty duplicate to the history.
+  const isCurrentChatNewAndEmpty =
+    activeSessionId != null &&
+    sessions.some((session) => session.id === activeSessionId && session.messages.length === 0);
+
   return (
     <aside
       aria-label="Session history"
@@ -79,16 +86,30 @@ export function HistorySidebar({
           isOpen ? 'opacity-100 delay-75' : 'opacity-0'
         )}
       >
-        <Button
-          onClick={() => {
-            setConfirmingSessionId(null);
-            onNewChat();
-          }}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-corporate-btn hover:-translate-y-0.5"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>New Chat</span>
-        </Button>
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* Span keeps hover events alive so the tooltip can explain why the
+                disabled button is inert (disabled buttons have pointer-events-none). */}
+              <span className="block w-full">
+                <Button
+                  disabled={isCurrentChatNewAndEmpty}
+                  onClick={() => {
+                    setConfirmingSessionId(null);
+                    onNewChat();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:shadow-none text-white font-bold py-2 rounded-xl text-xs transition-all shadow-corporate-btn hover:-translate-y-0.5"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>New Chat</span>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {isCurrentChatNewAndEmpty ? 'Already in a new empty chat' : 'Start a new chat'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <ScrollArea

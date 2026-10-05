@@ -122,16 +122,34 @@ export function ModelSelector({
             triggerClassName
           )}
         >
-          <SelectValue placeholder="Select a model" />
+          <SelectValue placeholder="Select a model">
+            <span
+              className="block min-w-0 max-w-full truncate font-mono"
+              title={selectedModelId ?? undefined}
+            >
+              {selectedModelId}
+            </span>
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {models.map((m) => {
             const familyName = getModelFamilyName(m.entry_id, catalogMap);
             return (
               <SelectItem key={m.entry_id} value={m.entry_id} title={m.entry_id}>
-                <span className="truncate max-w-[240px] block font-medium">
-                  {familyName}
+                <span
+                  className="block max-w-[240px] truncate font-mono font-medium"
+                  title={m.entry_id}
+                >
+                  {m.entry_id}
                 </span>
+                {familyName !== m.entry_id && (
+                  <span
+                    className="block max-w-[240px] truncate text-[10px] text-slate-500 dark:text-slate-400"
+                    title={familyName}
+                  >
+                    {familyName}
+                  </span>
+                )}
               </SelectItem>
             );
           })}
