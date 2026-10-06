@@ -20,7 +20,7 @@ jobs:
           - platform: 'ubuntu-24.04'
             target: 'x86_64-unknown-linux-gnu'
             args: '--verbose'
-          - platform: 'macos-13'
+          - platform: 'macos-15-intel'
             target: 'x86_64-apple-darwin'
             args: '--target x86_64-apple-darwin'
           - platform: 'macos-latest'
