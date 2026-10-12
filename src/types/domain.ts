@@ -38,6 +38,12 @@ export interface ModelBenchmarks {
   human_eval?: number;
 }
 
+export interface ModelShard {
+  filename: string;
+  file_size_bytes: number;
+  sha256: string;
+}
+
 export interface CatalogEntry {
   id: string;
   repo_id: string;
@@ -56,6 +62,14 @@ export interface CatalogEntry {
   quality_tier: number;
   tags: string[];
   benchmarks?: ModelBenchmarks;
+  shards?: ModelShard[];
+}
+
+export function totalSizeBytes(entry: CatalogEntry): number {
+  if (entry.shards && entry.shards.length > 0) {
+    return entry.shards.reduce((sum, s) => sum + s.file_size_bytes, 0);
+  }
+  return entry.file_size_bytes;
 }
 
 export type KvType = 'f16' | 'q8_0' | 'q4_0';

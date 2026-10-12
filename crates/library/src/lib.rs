@@ -123,6 +123,7 @@ impl LibraryStore {
             if record.file_path.exists() {
                 let _ = fs::remove_file(&record.file_path);
             }
+            remove_sibling_shards(&record.file_path);
             // Also check for standard file location
             let standard_path = self.models_dir.join(format!("{}.gguf", entry_id));
             if standard_path.exists() {
@@ -222,5 +223,41 @@ impl LibraryStore {
 
         self.write_records_unlocked(&[])?;
         Ok(reclaimed_bytes)
+    }
+}
+
+fn remove_sibling_shards(first_shard: &Path) {
+    let name = match first_shard.file_name().and_then(|n| n.to_str()) {
+        Some(n) => n,
+        None => return,
+    };
+    let marker = "-00001-of-";
+    let stem = match name.find(marker) {
+        Some(i) => &name[..i],
+        None => return,
+    };
+    let total: usize = match name[stem.len() + marker.len()..]
+        .strip_suffix(".gguf")
+        .and_then(|n| n.parse().ok())
+    {
+        Some(n) => n,
+        None => return,
+    };
+    let dir = match first_shard.parent() {
+        Some(d) => d,
+        None => return,
+    };
+    for i in 1..=total {
+        let sibling = dir.join(format!("{}-{:05}-of-{:05}.gguf", stem, i, total));
+        if sibling.exists() {
+            let _ = fs::remove_file(&sibling);
+        }
+        let part = dir.join(format!(
+            "{}-{:05}-of-{:05}.gguf.part",
+            stem, i, total
+        ));
+        if part.exists() {
+            let _ = fs::remove_file(&part);
+        }
     }
 }

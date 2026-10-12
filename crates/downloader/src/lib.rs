@@ -27,13 +27,14 @@ pub struct DownloadOptions {
 
 /// Computes the Hugging Face resolve URL for a catalog entry.
 pub fn get_resolve_url(entry: &CatalogEntry, base_url_override: Option<&str>) -> String {
+    file_resolve_url(&entry.repo_id, &entry.filename, base_url_override)
+}
+
+fn file_resolve_url(repo_id: &str, filename: &str, base_url_override: Option<&str>) -> String {
     if let Some(base) = base_url_override {
-        format!("{}/{}", base.trim_end_matches('/'), entry.filename)
+        format!("{}/{}", base.trim_end_matches('/'), filename)
     } else {
-        format!(
-            "https://huggingface.co/{}/resolve/main/{}",
-            entry.repo_id, entry.filename
-        )
+        format!("https://huggingface.co/{}/resolve/main/{}", repo_id, filename)
     }
 }
 
@@ -65,32 +66,156 @@ pub async fn compute_file_sha256(path: &Path) -> Result<String, AppError> {
 }
 
 /// Execute resumable download with SHA256 integrity verification.
+///
+/// Single-file entries keep the historical `{id}.gguf` destination name.
+/// Split entries keep each shard's original `-00001-of-00005.gguf` basename
+/// so llama.cpp can resolve siblings, and the returned path is the first shard.
 pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppError> {
     let entry = &options.entry;
     tokio::fs::create_dir_all(&options.destination_dir)
         .await
         .map_err(|e| AppError::Io(e.to_string()))?;
 
-    let final_path = options.destination_dir.join(format!("{}.gguf", entry.id));
-    let part_path = options.destination_dir.join(format!("{}.part", entry.id));
-
-    // If final file already exists and matches SHA256, return immediately
-    if final_path.exists() {
-        if let Ok(existing_sha) = compute_file_sha256(&final_path).await {
-            if existing_sha.eq_ignore_ascii_case(&entry.sha256) {
-                info!("Model {} already downloaded and verified", entry.id);
-                if let Some(ref cb) = options.on_progress {
-                    cb(entry.file_size_bytes, entry.file_size_bytes);
-                }
-                return Ok(final_path);
-            }
-        }
-    }
-
-    let url = get_resolve_url(entry, options.base_url_override.as_deref());
     let client = reqwest::Client::builder()
         .build()
         .map_err(|e| AppError::DownloadNetwork(e.to_string()))?;
+
+    if !entry.is_sharded() {
+        let final_path = options.destination_dir.join(format!("{}.gguf", entry.id));
+        let part_path = options.destination_dir.join(format!("{}.part", entry.id));
+
+        if final_path.exists() {
+            if let Ok(existing_sha) = compute_file_sha256(&final_path).await {
+                if existing_sha.eq_ignore_ascii_case(&entry.sha256) {
+                    info!("Model {} already downloaded and verified", entry.id);
+                    if let Some(ref cb) = options.on_progress {
+                        cb(entry.file_size_bytes, entry.file_size_bytes);
+                    }
+                    return Ok(final_path);
+                }
+            }
+        }
+
+        download_one(SingleFileJob {
+            client: &client,
+            options: &options,
+            filename: &entry.filename,
+            expected_size: entry.file_size_bytes,
+            expected_sha: &entry.sha256,
+            part_path: &part_path,
+            progress_base: 0,
+            progress_total: entry.file_size_bytes,
+        })
+        .await?;
+
+        if let Ok(header) = gguf::parse_gguf_file(&part_path) {
+            if let Err(e) = gguf::verify_gguf_against_catalog(&header, entry) {
+                tracing::warn!(
+                    "GGUF header cross-check discrepancy for {}: {}",
+                    entry.id,
+                    e
+                );
+            }
+        }
+
+        tokio::fs::rename(&part_path, &final_path)
+            .await
+            .map_err(|e| AppError::Io(e.to_string()))?;
+
+        info!("Successfully downloaded and verified {}", entry.id);
+        return Ok(final_path);
+    }
+
+    let shards = entry.shards.as_ref().expect("sharded entry has shards");
+    let total_bytes = entry.total_size_bytes();
+
+    let mut completed_before: u64 = 0;
+    let mut first_path: Option<PathBuf> = None;
+    for shard in shards {
+        let basename = shard
+            .filename
+            .rsplit('/')
+            .next()
+            .unwrap_or(&shard.filename);
+        let final_path = options.destination_dir.join(basename);
+        let part_path = options.destination_dir.join(format!("{}.part", basename));
+
+        let mut skip = false;
+        if final_path.exists() {
+            if let Ok(existing_sha) = compute_file_sha256(&final_path).await {
+                if existing_sha.eq_ignore_ascii_case(&shard.sha256) {
+                    skip = true;
+                }
+            }
+        }
+
+        if !skip {
+            download_one(SingleFileJob {
+                client: &client,
+                options: &options,
+                filename: &shard.filename,
+                expected_size: shard.file_size_bytes,
+                expected_sha: &shard.sha256,
+                part_path: &part_path,
+                progress_base: completed_before,
+                progress_total: total_bytes,
+            })
+            .await?;
+            tokio::fs::rename(&part_path, &final_path)
+                .await
+                .map_err(|e| AppError::Io(e.to_string()))?;
+        } else if let Some(ref cb) = options.on_progress {
+            cb(completed_before + shard.file_size_bytes, total_bytes);
+        }
+
+        if first_path.is_none() {
+            first_path = Some(final_path.clone());
+        }
+
+        if first_path.as_ref() == Some(&final_path) {
+            if let Ok(header) = gguf::parse_gguf_file(&final_path) {
+                if let Err(e) = gguf::verify_gguf_against_catalog(&header, entry) {
+                    tracing::warn!(
+                        "GGUF header cross-check discrepancy for {}: {}",
+                        entry.id,
+                        e
+                    );
+                }
+            }
+        }
+
+        completed_before += shard.file_size_bytes;
+    }
+
+    let first = first_path.expect("sharded entry has at least one shard");
+    info!("Successfully downloaded and verified {}", entry.id);
+    Ok(first)
+}
+
+struct SingleFileJob<'a> {
+    client: &'a reqwest::Client,
+    options: &'a DownloadOptions,
+    filename: &'a str,
+    expected_size: u64,
+    expected_sha: &'a str,
+    part_path: &'a Path,
+    progress_base: u64,
+    progress_total: u64,
+}
+
+async fn download_one(job: SingleFileJob<'_>) -> Result<(), AppError> {
+    let SingleFileJob {
+        client,
+        options,
+        filename,
+        expected_size,
+        expected_sha,
+        part_path,
+        progress_base,
+        progress_total,
+    } = job;
+    let entry = &options.entry;
+    let url = file_resolve_url(&entry.repo_id, filename, options.base_url_override.as_deref());
 
     // 1. Pre-flight HEAD request
     let mut head_req = client.head(&url);
@@ -123,10 +248,10 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
     }
 
     let header_len = head_resp.content_length().unwrap_or(0);
-    let total_bytes = if header_len > 0 {
+    let file_total = if header_len > 0 {
         header_len
     } else {
-        entry.file_size_bytes
+        expected_size
     };
 
     // 2. Check existing .part length for Range request
@@ -142,11 +267,11 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
     if let Some(ref token) = options.hf_token {
         get_req = get_req.header(AUTHORIZATION, format!("Bearer {}", token));
     }
-    if downloaded_bytes > 0 && downloaded_bytes < total_bytes {
+    if downloaded_bytes > 0 && downloaded_bytes < file_total {
         get_req = get_req.header(RANGE, format!("bytes={}-", downloaded_bytes));
     }
 
-    if downloaded_bytes < total_bytes {
+    if downloaded_bytes < file_total {
         let mut response = get_req
             .send()
             .await
@@ -197,7 +322,7 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
 
             downloaded_bytes += chunk.len() as u64;
             if let Some(ref cb) = options.on_progress {
-                cb(downloaded_bytes, total_bytes);
+                cb(progress_base + downloaded_bytes, progress_total);
             }
         }
         file.flush()
@@ -206,34 +331,17 @@ pub async fn download_model(options: DownloadOptions) -> Result<PathBuf, AppErro
     }
 
     // 4. SHA256 Verification
-    let computed_sha256 = compute_file_sha256(&part_path).await?;
-    let matches_catalog = computed_sha256.eq_ignore_ascii_case(&entry.sha256);
+    let computed_sha256 = compute_file_sha256(part_path).await?;
+    let matches_catalog = computed_sha256.eq_ignore_ascii_case(expected_sha);
 
     if !matches_catalog {
         // Checksum mismatch -> delete corrupted part file and return typed error
         let _ = tokio::fs::remove_file(&part_path).await;
         return Err(AppError::DownloadChecksum {
-            expected: entry.sha256.clone(),
+            expected: expected_sha.to_string(),
             actual: computed_sha256,
         });
     }
 
-    // 4b. GGUF header cross-check if file is a valid GGUF binary
-    if let Ok(header) = gguf::parse_gguf_file(&part_path) {
-        if let Err(e) = gguf::verify_gguf_against_catalog(&header, entry) {
-            tracing::warn!(
-                "GGUF header cross-check discrepancy for {}: {}",
-                entry.id,
-                e
-            );
-        }
-    }
-
-    // 5. Rename .part -> .gguf
-    tokio::fs::rename(&part_path, &final_path)
-        .await
-        .map_err(|e| AppError::Io(e.to_string()))?;
-
-    info!("Successfully downloaded and verified {}", entry.id);
-    Ok(final_path)
+    Ok(())
 }

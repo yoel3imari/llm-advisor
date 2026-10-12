@@ -392,14 +392,15 @@ async fn start_download(
     };
 
     let cancel_token = CancellationToken::new();
+    let total_bytes = entry.total_size_bytes();
     let task = DownloadTask {
         entry_id: entry_id.clone(),
         state: DownloadState::Downloading {
             bytes_done: 0,
-            total_bytes: entry.file_size_bytes,
+            total_bytes,
         },
         bytes_done: 0,
-        bytes_total: entry.file_size_bytes,
+        bytes_total: total_bytes,
         etag: entry.sha256.clone(),
         error: None,
     };
@@ -446,7 +447,7 @@ async fn start_download(
                 let record = ModelRecord {
                     entry_id: eid.clone(),
                     file_path,
-                    size_bytes: entry.file_size_bytes,
+                    size_bytes: entry.total_size_bytes(),
                     verified: true,
                     added_at: chrono::Utc::now(),
                 };
@@ -459,7 +460,7 @@ async fn start_download(
                     serde_json::json!({
                         "entry_id": eid,
                         "filename": entry.filename,
-                        "size_bytes": entry.file_size_bytes,
+                        "size_bytes": entry.total_size_bytes(),
                     }),
                 );
 

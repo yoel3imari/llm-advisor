@@ -1,4 +1,4 @@
-use domain::{AppError, CatalogEntry};
+use domain::{AppError, CatalogEntry, ModelShard};
 use downloader::*;
 use sha2::{Digest, Sha256};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -54,6 +54,7 @@ async fn test_happy_path_download_and_verify() {
         quality_tier: 4,
         tags: vec![],
         benchmarks: None,
+        shards: None,
     };
 
     let progress_recorded = Arc::new(AtomicU64::new(0));
@@ -126,6 +127,7 @@ async fn test_resumable_range_download() {
         quality_tier: 4,
         tags: vec![],
         benchmarks: None,
+        shards: None,
     };
 
     let options = DownloadOptions {
@@ -181,6 +183,7 @@ async fn test_checksum_mismatch_deletes_corrupted_file() {
         quality_tier: 4,
         tags: vec![],
         benchmarks: None,
+        shards: None,
     };
 
     let options = DownloadOptions {
@@ -238,6 +241,7 @@ async fn test_gated_model_without_token_error() {
         quality_tier: 4,
         tags: vec![],
         benchmarks: None,
+        shards: None,
     };
 
     let options = DownloadOptions {
@@ -339,6 +343,7 @@ fn test_gguf_header_parsing_and_cross_verification() {
         quality_tier: 4,
         tags: vec![],
         benchmarks: None,
+        shards: None,
     };
 
     assert!(gguf::verify_gguf_against_catalog(&header, &matching_entry).is_ok());
@@ -346,4 +351,96 @@ fn test_gguf_header_parsing_and_cross_verification() {
     let mut mismatch_entry = matching_entry.clone();
     mismatch_entry.n_kv_heads = 32; // wrong MHA instead of GQA
     assert!(gguf::verify_gguf_against_catalog(&header, &mismatch_entry).is_err());
+}
+
+#[tokio::test]
+async fn test_sharded_download_preserves_split_filenames() {
+    let mock_server = MockServer::start().await;
+    let payload1 = b"SHARD_ONE_PAYLOAD_00001";
+    let payload2 = b"SHARD_TWO_PAYLOAD_00002_LONGER";
+    let sha1 = calculate_sha256(payload1);
+    let sha2 = calculate_sha256(payload2);
+    let total = (payload1.len() + payload2.len()) as u64;
+
+    for (name, payload) in [
+        ("split-00001-of-00002.gguf", payload1.to_vec()),
+        ("split-00002-of-00002.gguf", payload2.to_vec()),
+    ] {
+        let uri_path = format!("/Q4_K_M/{}", name);
+        Mock::given(method("HEAD"))
+            .and(path(uri_path.clone()))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_bytes(payload.clone())
+                    .insert_header("content-length", payload.len().to_string()),
+            )
+            .mount(&mock_server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path(uri_path))
+            .respond_with(ResponseTemplate::new(200).set_body_bytes(payload))
+            .mount(&mock_server)
+            .await;
+    }
+
+    let dir = tempdir().unwrap();
+    let entry = CatalogEntry {
+        id: "split-model".to_string(),
+        repo_id: "org/split".to_string(),
+        filename: "Q4_K_M/split-00001-of-00002.gguf".to_string(),
+        family: "test".to_string(),
+        params_billions: 70.0,
+        active_params_b: None,
+        n_layers: 80,
+        n_kv_heads: 8,
+        head_dim: 128,
+        context_train: 8192,
+        quant: "Q4_K_M".to_string(),
+        file_size_bytes: payload1.len() as u64,
+        sha256: sha1.clone(),
+        gated: false,
+        quality_tier: 4,
+        tags: vec![],
+        benchmarks: None,
+        shards: Some(vec![
+            ModelShard {
+                filename: "Q4_K_M/split-00001-of-00002.gguf".to_string(),
+                file_size_bytes: payload1.len() as u64,
+                sha256: sha1,
+            },
+            ModelShard {
+                filename: "Q4_K_M/split-00002-of-00002.gguf".to_string(),
+                file_size_bytes: payload2.len() as u64,
+                sha256: sha2,
+            },
+        ]),
+    };
+
+    let seen_totals = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let seen_clone = seen_totals.clone();
+    let cb: ProgressCallback = Arc::new(move |done, total_bytes| {
+        seen_clone.lock().unwrap().push((done, total_bytes));
+    });
+
+    let options = DownloadOptions {
+        entry,
+        destination_dir: dir.path().to_path_buf(),
+        hf_token: None,
+        base_url_override: Some(mock_server.uri()),
+        cancel_token: None,
+        on_progress: Some(cb),
+    };
+
+    let first_path = download_model(options)
+        .await
+        .expect("Sharded download should succeed");
+    assert_eq!(first_path.file_name().unwrap(), "split-00001-of-00002.gguf");
+    assert!(dir.path().join("split-00001-of-00002.gguf").exists());
+    assert!(dir.path().join("split-00002-of-00002.gguf").exists());
+    assert_eq!(first_path, dir.path().join("split-00001-of-00002.gguf"));
+
+    let events = seen_totals.lock().unwrap();
+    let (last_done, last_total) = events.last().copied().unwrap();
+    assert_eq!(last_total, total);
+    assert_eq!(last_done, total);
 }

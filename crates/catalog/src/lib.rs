@@ -211,6 +211,34 @@ pub fn parse_catalog_json(json_str: &str) -> Result<Vec<CatalogEntry>, AppError>
                 entry.sha256.len()
             )));
         }
+        if let Some(shards) = &entry.shards {
+            if shards.is_empty() {
+                return Err(AppError::CatalogParse(format!(
+                    "Catalog entry '{}' has an empty shards array",
+                    entry.id
+                )));
+            }
+            if shards[0].filename != entry.filename {
+                return Err(AppError::CatalogParse(format!(
+                    "Catalog entry '{}' first shard filename does not match entry filename",
+                    entry.id
+                )));
+            }
+            for shard in shards {
+                if shard.file_size_bytes == 0 {
+                    return Err(AppError::CatalogParse(format!(
+                        "Catalog entry '{}' has a shard with 0 file_size_bytes ({})",
+                        entry.id, shard.filename
+                    )));
+                }
+                if shard.sha256.len() != 64 {
+                    return Err(AppError::CatalogParse(format!(
+                        "Catalog entry '{}' has a shard with invalid sha256 ({})",
+                        entry.id, shard.filename
+                    )));
+                }
+            }
+        }
     }
 
     Ok(entries)
@@ -235,7 +263,7 @@ mod tests {
     #[test]
     fn test_load_bundled_catalog() {
         let catalog = load_bundled_catalog().expect("Bundled catalog must parse cleanly");
-        assert_eq!(catalog.len(), 76);
+        assert_eq!(catalog.len(), 98);
 
         // Verify specific models
 
@@ -325,12 +353,12 @@ mod tests {
     fn test_load_active_catalog_fallback() {
         // None directory falls back to bundled
         let cat_none = load_active_catalog(None).unwrap();
-        assert_eq!(cat_none.len(), 76);
+        assert_eq!(cat_none.len(), 98);
 
         // Missing catalog directory falls back to bundled
         let tmp = tempfile::tempdir().unwrap();
         let cat_empty = load_active_catalog(Some(tmp.path())).unwrap();
-        assert_eq!(cat_empty.len(), 76);
+        assert_eq!(cat_empty.len(), 98);
 
         // Corrupted catalog in cache falls back to bundled
         let cat_dir = tmp.path().join("catalog");
@@ -338,7 +366,7 @@ mod tests {
         std::fs::write(cat_dir.join("catalog.json"), "invalid json content").unwrap();
 
         let cat_corrupt = load_active_catalog(Some(tmp.path())).unwrap();
-        assert_eq!(cat_corrupt.len(), 76);
+        assert_eq!(cat_corrupt.len(), 98);
     }
 
     #[test]

@@ -81,6 +81,28 @@ BASE_MODEL_MAP = {
     "openbmb/MiniCPM5-1B-GGUF": "openbmb/MiniCPM5-1B",
     "bartowski/baidu_ERNIE-4.5-21B-A3B-Thinking-GGUF": "baidu/ERNIE-4.5-21B-A3B-Thinking",
     "ggml-org/Qwen3.8-27B-GGUF": "Qwen/Qwen3.8-27B",
+    "unsloth/GLM-4.6-GGUF": "zai-org/GLM-4.6",
+    "unsloth/MiniMax-M2.1-GGUF": "MiniMaxAI/MiniMax-M2.1",
+    "unsloth/Seed-OSS-36B-Instruct-GGUF": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+    "ggml-org/SmolLM3-3B-GGUF": "HuggingFaceTB/SmolLM3-3B",
+    "unsloth/gemma-3n-E4B-it-GGUF": "google/gemma-3n-E4B-it",
+    "LGAI-EXAONE/EXAONE-4.0-32B-GGUF": "LGAI-EXAONE/EXAONE-4.0-32B",
+    "unsloth/Qwen3.5-9B-GGUF": "Qwen/Qwen3.5-9B",
+    "unsloth/Qwen3.5-35B-A3B-GGUF": "Qwen/Qwen3.5-35B-A3B",
+    "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+    "unsloth/Devstral-2-123B-Instruct-2512-GGUF": "mistralai/Devstral-2-123B-Instruct-2512",
+    "unsloth/Mistral-Medium-3.5-128B-GGUF": "mistralai/Mistral-Medium-3.5-128B",
+    "tiiuae/Falcon-H1-34B-Instruct-GGUF": "tiiuae/Falcon-H1-34B-Instruct",
+    "internlm/internlm3-8b-instruct-gguf": "internlm/internlm3-8b-instruct",
+    "unsloth/Hunyuan-A13B-Instruct-GGUF": "tencent/Hunyuan-A13B-Instruct",
+    "unsloth/Kimi-K2-Thinking-GGUF": "moonshotai/Kimi-K2-Thinking",
+    "unsloth/DeepSeek-V3.1-GGUF": "deepseek-ai/DeepSeek-V3.1",
+    "unsloth/DeepSeek-V3.2-GGUF": "deepseek-ai/DeepSeek-V3.2",
+    "lmstudio-community/Llama-4-Scout-17B-16E-Instruct-GGUF": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "unsloth/Llama-4-Maverick-17B-128E-Instruct-GGUF": "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+    "unsloth/Mistral-Large-3-675B-Instruct-2512-GGUF": "mistralai/Mistral-Large-3-675B-Instruct-2512",
+    "bartowski/stepfun-ai_Step-3.5-Flash-GGUF": "stepfun-ai/Step-3.5-Flash",
+    "unsloth/Ling-1T-GGUF": "inclusionAI/Ling-1T",
 }
 
 
@@ -303,6 +325,20 @@ def validate_entry(entry):
     if not sha or len(sha) != 64 or not re.match(r"^[0-9a-fA-F]{64}$", sha):
         errors.append(f"{pfx}: invalid sha256 ({sha})")
 
+    shards = entry.get("shards")
+    if shards is not None:
+        if not shards:
+            errors.append(f"{pfx}: empty shards array")
+        else:
+            if shards[0].get("filename") != entry.get("filename"):
+                errors.append(f"{pfx}: first shard filename mismatch")
+            for s in shards:
+                if not s.get("file_size_bytes"):
+                    errors.append(f"{pfx}: shard with 0 size ({s.get('filename')})")
+                ssha = s.get("sha256", "")
+                if not ssha or len(ssha) != 64 or not re.match(r"^[0-9a-fA-F]{64}$", ssha):
+                    errors.append(f"{pfx}: shard invalid sha256 ({s.get('filename')})")
+
     return errors
 
 
@@ -341,6 +377,18 @@ def main():
 
                 if tree_meta.get("sha256") and len(tree_meta["sha256"]) == 64:
                     entry["sha256"] = tree_meta["sha256"]
+
+                for shard in entry.get("shards") or []:
+                    shard_meta = fetch_file_lfs_metadata(
+                        repo_id, shard.get("filename", ""), token=token
+                    )
+                    if shard_meta.get("size_bytes", 0) > 0:
+                        shard["file_size_bytes"] = shard_meta["size_bytes"]
+                    if shard_meta.get("sha256") and len(shard_meta["sha256"]) == 64:
+                        shard["sha256"] = shard_meta["sha256"]
+                if entry.get("shards"):
+                    entry["file_size_bytes"] = entry["shards"][0]["file_size_bytes"]
+                    entry["sha256"] = entry["shards"][0]["sha256"]
 
                 entry["gated"] = False
                 print(f"OK (size: {entry['file_size_bytes'] / (1024 * 1024):.1f} MB)")

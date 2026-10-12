@@ -1966,5 +1966,917 @@
       "flagship",
       "coding"
     ]
+  },
+  {
+    "id": "glm-4.6-q4_k_m",
+    "repo_id": "unsloth/GLM-4.6-GGUF",
+    "filename": "Q4_K_M/GLM-4.6-Q4_K_M-00001-of-00005.gguf",
+    "family": "glm",
+    "params_billions": 357.0,
+    "n_layers": 92,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 202752,
+    "quant": "Q4_K_M",
+    "tags": [
+      "glm",
+      "zhipu",
+      "46b",
+      "moe",
+      "coding",
+      "tool-use"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 50006655360,
+    "sha256": "be232f022f8b6b8735dcb6bd77254b87354f87a0601a029b365a1db051f886a8",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/GLM-4.6-Q4_K_M-00001-of-00005.gguf",
+        "file_size_bytes": 50006655360,
+        "sha256": "be232f022f8b6b8735dcb6bd77254b87354f87a0601a029b365a1db051f886a8"
+      },
+      {
+        "filename": "Q4_K_M/GLM-4.6-Q4_K_M-00002-of-00005.gguf",
+        "file_size_bytes": 49705685664,
+        "sha256": "fa74ec39ef7a0b163a84bdf714675f0d930880564a9680f85d279796624d72e7"
+      },
+      {
+        "filename": "Q4_K_M/GLM-4.6-Q4_K_M-00003-of-00005.gguf",
+        "file_size_bytes": 49631164960,
+        "sha256": "a1e4a10484209d73322c0de016081741c708014e41700a3397e4d8a48044ec8b"
+      },
+      {
+        "filename": "Q4_K_M/GLM-4.6-Q4_K_M-00004-of-00005.gguf",
+        "file_size_bytes": 49501239424,
+        "sha256": "c5cb19c79c745d02fe5db22d831460548a49647d906addfa23aad6b25351507c"
+      },
+      {
+        "filename": "Q4_K_M/GLM-4.6-Q4_K_M-00005-of-00005.gguf",
+        "file_size_bytes": 16737887648,
+        "sha256": "a153145b2ab8b7a94242acbff507fe025760f565d361c52ac95667bbe5da561a"
+      }
+    ]
+  },
+  {
+    "id": "minimax-m2.1-q4_k_m",
+    "repo_id": "unsloth/MiniMax-M2.1-GGUF",
+    "filename": "Q4_K_M/MiniMax-M2.1-Q4_K_M-00001-of-00003.gguf",
+    "family": "minimax",
+    "params_billions": 229.0,
+    "active_params_b": 10.0,
+    "n_layers": 62,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 196608,
+    "quant": "Q4_K_M",
+    "tags": [
+      "minimax",
+      "moe",
+      "agentic",
+      "coding"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 49386415776,
+    "sha256": "5fa2adb0303621490e825290f4240abf5fb4cab3689d2efac0350fcab9a360ed",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/MiniMax-M2.1-Q4_K_M-00001-of-00003.gguf",
+        "file_size_bytes": 49386415776,
+        "sha256": "5fa2adb0303621490e825290f4240abf5fb4cab3689d2efac0350fcab9a360ed"
+      },
+      {
+        "filename": "Q4_K_M/MiniMax-M2.1-Q4_K_M-00002-of-00003.gguf",
+        "file_size_bytes": 49712985440,
+        "sha256": "e9383e86f1ecb2a74637f86996f41cfd31e317526e546fc7ec01a7a7cd3f05c2"
+      },
+      {
+        "filename": "Q4_K_M/MiniMax-M2.1-Q4_K_M-00003-of-00003.gguf",
+        "file_size_bytes": 39242984096,
+        "sha256": "1b98f9f3020a4db9f481ec380c54b55a939d2aeb05cd30f9b9f0e615a191f68c"
+      }
+    ]
+  },
+  {
+    "id": "seed-oss-36b-instruct-q4_k_m",
+    "repo_id": "unsloth/Seed-OSS-36B-Instruct-GGUF",
+    "filename": "Seed-OSS-36B-Instruct-Q4_K_M.gguf",
+    "family": "seed",
+    "params_billions": 36.0,
+    "n_layers": 64,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 524288,
+    "quant": "Q4_K_M",
+    "tags": [
+      "bytedance",
+      "seed",
+      "reasoning",
+      "long-context"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 21762149536,
+    "sha256": "2d9f3c32a61f2668e012708be7ec04e753e35e366f87b9e4bce89f4d073cfc16",
+    "gated": false
+  },
+  {
+    "id": "smollm3-3b-q4_k_m",
+    "repo_id": "ggml-org/SmolLM3-3B-GGUF",
+    "filename": "SmolLM3-Q4_K_M.gguf",
+    "family": "smollm3",
+    "params_billions": 3.0,
+    "n_layers": 36,
+    "n_kv_heads": 4,
+    "head_dim": 128,
+    "context_train": 65536,
+    "quant": "Q4_K_M",
+    "tags": [
+      "smollm3",
+      "huggingface",
+      "edge",
+      "efficient"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 1915305312,
+    "sha256": "8334b850b7bd46238c16b0c550df2138f0889bf433809008cc17a8b05761863e",
+    "gated": false
+  },
+  {
+    "id": "gemma-3n-e4b-it-q4_k_m",
+    "repo_id": "unsloth/gemma-3n-E4B-it-GGUF",
+    "filename": "gemma-3n-E4B-it-Q4_K_M.gguf",
+    "family": "gemma-3n",
+    "params_billions": 8.0,
+    "n_layers": 35,
+    "n_kv_heads": 2,
+    "head_dim": 256,
+    "context_train": 32768,
+    "quant": "Q4_K_M",
+    "tags": [
+      "gemma",
+      "google",
+      "edge",
+      "efficient",
+      "multimodal"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 4539054208,
+    "sha256": "43b489bb77a81bda85180e7c490d40ad7f1d5c2ce654c9b05e15e104bd3c777e",
+    "gated": false
+  },
+  {
+    "id": "exaone-4.0-32b-q4_k_m",
+    "repo_id": "LGAI-EXAONE/EXAONE-4.0-32B-GGUF",
+    "filename": "EXAONE-4.0-32B-Q4_K_M.gguf",
+    "family": "exaone",
+    "params_billions": 32.0,
+    "n_layers": 64,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 131072,
+    "quant": "Q4_K_M",
+    "tags": [
+      "lg",
+      "exaone",
+      "multilingual",
+      "32b"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 19343826720,
+    "sha256": "738060fec3193ccbd4615b1ac7e6404805af25c0f627093d89cf04a099dfdde8",
+    "gated": false
+  },
+  {
+    "id": "qwen3.5-9b-instruct-q4_k_m",
+    "repo_id": "unsloth/Qwen3.5-9B-GGUF",
+    "filename": "Qwen3.5-9B-Q4_K_M.gguf",
+    "family": "qwen3.5",
+    "params_billions": 9.65,
+    "n_layers": 32,
+    "n_kv_heads": 4,
+    "head_dim": 256,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "qwen",
+      "9b",
+      "multilingual",
+      "general"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 5680522464,
+    "sha256": "03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8",
+    "gated": false
+  },
+  {
+    "id": "qwen3.5-35b-a3b-instruct-q4_k_m",
+    "repo_id": "unsloth/Qwen3.5-35B-A3B-GGUF",
+    "filename": "Qwen3.5-35B-A3B-Q4_K_M.gguf",
+    "family": "qwen3.5",
+    "params_billions": 36.0,
+    "active_params_b": 3.0,
+    "n_layers": 40,
+    "n_kv_heads": 2,
+    "head_dim": 256,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "qwen",
+      "moe",
+      "35b-a3b",
+      "efficient-expert"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 22016023168,
+    "sha256": "3b46d1066bc91cc2d613e3bc22ce691dd77e6f0d33c9060690d24ce6de494375",
+    "gated": false
+  },
+  {
+    "id": "devstral-small-2-24b-instruct-2512-q4_k_m",
+    "repo_id": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF",
+    "filename": "Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf",
+    "family": "devstral",
+    "params_billions": 24.0,
+    "n_layers": 40,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 393216,
+    "quant": "Q4_K_M",
+    "tags": [
+      "mistral",
+      "devstral",
+      "agentic-coding",
+      "24b"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 14334446752,
+    "sha256": "d14ba9edee1bb4c4996a726deb81e49ae81800a3216f0774634238c380aee496",
+    "gated": false
+  },
+  {
+    "id": "devstral-2-123b-instruct-2512-q4_k_m",
+    "repo_id": "unsloth/Devstral-2-123B-Instruct-2512-GGUF",
+    "filename": "Q4_K_M/Devstral-2-123B-Instruct-2512-Q4_K_M-00001-of-00002.gguf",
+    "family": "devstral",
+    "params_billions": 123.0,
+    "n_layers": 88,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "mistral",
+      "devstral",
+      "agentic-coding",
+      "123b"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 49936343776,
+    "sha256": "e1d870265f1dced7ca17c198a8701c0fb2c32c5a664f71183c25bbe7dcb95ef2",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/Devstral-2-123B-Instruct-2512-Q4_K_M-00001-of-00002.gguf",
+        "file_size_bytes": 49936343776,
+        "sha256": "e1d870265f1dced7ca17c198a8701c0fb2c32c5a664f71183c25bbe7dcb95ef2"
+      },
+      {
+        "filename": "Q4_K_M/Devstral-2-123B-Instruct-2512-Q4_K_M-00002-of-00002.gguf",
+        "file_size_bytes": 24961318624,
+        "sha256": "18137111738c71ff3cda27a6012ec448c51ff0cb0cf7b20ec8d01b9801281114"
+      }
+    ]
+  },
+  {
+    "id": "mistral-medium-3.5-128b-q4_k_m",
+    "repo_id": "unsloth/Mistral-Medium-3.5-128B-GGUF",
+    "filename": "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00001-of-00003.gguf",
+    "family": "mistral",
+    "params_billions": 127.7,
+    "n_layers": 88,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "mistral",
+      "medium",
+      "128b",
+      "general"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 7875456,
+    "sha256": "94bf2dd90d80f41b1dfb1f94b569d11fd78fd302a79ae9fdf828f8082d1dfeaa",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00001-of-00003.gguf",
+        "file_size_bytes": 7875456,
+        "sha256": "94bf2dd90d80f41b1dfb1f94b569d11fd78fd302a79ae9fdf828f8082d1dfeaa"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00002-of-00003.gguf",
+        "file_size_bytes": 49927945056,
+        "sha256": "8396392f4b9eafac69e59355b569b6603f42d103505988e26939db7f5bfecb95"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00003-of-00003.gguf",
+        "file_size_bytes": 24961318624,
+        "sha256": "3f4ddc0284d522e6f1a020eaa731eaf851d6708a26431773de7bba504227c2e5"
+      }
+    ]
+  },
+  {
+    "id": "falcon-h1-34b-instruct-q4_k_m",
+    "repo_id": "tiiuae/Falcon-H1-34B-Instruct-GGUF",
+    "filename": "Falcon-H1-34B-Instruct-Q4_K_M.gguf",
+    "family": "falcon",
+    "params_billions": 34.0,
+    "n_layers": 72,
+    "n_kv_heads": 4,
+    "head_dim": 128,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "tii",
+      "falcon",
+      "34b",
+      "science",
+      "coding"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 20336841440,
+    "sha256": "9f7fcda8783567bf0b28eceba6d558046a89d191b4052099ba4d99ce70e91f8e",
+    "gated": false
+  },
+  {
+    "id": "internlm3-8b-instruct-q4_k_m",
+    "repo_id": "internlm/internlm3-8b-instruct-gguf",
+    "filename": "internlm3-8b-instruct-q4_k_m.gguf",
+    "family": "internlm3",
+    "params_billions": 8.0,
+    "n_layers": 48,
+    "n_kv_heads": 2,
+    "head_dim": 128,
+    "context_train": 32768,
+    "quant": "Q4_K_M",
+    "tags": [
+      "internlm",
+      "8b",
+      "reasoning",
+      "general"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 5358623936,
+    "sha256": "e7b10f95f20a5c5a8e6213925c88bc6b02012e41c0c7d7da0b0788c528c0e010",
+    "gated": false
+  },
+  {
+    "id": "hunyuan-a13b-instruct-q4_k_m",
+    "repo_id": "unsloth/Hunyuan-A13B-Instruct-GGUF",
+    "filename": "Hunyuan-A13B-Instruct-Q4_K_M.gguf",
+    "family": "hunyuan",
+    "params_billions": 80.0,
+    "active_params_b": 13.0,
+    "n_layers": 32,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 32768,
+    "quant": "Q4_K_M",
+    "tags": [
+      "tencent",
+      "hunyuan",
+      "moe",
+      "multilingual"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 48782258560,
+    "sha256": "435bc0be53a22e12c3ec3bdc7ae21c239c8d2835ecb552ae6e7b7925efa1f9bd",
+    "gated": false
+  },
+  {
+    "id": "kimi-k2-thinking-q4_k_m",
+    "repo_id": "unsloth/Kimi-K2-Thinking-GGUF",
+    "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00001-of-00013.gguf",
+    "family": "kimi",
+    "params_billions": 1000.0,
+    "active_params_b": 32.0,
+    "n_layers": 61,
+    "n_kv_heads": 64,
+    "head_dim": 112,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "moonshot",
+      "kimi",
+      "moe",
+      "mla",
+      "reasoning"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 46304137184,
+    "sha256": "06ee8100cae7af93dfb3e07a3cbe309761dedd222fadff49f7b218612924cec2",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00001-of-00013.gguf",
+        "file_size_bytes": 46304137184,
+        "sha256": "06ee8100cae7af93dfb3e07a3cbe309761dedd222fadff49f7b218612924cec2"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00002-of-00013.gguf",
+        "file_size_bytes": 49211448320,
+        "sha256": "6da01a68e03a9e75f2eebd804ad046993fbeaa6346470a0462ee7c44e993af48"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00003-of-00013.gguf",
+        "file_size_bytes": 49548961120,
+        "sha256": "7ce29599fa1fdeb78c5ba620e68ddcb1f4e16e92e057132c70ca76ef752e878a"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00004-of-00013.gguf",
+        "file_size_bytes": 47810262080,
+        "sha256": "66438c82a35b7734aa116d5e386b6555cf28f4f34fc89293a3844bda8d0c1788"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00005-of-00013.gguf",
+        "file_size_bytes": 46366024896,
+        "sha256": "616ef7892f554471a8680059e385a81dc787ddf7ad65f1b1de20f75164859322"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00006-of-00013.gguf",
+        "file_size_bytes": 47758122080,
+        "sha256": "be7af0ee14772f5242b824ec726f7f46387114ade6f11c7d41404f6260b91e64"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00007-of-00013.gguf",
+        "file_size_bytes": 47810262080,
+        "sha256": "f3b53b0eaae58983be66ed1e5540ae1a92acc7541d298088967ce14d2a057fb8"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00008-of-00013.gguf",
+        "file_size_bytes": 49548961120,
+        "sha256": "eafec014a5bcdde552cdbcf053d8f89b84fef82c27ac4fd94a68a487ce710a37"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00009-of-00013.gguf",
+        "file_size_bytes": 47819351232,
+        "sha256": "16c2034ad1dee6a40845922c004d966fefeb0aabe792da0b17268436078a2254"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00010-of-00013.gguf",
+        "file_size_bytes": 49548961120,
+        "sha256": "25e81710ab933e7e400c793249e2e54b80c6296d6711160aa67b48505c358520"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00011-of-00013.gguf",
+        "file_size_bytes": 47758122080,
+        "sha256": "8386e06f597758085d0919d159f5500fe9832b6233047b1a5f4b129299839fdc"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00012-of-00013.gguf",
+        "file_size_bytes": 47533978560,
+        "sha256": "09bc28aa16105119343abee803688ac5f0a7eeb75163e390226994c4b14b8063"
+      },
+      {
+        "filename": "Q4_K_M/Kimi-K2-Thinking-Q4_K_M-00013-of-00013.gguf",
+        "file_size_bytes": 44226634336,
+        "sha256": "35b36760dceedf81baadd30231e5438e63932b6b5d1c1cdd3fa9d8a2b9a04a59"
+      }
+    ]
+  },
+  {
+    "id": "deepseek-v3.1-q4_k_m",
+    "repo_id": "unsloth/DeepSeek-V3.1-GGUF",
+    "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00001-of-00009.gguf",
+    "family": "deepseek-v3",
+    "params_billions": 685.0,
+    "active_params_b": 37.0,
+    "n_layers": 61,
+    "n_kv_heads": 128,
+    "head_dim": 56,
+    "context_train": 163840,
+    "quant": "Q4_K_M",
+    "tags": [
+      "deepseek",
+      "moe",
+      "mla",
+      "reasoning",
+      "flagship"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 48473901440,
+    "sha256": "02c50f1b9abeb956ee130c65c765535bbfc4651ec9fd9ef266d31a66eedce287",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00001-of-00009.gguf",
+        "file_size_bytes": 48473901440,
+        "sha256": "02c50f1b9abeb956ee130c65c765535bbfc4651ec9fd9ef266d31a66eedce287"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00002-of-00009.gguf",
+        "file_size_bytes": 49549016448,
+        "sha256": "977a3a05e11bf840cc39253befc8b0ad00cd0b9e49dddd86527e35c1fcd0459e"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00003-of-00009.gguf",
+        "file_size_bytes": 49657385856,
+        "sha256": "7017d14676e19d7fd3db9bca63fda804dcff1785ab5baf9e3726ef374d657030"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00004-of-00009.gguf",
+        "file_size_bytes": 48386509952,
+        "sha256": "cea9da55904e023cf7f109223902c94615722985bd349e1f4c45f4033c6fc9e2"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00005-of-00009.gguf",
+        "file_size_bytes": 49543597312,
+        "sha256": "655a9431679749c3712cfcc1a774665923e0dd68c4d1c8c7cf54ec6a28734937"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00006-of-00009.gguf",
+        "file_size_bytes": 48386509952,
+        "sha256": "4f21a846e26b1e0bb18352012184a0be6e09130276299cfde74eea01983897fd"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00007-of-00009.gguf",
+        "file_size_bytes": 49549016448,
+        "sha256": "0a4e6d891c84d07d0551d89a0b1c8bfec4b6e89ced24241ab84d132252ce5294"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00008-of-00009.gguf",
+        "file_size_bytes": 47035800288,
+        "sha256": "34fa6d5c853b3c0945e48bd61aeab0417540a839cf8f5dee751be468adbeb092"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.1-Q4_K_M-00009-of-00009.gguf",
+        "file_size_bytes": 14816275232,
+        "sha256": "947c42d5b5c085edaf93771c6a90ae9fdbe2b78a176e571381520473b474e5a2"
+      }
+    ]
+  },
+  {
+    "id": "deepseek-v3.2-q4_k_m",
+    "repo_id": "unsloth/DeepSeek-V3.2-GGUF",
+    "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00001-of-00009.gguf",
+    "family": "deepseek-v3",
+    "params_billions": 685.0,
+    "active_params_b": 37.0,
+    "n_layers": 61,
+    "n_kv_heads": 128,
+    "head_dim": 56,
+    "context_train": 163840,
+    "quant": "Q4_K_M",
+    "tags": [
+      "deepseek",
+      "moe",
+      "mla",
+      "reasoning",
+      "flagship"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 48473912832,
+    "sha256": "05d2af9c16eac8f7e96d3c6f20864578042a029c4e7cc80e30744c08adbbc759",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00001-of-00009.gguf",
+        "file_size_bytes": 48473912832,
+        "sha256": "05d2af9c16eac8f7e96d3c6f20864578042a029c4e7cc80e30744c08adbbc759"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00002-of-00009.gguf",
+        "file_size_bytes": 49549016448,
+        "sha256": "dfe6286dea561655b5db52d67c3c132d8d1a7c445abe2153429eeae2d2df3e61"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00003-of-00009.gguf",
+        "file_size_bytes": 49657385856,
+        "sha256": "6acd3653e1ecb69b2d9b7238a633d8dfabb9cd813395e85d6c15563dfe35e9b7"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00004-of-00009.gguf",
+        "file_size_bytes": 48386509952,
+        "sha256": "1103a0e46925e42e8af0171d47dc83f4ead0baeb1d1144aa0f5c758675a630e9"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00005-of-00009.gguf",
+        "file_size_bytes": 49543597312,
+        "sha256": "fa92251a6779c9c70b789b3e9572bf4ec2c82fc0d9a454a9d04a07973c6260c8"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00006-of-00009.gguf",
+        "file_size_bytes": 48386509952,
+        "sha256": "a1cbc38c10cfed992dc584f61fcfd4d72a456262c2a5c71c541d31dee6095a93"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00007-of-00009.gguf",
+        "file_size_bytes": 49549016448,
+        "sha256": "63b26c8b98a613a9608c78ec6208f9c23fc06d5186b8c6355735718a163f5864"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00008-of-00009.gguf",
+        "file_size_bytes": 47035800288,
+        "sha256": "1b704c62922fecd33e7b4c8a156d5a8135fff7570f099b890fa604770f41a0ba"
+      },
+      {
+        "filename": "Q4_K_M/DeepSeek-V3.2-Q4_K_M-00009-of-00009.gguf",
+        "file_size_bytes": 14816275232,
+        "sha256": "c63d32273f776d14995e41cb64e1517159f6c520cd01e8370d6c235bb070106b"
+      }
+    ]
+  },
+  {
+    "id": "llama-4-scout-17b-16e-instruct-q4_k_m",
+    "repo_id": "lmstudio-community/Llama-4-Scout-17B-16E-Instruct-GGUF",
+    "filename": "Llama-4-Scout-17B-16E-Instruct-Q4_K_M-00001-of-00002.gguf",
+    "family": "llama-4",
+    "params_billions": 109.0,
+    "active_params_b": 17.0,
+    "n_layers": 48,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 10485760,
+    "quant": "Q4_K_M",
+    "tags": [
+      "meta",
+      "llama-4",
+      "scout",
+      "moe",
+      "multimodal"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 39837274688,
+    "sha256": "beedc223b89ad2d4b389fbf92a1d0303cb7404f6cd429291d47c40f6deefa9cf",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Llama-4-Scout-17B-16E-Instruct-Q4_K_M-00001-of-00002.gguf",
+        "file_size_bytes": 39837274688,
+        "sha256": "beedc223b89ad2d4b389fbf92a1d0303cb7404f6cd429291d47c40f6deefa9cf"
+      },
+      {
+        "filename": "Llama-4-Scout-17B-16E-Instruct-Q4_K_M-00002-of-00002.gguf",
+        "file_size_bytes": 27708903776,
+        "sha256": "db52153b1ea8515dec97422c29e89974ca8d8f755888b8ab02f9d529d45dac0f"
+      }
+    ]
+  },
+  {
+    "id": "llama-4-maverick-17b-128e-instruct-q4_k_m",
+    "repo_id": "unsloth/Llama-4-Maverick-17B-128E-Instruct-GGUF",
+    "filename": "Q4_K_M/Llama-4-Maverick-17B-128E-Instruct-Q4_K_M-00001-of-00005.gguf",
+    "family": "llama-4",
+    "params_billions": 400.0,
+    "active_params_b": 17.0,
+    "n_layers": 48,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 1048576,
+    "quant": "Q4_K_M",
+    "tags": [
+      "meta",
+      "llama-4",
+      "maverick",
+      "moe",
+      "multimodal"
+    ],
+    "quality_tier": 5,
+    "file_size_bytes": 49408442368,
+    "sha256": "f2f8206b0c81e28644a8a4632e5745381b4e3009b92e2754b9b975a7d9fc0d56",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/Llama-4-Maverick-17B-128E-Instruct-Q4_K_M-00001-of-00005.gguf",
+        "file_size_bytes": 49408442368,
+        "sha256": "f2f8206b0c81e28644a8a4632e5745381b4e3009b92e2754b9b975a7d9fc0d56"
+      },
+      {
+        "filename": "Q4_K_M/Llama-4-Maverick-17B-128E-Instruct-Q4_K_M-00002-of-00005.gguf",
+        "file_size_bytes": 49543134080,
+        "sha256": "1f1b167907c322954c6e971271aa7426028149a979f2d23d56da409ab21a67e2"
+      },
+      {
+        "filename": "Q4_K_M/Llama-4-Maverick-17B-128E-Instruct-Q4_K_M-00003-of-00005.gguf",
+        "file_size_bytes": 49566112640,
+        "sha256": "8138c895fc95c32c04d6fdcb98f223467b68deb597f0f5c7e2a2661313d85771"
+      },
+      {
+        "filename": "Q4_K_M/Llama-4-Maverick-17B-128E-Instruct-Q4_K_M-00004-of-00005.gguf",
+        "file_size_bytes": 48169827200,
+        "sha256": "ade0af564d22825d7f273a4431d7d8d51aefeb18cbff93144f5469a9d5322afa"
+      },
+      {
+        "filename": "Q4_K_M/Llama-4-Maverick-17B-128E-Instruct-Q4_K_M-00005-of-00005.gguf",
+        "file_size_bytes": 46079637152,
+        "sha256": "c4e1a1f23f910ea9f704fe537b2e9764ddca663e04d191ba520104890432acfb"
+      }
+    ]
+  },
+  {
+    "id": "mistral-large-3-675b-instruct-2512-q4_k_m",
+    "repo_id": "unsloth/Mistral-Large-3-675B-Instruct-2512-GGUF",
+    "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00001-of-00009.gguf",
+    "family": "mistral",
+    "params_billions": 675.0,
+    "n_layers": 88,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "mistral",
+      "large-3",
+      "675b",
+      "moe",
+      "flagship"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 48592525920,
+    "sha256": "ea254f2894dcf155404ef3b4007b5e71153be48c400564e4e47450cd21f8402c",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00001-of-00009.gguf",
+        "file_size_bytes": 48592525920,
+        "sha256": "ea254f2894dcf155404ef3b4007b5e71153be48c400564e4e47450cd21f8402c"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00002-of-00009.gguf",
+        "file_size_bytes": 49755332608,
+        "sha256": "2e519a3abc4de1c1c65a626aca44ebb1ba6c321822d1b8400cca0627295f1b65"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00003-of-00009.gguf",
+        "file_size_bytes": 49867370944,
+        "sha256": "ed86b48f96602037d75f23a2482ad501bb7828e2c6557f29238509921e8e2f57"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00004-of-00009.gguf",
+        "file_size_bytes": 48586403584,
+        "sha256": "fce9874590baf7588e8e0ca39e97a237ce278450cff6ad91671493ea05051113"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00005-of-00009.gguf",
+        "file_size_bytes": 49755533184,
+        "sha256": "ff6a970c9b7e245105e686d0dcee6699b25555992d3176a11b672882fdf9923b"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00006-of-00009.gguf",
+        "file_size_bytes": 48586403584,
+        "sha256": "a5b3839cf5ec1d51386dbff2075fb26dae89afa5eaacc78802e438b30e060c9e"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00007-of-00009.gguf",
+        "file_size_bytes": 49755332608,
+        "sha256": "d5b47b3c0e7e4e5b5c2c278af24bb6a49aa2305ea90f15265b6167851ed0f860"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00008-of-00009.gguf",
+        "file_size_bytes": 47217229152,
+        "sha256": "52f745e70d42885edfbf26f27af424d10937e5bfdce274989c3fc440ccdb626c"
+      },
+      {
+        "filename": "Q4_K_M/Mistral-Large-3-675B-Instruct-2512-Q4_K_M-00009-of-00009.gguf",
+        "file_size_bytes": 14873388800,
+        "sha256": "7adc0f05a49fa22b20798dcb44d9d9fd5fbd8696afb3cc1c77f64bf5a2a89b9e"
+      }
+    ]
+  },
+  {
+    "id": "step-3.5-flash-q4_k_m",
+    "repo_id": "bartowski/stepfun-ai_Step-3.5-Flash-GGUF",
+    "filename": "stepfun-ai_Step-3.5-Flash-Q4_K_M/stepfun-ai_Step-3.5-Flash-Q4_K_M-00001-of-00004.gguf",
+    "family": "step",
+    "params_billions": 199.0,
+    "active_params_b": 11.0,
+    "n_layers": 45,
+    "n_kv_heads": 64,
+    "head_dim": 128,
+    "context_train": 262144,
+    "quant": "Q4_K_M",
+    "tags": [
+      "stepfun",
+      "moe",
+      "mla",
+      "efficient"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 39448283104,
+    "sha256": "fcbccc2a773a9a994816b6e0be5418481369710df3d91dcdaf5851752259bf94",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "stepfun-ai_Step-3.5-Flash-Q4_K_M/stepfun-ai_Step-3.5-Flash-Q4_K_M-00001-of-00004.gguf",
+        "file_size_bytes": 39448283104,
+        "sha256": "fcbccc2a773a9a994816b6e0be5418481369710df3d91dcdaf5851752259bf94"
+      },
+      {
+        "filename": "stepfun-ai_Step-3.5-Flash-Q4_K_M/stepfun-ai_Step-3.5-Flash-Q4_K_M-00002-of-00004.gguf",
+        "file_size_bytes": 39273558880,
+        "sha256": "6ac8957b163eb8d890c53efa6bc7fd2b0537648c36bee376f90f420e50f1d32b"
+      },
+      {
+        "filename": "stepfun-ai_Step-3.5-Flash-Q4_K_M/stepfun-ai_Step-3.5-Flash-Q4_K_M-00003-of-00004.gguf",
+        "file_size_bytes": 39501541728,
+        "sha256": "31e79ee85cc02f7607ea798b6dac9e82c5425664764a427800f98b7d8374e6db"
+      },
+      {
+        "filename": "stepfun-ai_Step-3.5-Flash-Q4_K_M/stepfun-ai_Step-3.5-Flash-Q4_K_M-00004-of-00004.gguf",
+        "file_size_bytes": 1714569728,
+        "sha256": "bba655d5172c4fbab1a9bcbefdd164f77636fc34b556fdcf7250a67a7a55188e"
+      }
+    ]
+  },
+  {
+    "id": "ling-1t-q4_k_m",
+    "repo_id": "unsloth/Ling-1T-GGUF",
+    "filename": "Q4_K_M/Ling-1T-Q4_K_M-00001-of-00013.gguf",
+    "family": "ling",
+    "params_billions": 1000.0,
+    "n_layers": 80,
+    "n_kv_heads": 8,
+    "head_dim": 128,
+    "context_train": 32768,
+    "quant": "Q4_K_M",
+    "tags": [
+      "inclusion",
+      "ling",
+      "moe",
+      "flagship"
+    ],
+    "quality_tier": 4,
+    "file_size_bytes": 49455218496,
+    "sha256": "ec82d4d7f47b387eceac1a7c6941d634bfdf1e95737e4deda32e6ea58b41a0fa",
+    "gated": false,
+    "shards": [
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00001-of-00013.gguf",
+        "file_size_bytes": 49455218496,
+        "sha256": "ec82d4d7f47b387eceac1a7c6941d634bfdf1e95737e4deda32e6ea58b41a0fa"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00002-of-00013.gguf",
+        "file_size_bytes": 48981264000,
+        "sha256": "bc832b58e635034276de6262f757cd350c40adf69c4fd08f51a1730ee0f06323"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00003-of-00013.gguf",
+        "file_size_bytes": 49068298080,
+        "sha256": "53dcb35361005044e6e3d0986a03ffbddc8b41e7ed39ff97977c855db49148f9"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00004-of-00013.gguf",
+        "file_size_bytes": 48975070720,
+        "sha256": "f3df068c2521c836a9a3ca24266ad5f1c4682503392e3694a99b72943d729e61"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00005-of-00013.gguf",
+        "file_size_bytes": 48981264000,
+        "sha256": "efe385e6c09a0fa5fa86c5ce676d24243c1d9473c2944fc1a5ac3a4c33bbdc31"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00006-of-00013.gguf",
+        "file_size_bytes": 49068298080,
+        "sha256": "f9ca3f2d16afa130fd39e2767cfdc86c58abf1352e33f0f41c373edb9909b0cf"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00007-of-00013.gguf",
+        "file_size_bytes": 48975070720,
+        "sha256": "adff8c64f44e270bed6f4447a23fa39c6d23486e1f030acb40745fd598315a2e"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00008-of-00013.gguf",
+        "file_size_bytes": 48981264000,
+        "sha256": "6b8f9a9446bce1b198ac752c57bb751c4ebe75c9fc8f592d24fa5215483003e9"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00009-of-00013.gguf",
+        "file_size_bytes": 49068298080,
+        "sha256": "34ca1c2d5a11a76db6025d9061903423bae3c122000baf202be163efbd0ffa1a"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00010-of-00013.gguf",
+        "file_size_bytes": 46545388928,
+        "sha256": "597ba98fe01a4faa5e6403722877021dca8554791a275d59842be962a438d72c"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00011-of-00013.gguf",
+        "file_size_bytes": 48759981440,
+        "sha256": "96117dfa077925261968c3688c0c07e58f05f32fd123858561687ce392d51505"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00012-of-00013.gguf",
+        "file_size_bytes": 48451664768,
+        "sha256": "560ebd55ec04be3befac6965b3052d23d1b59c69ee602d97a67cdfc477f547fc"
+      },
+      {
+        "filename": "Q4_K_M/Ling-1T-Q4_K_M-00013-of-00013.gguf",
+        "file_size_bytes": 19418978304,
+        "sha256": "d8c86dbd651de538ddde072d710266d984f1ee629662c44408f223bc9ac2f5de"
+      }
+    ]
   }
 ]

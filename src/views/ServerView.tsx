@@ -262,9 +262,6 @@ export function ServerView({
               <Layers className="w-4 h-4" />
               <span>Running Model Instances ({activeInstances.length})</span>
             </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-              External apps route automatically via <code className="text-indigo-600 dark:text-indigo-400 font-bold font-mono">"model": "&lt;id&gt;"</code>
-            </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

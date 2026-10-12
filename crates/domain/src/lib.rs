@@ -114,6 +114,16 @@ pub struct ModelBenchmarks {
     pub human_eval: Option<f32>,
 }
 
+/// A single file shard of a split (multi-file) GGUF model.
+/// llama.cpp locates sibling shards via the `-00001-of-00005.gguf` filename
+/// pattern, so shard filenames must be preserved verbatim on disk.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModelShard {
+    pub filename: String,
+    pub file_size_bytes: u64,
+    pub sha256: String,
+}
+
 /// Curated catalog entry describing a GGUF model and its architecture parameters.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct CatalogEntry {
@@ -139,6 +149,25 @@ pub struct CatalogEntry {
     pub tags: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub benchmarks: Option<ModelBenchmarks>,
+    /// Present only for split models: every shard file with its own size/hash.
+    /// `filename`/`file_size_bytes`/`sha256` above always describe the FIRST shard.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shards: Option<Vec<ModelShard>>,
+}
+
+impl CatalogEntry {
+    /// Total download size across all shards (or the single file size).
+    pub fn total_size_bytes(&self) -> u64 {
+        match &self.shards {
+            Some(shards) if !shards.is_empty() => shards.iter().map(|s| s.file_size_bytes).sum(),
+            _ => self.file_size_bytes,
+        }
+    }
+
+    /// True when the model spans multiple GGUF shard files.
+    pub fn is_sharded(&self) -> bool {
+        self.shards.as_ref().is_some_and(|s| s.len() > 1)
+    }
 }
 
 /// KV cache quantization type.
