@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -39,6 +39,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
 import { openExternalUrl } from '../../utils/browser';
 import { DeleteConfirmDialog } from '../ui/DeleteConfirmDialog';
 import type { FitResult, ModelRecord, DownloadTask } from '../../types/domain';
+import { totalSizeBytes } from '../../types/domain';
 
 interface Props {
   results: FitResult[];
@@ -59,6 +60,40 @@ function resolveModelId(entry: FitResult['entry']): string {
   return entry.id || entry.repo_id;
 }
 
+interface SortableHeaderProps {
+  label: string;
+  tip: string;
+  isSorted: 'asc' | 'desc' | false;
+  onToggle: () => void;
+  icon?: ReactNode;
+}
+
+function SortableHeader({ label, tip, isSorted, onToggle, icon }: SortableHeaderProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onToggle}
+          className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
+        >
+          {icon}
+          {label}
+          {isSorted === 'asc' ? (
+            <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+          ) : isSorted === 'desc' ? (
+            <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+          ) : (
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[240px] whitespace-normal leading-relaxed">
+        {tip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function ModelsTable({
   results,
   hostBudget,
@@ -74,7 +109,8 @@ export function ModelsTable({
   statusFilter,
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([
-    { id: 'fit_score', desc: true },
+    { id: 'verdict', desc: true },
+    { id: 'params', desc: true },
   ]);
   const [deleteModelTarget, setDeleteModelTarget] = useState<{
     id: string;
@@ -162,19 +198,12 @@ export function ModelsTable({
         id: 'model',
         accessorFn: (row) => row.entry.id,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Model & Family
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Model & Family"
+            tip="Model name and architecture family. Quantization is shown in the model name."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => {
           const entry = row.original.entry;
@@ -212,19 +241,12 @@ export function ModelsTable({
         id: 'params',
         accessorFn: (row) => row.entry.params_billions,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Params (B)
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Params (B)"
+            tip="Parameter count in billions. Larger models are usually more capable but need more RAM. Within the same fit category, larger models rank first."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => {
           const entry = row.original.entry;
@@ -239,30 +261,6 @@ export function ModelsTable({
         },
       },
       {
-        id: 'quant',
-        accessorFn: (row) => row.entry.quant,
-        header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Quant
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-zinc-700/40 whitespace-nowrap font-medium">
-            {row.original.entry.quant}
-          </span>
-        ),
-      },
-      {
         id: 'benchmarks',
         accessorFn: (row) => {
           const b = row.entry.benchmarks;
@@ -275,20 +273,13 @@ export function ModelsTable({
           );
         },
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            <Award className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
-            Benchmarks
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Benchmarks"
+            tip="Verified quality scores: SWE-bench, LiveCodeBench, MMLU-Pro and Arena Elo. Higher means stronger real-world performance. Hover a value for details."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            icon={<Award className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />}
+          />
         ),
         cell: ({ row }) => {
           const b = row.original.entry.benchmarks;
@@ -364,45 +355,34 @@ export function ModelsTable({
       },
       {
         id: 'file_size',
-        accessorFn: (row) => row.entry.file_size_bytes,
+        accessorFn: (row) => totalSizeBytes(row.entry),
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Disk
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Disk"
+            tip="Download size on disk for the GGUF file. Smaller files download faster and use less storage."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => (
           <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-            {formatDiskSize(row.original.entry.file_size_bytes)}
+            {formatDiskSize(totalSizeBytes(row.original.entry))}
           </span>
         ),
       },
       {
         id: 'verdict',
-        accessorFn: (row) => (row.fits ? row.score_fit : -1),
+        accessorFn: (row) => {
+          if (!row.fits) return 0;
+          return row.est_total_bytes > hostBudget * 0.9 ? 1 : 2;
+        },
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Verdict
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Verdict"
+            tip="Memory fit for your machine: Fits, Tight Fit (over 90% of available RAM), or No Fit. Default order is Fits first, then Tight Fit, then No Fit."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => {
           const res = row.original;
@@ -420,19 +400,12 @@ export function ModelsTable({
         id: 'memory_fit',
         accessorFn: (row) => row.est_total_bytes,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            RAM Needed (GB)
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="RAM Needed (GB)"
+            tip="Estimated total RAM: weights plus KV cache plus overhead. Hover a value for the full breakdown."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => {
           const res = row.original;
@@ -472,19 +445,12 @@ export function ModelsTable({
         id: 'max_context',
         accessorFn: (row) => row.usable_context ?? row.max_context_that_fits,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Usable Ctx
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Usable Ctx"
+            tip="Usable context window that fits in your RAM versus the native training context. Reduced values avoid paging."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => {
           const res = row.original;
@@ -538,20 +504,13 @@ export function ModelsTable({
         id: 'gpu_layers',
         accessorFn: (row) => row.recommended_gpu_layers,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            <Layers className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-            GPU Layers
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="GPU Layers"
+            tip="Layers offloaded to GPU out of total layers. Higher is faster; 0 means CPU-only."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            icon={<Layers className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />}
+          />
         ),
         cell: ({ row }) => {
           const res = row.original;
@@ -572,20 +531,13 @@ export function ModelsTable({
         id: 'speed_tps',
         accessorFn: (row) => row.speed_tps_estimate,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-            Speed (TPS)
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Speed (TPS)"
+            tip="Estimated generation speed in tokens per second from the memory-bandwidth roofline for your hardware."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            icon={<Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />}
+          />
         ),
         cell: ({ row }) => {
           const res = row.original;
@@ -627,19 +579,12 @@ export function ModelsTable({
         id: 'fit_score',
         accessorFn: (row) => row.score_fit,
         header: ({ column }) => (
-          <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white whitespace-nowrap"
-          >
-            Score (/10)
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-60" />
-            )}
-          </button>
+          <SortableHeader
+            label="Score (/10)"
+            tip="Overall fit score out of 10 combining memory headroom, speed, and quality."
+            isSorted={column.getIsSorted()}
+            onToggle={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          />
         ),
         cell: ({ row }) => {
           const score = row.original.score_fit;
@@ -717,7 +662,7 @@ export function ModelsTable({
                             onClick={() =>
                               setDeleteModelTarget({
                                 id: entry.id,
-                                sizeBytes: entry.file_size_bytes,
+                                sizeBytes: totalSizeBytes(entry),
                               })
                             }
                           >
@@ -731,7 +676,7 @@ export function ModelsTable({
                     <>
                       <DropdownMenuItem onClick={() => onDownload(entry.id)}>
                         <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                        Download GGUF ({gb(entry.file_size_bytes)} GB)
+                        Download GGUF ({gb(totalSizeBytes(entry))} GB)
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
