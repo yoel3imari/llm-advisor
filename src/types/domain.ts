@@ -44,6 +44,34 @@ export interface ModelShard {
   sha256: string;
 }
 
+export type OutputType = 'text' | 'embedding' | 'image' | 'audio' | 'multimodal';
+
+export function outputTypeLabel(t?: OutputType | null): string {
+  switch (t) {
+    case 'embedding':
+      return 'Embedding';
+    case 'image':
+      return 'Image';
+    case 'audio':
+      return 'Audio';
+    case 'multimodal':
+      return 'Multimodal';
+    case 'text':
+    default:
+      return 'Text';
+  }
+}
+
+/** Conservative client-side resolution mirroring the backend priority. */
+export function resolveOutputType(entry: Pick<CatalogEntry, 'id' | 'filename' | 'repo_id' | 'family' | 'tags' | 'output_type'>): OutputType {
+  if (entry.output_type && entry.output_type !== 'text') return entry.output_type;
+  const hay = [entry.id, entry.filename, entry.repo_id, entry.family, ...(entry.tags ?? [])]
+    .join(' ')
+    .toLowerCase();
+  if (hay.includes('embed')) return 'embedding';
+  return 'text';
+}
+
 export interface CatalogEntry {
   id: string;
   repo_id: string;
@@ -63,6 +91,8 @@ export interface CatalogEntry {
   tags: string[];
   benchmarks?: ModelBenchmarks;
   shards?: ModelShard[];
+  /** Missing in older payloads -> treat as 'text' (backward compat). */
+  output_type?: OutputType | null;
 }
 
 export function totalSizeBytes(entry: CatalogEntry): number {
@@ -120,6 +150,8 @@ export interface ModelRecord {
   size_bytes: number;
   verified: boolean;
   added_at: string;
+  /** Missing in older payloads -> treat as 'text' (backward compat). */
+  output_type?: OutputType | null;
 }
 
 export interface RunningInstanceInfo {

@@ -198,7 +198,9 @@ pub fn parse_catalog_json(json_str: &str) -> Result<Vec<CatalogEntry>, AppError>
                 entry.id
             )));
         }
-        if entry.n_kv_heads == 0 {
+        // Embedding models may carry 0 / non-meaningful KV heads (no KV cache).
+        if entry.n_kv_heads == 0 && entry.resolved_output_type() != domain::OutputType::Embedding
+        {
             return Err(AppError::CatalogParse(format!(
                 "Catalog entry '{}' has invalid n_kv_heads (0)",
                 entry.id

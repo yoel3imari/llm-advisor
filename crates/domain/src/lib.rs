@@ -94,6 +94,82 @@ fn default_host_bandwidth_gbps() -> f32 {
     40.0
 }
 
+/// Model output modality. Extensible for future types (image, audio, ...).
+/// Serialized lowercase for API stability; missing values default to `Text`
+/// for backward compatibility with existing catalogs and library records.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum OutputType {
+    #[default]
+    Text,
+    Embedding,
+    Image,
+    Audio,
+    Multimodal,
+}
+
+impl OutputType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            OutputType::Text => "text",
+            OutputType::Embedding => "embedding",
+            OutputType::Image => "image",
+            OutputType::Audio => "audio",
+            OutputType::Multimodal => "multimodal",
+        }
+    }
+
+    /// Human-readable label for dashboard badges.
+    pub fn label(&self) -> &'static str {
+        match self {
+            OutputType::Text => "Text",
+            OutputType::Embedding => "Embedding",
+            OutputType::Image => "Image",
+            OutputType::Audio => "Audio",
+            OutputType::Multimodal => "Multimodal",
+        }
+    }
+
+    pub fn is_embedding(&self) -> bool {
+        matches!(self, OutputType::Embedding)
+    }
+}
+
+impl std::fmt::Display for OutputType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
+    }
+}
+
+/// Conservative name heuristic: treat names containing "embed"
+/// (case-insensitive) as embedding models.
+pub fn is_embedding_name(value: &str) -> bool {
+    value.to_ascii_lowercase().contains("embed")
+}
+
+/// GGUF pooling-type signal (e.g. `general.pooling_type` = "mean"/"cls").
+/// llama.cpp pooling: 0 = none/generative, non-zero = embedding-style pooling.
+pub fn is_embedding_pooling_str(value: &str) -> bool {
+    matches!(
+        value.to_ascii_lowercase().as_str(),
+        "mean" | "cls" | "last" | "average" | "embedding" | "masked-mean" | "rank"
+    )
+}
+
+/// Architecture-level embedding signal for GGUF `general.architecture`.
+/// Conservative: BERT-family architectures are embedding-only in practice.
+pub fn is_embedding_architecture(arch: &str) -> bool {
+    let lower = arch.to_ascii_lowercase();
+    lower.contains("embed")
+        || lower.contains("bert")
+        || lower.contains("nomic")
+        || lower.contains("jina")
+        || lower == "bge"
+        || lower.contains("bge-")
+        || lower.contains("gte-")
+        || lower.contains("e5-")
+}
+
 /// Real-world benchmark evaluation metrics for the model.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelBenchmarks {
@@ -153,6 +229,11 @@ pub struct CatalogEntry {
     /// `filename`/`file_size_bytes`/`sha256` above always describe the FIRST shard.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shards: Option<Vec<ModelShard>>,
+    /// Model output modality. Defaults to `Text` when missing (backward compat
+    /// migration for existing catalogs/configs). Explicit non-`Text` values act
+    /// as catalog overrides during detection.
+    #[serde(default)]
+    pub output_type: OutputType,
 }
 
 impl CatalogEntry {
@@ -167,6 +248,32 @@ impl CatalogEntry {
     /// True when the model spans multiple GGUF shard files.
     pub fn is_sharded(&self) -> bool {
         self.shards.as_ref().is_some_and(|s| s.len() > 1)
+    }
+
+    /// Resolve the effective output type with conservative priority:
+    /// catalog override (explicit non-`Text` `output_type`), then name
+    /// heuristic (`embed` substring, case-insensitive), then default `Text`
+    /// for backward compatibility.
+    /// GGUF header pooling/architecture signals take precedence over this and
+    /// are applied in `downloader::gguf::resolve_output_type`.
+    pub fn resolved_output_type(&self) -> OutputType {
+        if self.output_type != OutputType::Text {
+            return self.output_type;
+        }
+        if is_embedding_name(&self.id)
+            || is_embedding_name(&self.filename)
+            || is_embedding_name(&self.repo_id)
+            || is_embedding_name(&self.family)
+            || self.tags.iter().any(|t| is_embedding_name(t))
+        {
+            return OutputType::Embedding;
+        }
+        OutputType::Text
+    }
+
+    /// True when the resolved output type is embedding (no KV cache needed).
+    pub fn is_embedding(&self) -> bool {
+        self.resolved_output_type().is_embedding()
     }
 }
 
@@ -274,6 +381,23 @@ pub struct ModelRecord {
     pub size_bytes: u64,
     pub verified: bool,
     pub added_at: DateTime<Utc>,
+    /// Persisted output type. Missing values migrate to `Text` via serde default.
+    #[serde(default)]
+    pub output_type: OutputType,
+}
+
+impl ModelRecord {
+    /// Resolve the effective output type: stored override wins, otherwise fall
+    /// back to the conservative `embed` name heuristic on `entry_id`.
+    pub fn resolved_output_type(&self) -> OutputType {
+        if self.output_type != OutputType::Text {
+            return self.output_type;
+        }
+        if is_embedding_name(&self.entry_id) {
+            return OutputType::Embedding;
+        }
+        OutputType::Text
+    }
 }
 
 /// Metadata describing a running model instance in the multi-sidecar pool.

@@ -95,6 +95,7 @@ fn test_model_record_and_fit_result_serde() {
         size_bytes: 1234567,
         verified: true,
         added_at: Utc::now(),
+        output_type: Default::default(),
     };
     let json = serde_json::to_string(&record).unwrap();
     let deserialized: ModelRecord = serde_json::from_str(&json).unwrap();
@@ -150,4 +151,81 @@ fn test_running_instance_info_serde() {
     let json = serde_json::to_string(&inst).unwrap();
     let decoded: RunningInstanceInfo = serde_json::from_str(&json).unwrap();
     assert_eq!(inst, decoded);
+}
+
+#[test]
+fn test_output_type_defaults_to_text_for_backward_compat() {
+    // Legacy fixture has no output_type field -> must migrate to Text.
+    let fixture_str = include_str!("fixtures/catalog_entry.json");
+    assert!(!fixture_str.contains("output_type"));
+    let entry: CatalogEntry = serde_json::from_str(fixture_str).unwrap();
+    assert_eq!(entry.output_type, OutputType::Text);
+    assert_eq!(entry.resolved_output_type(), OutputType::Text);
+    assert!(!entry.is_embedding());
+    assert_eq!(entry.output_type.label(), "Text");
+}
+
+#[test]
+fn test_output_type_catalog_override_wins_over_heuristic() {
+    let mut entry: CatalogEntry =
+        serde_json::from_str(include_str!("fixtures/catalog_entry.json")).unwrap();
+    entry.output_type = OutputType::Embedding;
+    assert_eq!(entry.resolved_output_type(), OutputType::Embedding);
+    assert!(entry.is_embedding());
+
+    // Explicit roundtrip preserves the override.
+    let json = serde_json::to_string(&entry).unwrap();
+    assert!(json.contains("\"embedding\""));
+    let decoded: CatalogEntry = serde_json::from_str(&json).unwrap();
+    assert_eq!(decoded.output_type, OutputType::Embedding);
+}
+
+#[test]
+fn test_output_type_name_heuristic_is_conservative() {
+    let mut entry: CatalogEntry =
+        serde_json::from_str(include_str!("fixtures/catalog_entry.json")).unwrap();
+    // "embed" substring (case-insensitive) across id/filename/repo/family/tags.
+    entry.id = "nomic-embed-text-v1-q4_k_m".to_string();
+    assert_eq!(entry.resolved_output_type(), OutputType::Embedding);
+
+    entry.id = "llama-3.1-8b-instruct-q4_k_m".to_string();
+    entry.filename = "NOMIC-EMBED-Q4.gguf".to_string();
+    assert_eq!(entry.resolved_output_type(), OutputType::Embedding);
+
+    entry.filename = "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf".to_string();
+    entry.tags = vec!["embedding".to_string()];
+    assert_eq!(entry.resolved_output_type(), OutputType::Embedding);
+
+    // Plain text model stays Text.
+    entry.tags = vec!["llama".to_string()];
+    assert_eq!(entry.resolved_output_type(), OutputType::Text);
+}
+
+#[test]
+fn test_output_type_helpers() {
+    assert!(is_embedding_name("bge-m3-EMBED-v2"));
+    assert!(!is_embedding_name("llama-3.1-8b"));
+    assert!(is_embedding_pooling_str("mean"));
+    assert!(is_embedding_pooling_str("CLS"));
+    assert!(is_embedding_pooling_str("last"));
+    assert!(!is_embedding_pooling_str("none"));
+    assert!(is_embedding_architecture("bert"));
+    assert!(is_embedding_architecture("nomic-bert"));
+    assert!(!is_embedding_architecture("llama"));
+}
+
+#[test]
+fn test_model_record_output_type_migration_and_resolution() {
+    // Legacy library.json records lack output_type -> default Text.
+    let legacy = r#"{"entry_id":"llama-3.1-8b","file_path":"/models/x.gguf","size_bytes":10,"verified":true,"added_at":"2024-01-01T00:00:00Z"}"#;
+    let record: ModelRecord = serde_json::from_str(legacy).unwrap();
+    assert_eq!(record.output_type, OutputType::Text);
+    assert_eq!(record.resolved_output_type(), OutputType::Text);
+
+    let mut embed_record = record.clone();
+    embed_record.entry_id = "nomic-embed-text-v1".to_string();
+    assert_eq!(
+        embed_record.resolved_output_type(),
+        OutputType::Embedding
+    );
 }

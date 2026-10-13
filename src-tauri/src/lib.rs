@@ -450,6 +450,7 @@ async fn start_download(
                     size_bytes: entry.total_size_bytes(),
                     verified: true,
                     added_at: chrono::Utc::now(),
+                    output_type: entry.resolved_output_type(),
                 };
                 let _ = library.add_verified(record);
                 downloads_map.lock().unwrap().remove(&eid);

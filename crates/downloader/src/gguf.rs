@@ -1,6 +1,6 @@
 //! Lightweight binary parser for GGUF metadata headers and catalog cross-verification.
 
-use domain::{AppError, CatalogEntry};
+use domain::{is_embedding_architecture, is_embedding_pooling_str, AppError, CatalogEntry, OutputType};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
@@ -56,7 +56,49 @@ pub struct GgufHeaderMetadata {
     pub head_dim: Option<u32>,
     pub context_train: Option<u32>,
     pub embedding_length: Option<u32>,
+    /// Raw pooling-type string when present (e.g. `general.pooling_type` = "mean").
+    pub pooling_type: Option<String>,
+    /// Numeric pooling-type when stored as u32 (0 = none/generative).
+    pub pooling_type_u32: Option<u32>,
     pub raw_metadata: HashMap<String, GgufValue>,
+}
+
+impl GgufHeaderMetadata {
+    /// True when header carries embedding signals: non-none pooling type,
+    /// embedding pooling string (mean/cls/last), or BERT-family architecture.
+    pub fn is_embedding(&self) -> bool {
+        if let Some(pooling) = &self.pooling_type {
+            if is_embedding_pooling_str(pooling) {
+                return true;
+            }
+        }
+        if let Some(pooling) = self.pooling_type_u32 {
+            if pooling != 0 {
+                return true;
+            }
+        }
+        if let Some(arch) = &self.architecture {
+            if is_embedding_architecture(arch) {
+                return true;
+            }
+        }
+        // Also scan raw keys for any `*.pooling_type` fallback.
+        for (key, value) in &self.raw_metadata {
+            if key.ends_with("pooling_type") {
+                match value {
+                    GgufValue::String(s) if is_embedding_pooling_str(s) => return true,
+                    v => {
+                        if let Some(n) = v.as_u32() {
+                            if n != 0 {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        false
+    }
 }
 
 fn read_u8<R: Read>(r: &mut R) -> Result<u8, AppError> {
@@ -243,6 +285,14 @@ pub fn parse_gguf_metadata<R: Read + Seek>(mut reader: R) -> Result<GgufHeaderMe
         .get(&format!("{}.embedding_length", arch))
         .and_then(|v| v.as_u32());
 
+    // Pooling-type signals: `general.pooling_type` (string or u32) plus any
+    // `{arch}.pooling_type` fallback. Non-zero / mean|cls|last => embedding.
+    let pooling_raw = raw_metadata
+        .get("general.pooling_type")
+        .or_else(|| raw_metadata.get(&format!("{}.pooling_type", arch)));
+    let pooling_type = pooling_raw.and_then(|v| v.as_str()).map(|s| s.to_string());
+    let pooling_type_u32 = pooling_raw.and_then(|v| v.as_u32());
+
     Ok(GgufHeaderMetadata {
         architecture,
         n_layers,
@@ -251,6 +301,8 @@ pub fn parse_gguf_metadata<R: Read + Seek>(mut reader: R) -> Result<GgufHeaderMe
         head_dim,
         context_train,
         embedding_length,
+        pooling_type,
+        pooling_type_u32,
         raw_metadata,
     })
 }
@@ -262,11 +314,30 @@ pub fn parse_gguf_file(path: &Path) -> Result<GgufHeaderMetadata, AppError> {
     parse_gguf_metadata(reader)
 }
 
+/// Resolve the effective output type with detection priority:
+/// 1. GGUF metadata (preferred): pooling-type / architecture signals.
+/// 2. Catalog override: explicit non-`Text` `output_type` on the entry.
+/// 3. Conservative name heuristic (`embed` substring).
+/// 4. Default `Text` for backward compatibility.
+pub fn resolve_output_type(header: &GgufHeaderMetadata, entry: &CatalogEntry) -> OutputType {
+    if header.is_embedding() {
+        return OutputType::Embedding;
+    }
+    entry.resolved_output_type()
+}
+
 /// Cross-check parsed GGUF header metadata against catalog entry records.
+///
+/// Type-aware: when the resolved output type is `Embedding`, KV-related
+/// checks are relaxed (embedding GGUFs may report 0 / non-meaningful KV
+/// fields) without weakening validation for text/generation models.
 pub fn verify_gguf_against_catalog(
     header: &GgufHeaderMetadata,
     entry: &CatalogEntry,
 ) -> Result<(), AppError> {
+    let effective_type = resolve_output_type(header, entry);
+    let is_embedding = effective_type.is_embedding();
+
     if let Some(n_layers) = header.n_layers {
         if n_layers != entry.n_layers {
             return Err(AppError::CatalogParse(format!(
@@ -278,19 +349,41 @@ pub fn verify_gguf_against_catalog(
 
     if let Some(n_kv_heads) = header.n_kv_heads {
         if n_kv_heads != entry.n_kv_heads {
-            return Err(AppError::CatalogParse(format!(
-                "GGUF KV heads (GQA) mismatch: file has {} KV heads, catalog has {}",
-                n_kv_heads, entry.n_kv_heads
-            )));
+            if is_embedding {
+                // Embedding GGUFs may report 0 / non-meaningful KV heads.
+                info!(
+                    "GGUF KV heads differ for embedding model '{}' (file {}, catalog {}); relaxing check",
+                    entry.id, n_kv_heads, entry.n_kv_heads
+                );
+            } else {
+                return Err(AppError::CatalogParse(format!(
+                    "GGUF KV heads (GQA) mismatch: file has {} KV heads, catalog has {}",
+                    n_kv_heads, entry.n_kv_heads
+                )));
+            }
         }
     }
 
     if let Some(head_dim) = header.head_dim {
         if head_dim != entry.head_dim {
-            return Err(AppError::CatalogParse(format!(
-                "GGUF head_dim mismatch: file has {}, catalog has {}",
-                head_dim, entry.head_dim
-            )));
+            // Relax only the degenerate 0 case for embeddings; real mismatches
+            // still surface as warnings, not hard errors.
+            if is_embedding && (head_dim == 0 || entry.head_dim == 0) {
+                info!(
+                    "GGUF head_dim differs for embedding model '{}' (file {}, catalog {}); relaxing check",
+                    entry.id, head_dim, entry.head_dim
+                );
+            } else if is_embedding {
+                info!(
+                    "GGUF head_dim discrepancy for embedding model '{}' (file {}, catalog {})",
+                    entry.id, head_dim, entry.head_dim
+                );
+            } else {
+                return Err(AppError::CatalogParse(format!(
+                    "GGUF head_dim mismatch: file has {}, catalog has {}",
+                    head_dim, entry.head_dim
+                )));
+            }
         }
     }
 

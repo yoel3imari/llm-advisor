@@ -298,6 +298,30 @@ def extract_arch_params(config, existing=None):
     return res
 
 
+def detect_output_type(entry):
+    """Conservative output-type detection mirroring the backend priority.
+
+    1. Catalog override: explicit non-text output_type wins.
+    2. Name heuristic: 'embed' substring (case-insensitive).
+    3. Default 'text' for backward compatibility.
+    """
+    explicit = (entry.get("output_type") or "").lower()
+    if explicit and explicit != "text":
+        return explicit
+    hay = " ".join(
+        [
+            str(entry.get("id", "")),
+            str(entry.get("filename", "")),
+            str(entry.get("repo_id", "")),
+            str(entry.get("family", "")),
+            " ".join(entry.get("tags", []) or []),
+        ]
+    ).lower()
+    if "embed" in hay:
+        return "embedding"
+    return "text"
+
+
 def validate_entry(entry):
     errors = []
     pfx = f"Model '{entry.get('id', 'unknown')}'"
@@ -311,7 +335,9 @@ def validate_entry(entry):
     if not entry.get("n_layers") or entry["n_layers"] <= 0:
         errors.append(f"{pfx}: invalid n_layers ({entry.get('n_layers')})")
     if not entry.get("n_kv_heads") or entry["n_kv_heads"] <= 0:
-        errors.append(f"{pfx}: invalid n_kv_heads ({entry.get('n_kv_heads')})")
+        # Embedding models may carry 0 / non-meaningful KV heads (no KV cache).
+        if detect_output_type(entry) != "embedding":
+            errors.append(f"{pfx}: invalid n_kv_heads ({entry.get('n_kv_heads')})")
     if not entry.get("head_dim") or entry["head_dim"] <= 0:
         errors.append(f"{pfx}: invalid head_dim ({entry.get('head_dim')})")
     if not entry.get("context_train") or entry["context_train"] <= 0:
@@ -421,6 +447,10 @@ def main():
             )
             if bm:
                 entry["benchmarks"] = bm
+
+        # Backfill output_type for forward-compat (explicit override or heuristic).
+        if not entry.get("output_type"):
+            entry["output_type"] = detect_output_type(entry)
 
         errs = validate_entry(entry)
         if errs:

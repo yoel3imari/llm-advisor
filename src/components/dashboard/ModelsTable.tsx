@@ -39,7 +39,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
 import { openExternalUrl } from '../../utils/browser';
 import { DeleteConfirmDialog } from '../ui/DeleteConfirmDialog';
 import type { FitResult, ModelRecord, DownloadTask } from '../../types/domain';
-import { totalSizeBytes } from '../../types/domain';
+import { totalSizeBytes, resolveOutputType, outputTypeLabel } from '../../types/domain';
 
 interface Props {
   results: FitResult[];
@@ -208,6 +208,8 @@ export function ModelsTable({
         cell: ({ row }) => {
           const entry = row.original.entry;
           const inLibrary = downloadedIds.has(entry.id);
+          const outputType = resolveOutputType(entry);
+          const outputLabel = outputTypeLabel(outputType);
 
           return (
             <div className="flex flex-col py-0.5 min-w-[170px]">
@@ -228,9 +230,19 @@ export function ModelsTable({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                 <span className="capitalize px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700/50">
                   {entry.family}
+                </span>
+                <span
+                  title={`Model output type: ${outputLabel}`}
+                  className={
+                    outputType === 'embedding'
+                      ? 'capitalize px-1.5 py-0.2 rounded bg-violet-50 text-violet-700 border border-violet-200/80 dark:bg-violet-950/80 dark:text-violet-300 dark:border-violet-800/60 font-medium'
+                      : 'capitalize px-1.5 py-0.2 rounded bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-950/80 dark:text-sky-300 dark:border-sky-800/60'
+                  }
+                >
+                  {outputLabel}
                 </span>
               </div>
             </div>

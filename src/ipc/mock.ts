@@ -204,9 +204,21 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
   const kvElemBytes = cfg.kv_type === 'q8_0' ? 1 : 2;
   const slots = cfg.n_parallel || 1;
 
+  function mockResolveOutputType(entry: CatalogEntry): string {
+    if (entry.output_type && entry.output_type !== 'text') return entry.output_type;
+    const hay = [entry.id, entry.filename, entry.repo_id, entry.family, ...(entry.tags ?? [])]
+      .join(' ')
+      .toLowerCase();
+    if (hay.includes('embed')) return 'embedding';
+    return 'text';
+  }
+
   return MOCK_CATALOG.map((entry) => {
+    const isEmbedding = mockResolveOutputType(entry) === 'embedding';
     const effectiveCtx = Math.min(cfg.context_size, entry.context_train);
-    const kv = 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * effectiveCtx * kvElemBytes * slots;
+    const kv = isEmbedding
+      ? 0
+      : 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * effectiveCtx * kvElemBytes * slots;
     const weights = entry.file_size_bytes;
     const activations = Math.ceil(weights * 0.05);
     const overhead = 700 * 1024 * 1024;
@@ -232,9 +244,13 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
     const scoreQuality = entry.quality_tier * 2;
 
     const leftover = Math.max(0, hostBudget - (weights + activations + overhead));
-    const bytesPerToken = 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * kvElemBytes * slots;
+    const bytesPerToken = isEmbedding
+      ? 0
+      : 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * kvElemBytes * slots;
     const maxTokens = bytesPerToken > 0 ? Math.floor(leftover / bytesPerToken) : entry.context_train;
-    const usableContext = Math.min(entry.context_train, Math.max(512, maxTokens));
+    const usableContext = isEmbedding
+      ? entry.context_train
+      : Math.min(entry.context_train, Math.max(512, maxTokens));
     const isConstrained = usableContext < entry.context_train;
 
     return {

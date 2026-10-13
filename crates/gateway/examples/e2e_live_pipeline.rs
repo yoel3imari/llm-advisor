@@ -97,6 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         size_bytes: target_entry.file_size_bytes,
         verified: true,
         added_at: chrono::Utc::now(),
+        output_type: Default::default(),
     };
     library.add_verified(record)?;
 

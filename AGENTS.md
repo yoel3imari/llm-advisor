@@ -19,7 +19,9 @@ This document records architectural conventions, project lessons learned, and gu
 * **macOS Dynamic Library Bundling & Dev Guardrail**:
   * Tauri 2 only copies the single binary in `externalBin` into `Contents/MacOS/llama-server` (or `target/debug/llama-server`).
   * Because `llama-server` is dynamically linked against `.dylib` files (`libllama-server-impl.dylib`, `libllama.dylib`, `libggml.dylib`, `libllama-common.dylib`, `libmtmd.dylib`, etc.) resolving via `@rpath` / `@loader_path`, all `.dylib` files, metal shaders, and their version symlinks must be synchronized into `Contents/MacOS/` via `scripts/post-bundle.sh` and into `target/debug/` via `src-tauri/build.rs` and `server_manager::ensure_sidecar_dependencies`.
-  * Precompiled GitHub release binaries for `llama.cpp` require macOS 13.3+ Accelerate ILP64 symbols; on macOS 12 (Monterey), `scripts/fetch-sidecar.sh` performs automated verification and compiles natively with `-DCMAKE_INSTALL_RPATH="@loader_path;@executable_path"` and Mach-O `@rpath` tooling (`install_name_tool`).
+  * **macOS Floor Is 15.0 — Do Not Lower It Without Rebuilding the Sidecar**:
+  * Upstream `llama.cpp` prebuilts (`minos 15.0`, SDK 15.5) link Accelerate ILP64 symbols (`_cblas_sgemm$NEWLAPACK$ILP64`, present only in macOS 13.3+) and newer `libc++`/`libSystem`; on anything older `dyld` aborts at sidecar load. `tauri.conf.json` `macOS.minimumSystemVersion` must therefore stay at `"15.0"` (enforced by the OS via `LSMinimumSystemVersion`).
+  * Supporting an older floor again would require either a natively rebuilt sidecar (`-DGGML_BLAS=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=<floor>`, plus a `nm -m | grep NEWLAPACK` gate in `scripts/fetch-sidecar.sh`) or a dual-variant bundle — all previously prototyped and deliberately removed in favor of the 15.0 floor.
 
 ---
 

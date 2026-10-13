@@ -22,6 +22,7 @@ fn test_library_crud_and_reconciliation() {
         size_bytes: 15,
         verified: true,
         added_at: Utc::now(),
+        output_type: Default::default(),
     };
 
     // 1. Add verified

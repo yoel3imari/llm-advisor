@@ -55,6 +55,7 @@ async fn test_happy_path_download_and_verify() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let progress_recorded = Arc::new(AtomicU64::new(0));
@@ -128,6 +129,7 @@ async fn test_resumable_range_download() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let options = DownloadOptions {
@@ -184,6 +186,7 @@ async fn test_checksum_mismatch_deletes_corrupted_file() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let options = DownloadOptions {
@@ -242,6 +245,7 @@ async fn test_gated_model_without_token_error() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let options = DownloadOptions {
@@ -313,6 +317,62 @@ fn create_mock_gguf_bytes(
     bytes
 }
 
+fn push_gguf_string_kv(bytes: &mut Vec<u8>, key: &str, value: &str) {
+    bytes.extend_from_slice(&(key.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(key.as_bytes());
+    bytes.extend_from_slice(&8u32.to_le_bytes()); // String
+    bytes.extend_from_slice(&(value.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(value.as_bytes());
+}
+
+fn push_gguf_u32_kv(bytes: &mut Vec<u8>, key: &str, value: u32) {
+    bytes.extend_from_slice(&(key.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(key.as_bytes());
+    bytes.extend_from_slice(&4u32.to_le_bytes()); // Uint32
+    bytes.extend_from_slice(&value.to_le_bytes());
+}
+
+fn create_mock_gguf_bytes_with_pooling(
+    arch: &str,
+    n_layers: u32,
+    n_kv_heads: u32,
+    head_dim: u32,
+    context_train: u32,
+    pooling_str: Option<&str>,
+    pooling_u32: Option<u32>,
+) -> Vec<u8> {
+    let extra = usize::from(pooling_str.is_some()) + usize::from(pooling_u32.is_some());
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"GGUF");
+    bytes.extend_from_slice(&3u32.to_le_bytes());
+    bytes.extend_from_slice(&0u64.to_le_bytes());
+    bytes.extend_from_slice(&(5u64 + extra as u64).to_le_bytes());
+
+    push_gguf_string_kv(&mut bytes, "general.architecture", arch);
+    push_gguf_u32_kv(&mut bytes, &format!("{}.block_count", arch), n_layers);
+    push_gguf_u32_kv(
+        &mut bytes,
+        &format!("{}.attention.head_count_kv", arch),
+        n_kv_heads,
+    );
+    push_gguf_u32_kv(
+        &mut bytes,
+        &format!("{}.attention.key_length", arch),
+        head_dim,
+    );
+    push_gguf_u32_kv(
+        &mut bytes,
+        &format!("{}.context_length", arch),
+        context_train,
+    );
+    if let Some(pooling) = pooling_str {
+        push_gguf_string_kv(&mut bytes, "general.pooling_type", pooling);
+    } else if let Some(pooling) = pooling_u32 {
+        push_gguf_u32_kv(&mut bytes, "general.pooling_type", pooling);
+    }
+    bytes
+}
+
 #[test]
 fn test_gguf_header_parsing_and_cross_verification() {
     let mock_bytes = create_mock_gguf_bytes("llama", 32, 8, 128, 131072);
@@ -344,6 +404,7 @@ fn test_gguf_header_parsing_and_cross_verification() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     assert!(gguf::verify_gguf_against_catalog(&header, &matching_entry).is_ok());
@@ -351,6 +412,142 @@ fn test_gguf_header_parsing_and_cross_verification() {
     let mut mismatch_entry = matching_entry.clone();
     mismatch_entry.n_kv_heads = 32; // wrong MHA instead of GQA
     assert!(gguf::verify_gguf_against_catalog(&header, &mismatch_entry).is_err());
+}
+
+fn sample_text_entry_for_gguf() -> CatalogEntry {
+    CatalogEntry {
+        id: "llama-3.1-8b".to_string(),
+        repo_id: "bartowski/llama".to_string(),
+        filename: "llama.gguf".to_string(),
+        family: "llama-3.1".to_string(),
+        params_billions: 8.0,
+        active_params_b: None,
+        n_layers: 12,
+        n_kv_heads: 4,
+        head_dim: 64,
+        context_train: 8192,
+        quant: "Q4_K_M".to_string(),
+        file_size_bytes: 4000000000,
+        sha256: "test".to_string(),
+        gated: false,
+        quality_tier: 4,
+        tags: vec![],
+        benchmarks: None,
+        shards: None,
+        output_type: Default::default(),
+    }
+}
+
+#[test]
+fn test_gguf_pooling_type_string_signals_embedding() {
+    let bytes =
+        create_mock_gguf_bytes_with_pooling("bert", 12, 0, 64, 8192, Some("mean"), None);
+    let mut cursor = std::io::Cursor::new(bytes);
+    let header = gguf::parse_gguf_metadata(&mut cursor).expect("parse header");
+    assert_eq!(header.pooling_type.as_deref(), Some("mean"));
+    assert!(header.is_embedding());
+    assert_eq!(
+        gguf::resolve_output_type(&header, &sample_text_entry_for_gguf()),
+        domain::OutputType::Embedding
+    );
+
+    for pooling in ["cls", "last", "MEAN"] {
+        let bytes =
+            create_mock_gguf_bytes_with_pooling("llama", 12, 4, 64, 8192, Some(pooling), None);
+        let mut cursor = std::io::Cursor::new(bytes);
+        let header = gguf::parse_gguf_metadata(&mut cursor).expect("parse header");
+        assert!(header.is_embedding(), "pooling '{}' must signal embedding", pooling);
+    }
+}
+
+#[test]
+fn test_gguf_pooling_type_u32_and_arch_signals_embedding() {
+    // Numeric pooling (non-zero) signals embedding.
+    let bytes = create_mock_gguf_bytes_with_pooling("llama", 12, 4, 64, 8192, None, Some(1));
+    let mut cursor = std::io::Cursor::new(bytes);
+    let header = gguf::parse_gguf_metadata(&mut cursor).expect("parse header");
+    assert_eq!(header.pooling_type_u32, Some(1));
+    assert!(header.is_embedding());
+
+    // Zero pooling + generative arch stays text.
+    let bytes = create_mock_gguf_bytes_with_pooling("llama", 12, 4, 64, 8192, None, Some(0));
+    let mut cursor = std::io::Cursor::new(bytes);
+    let header = gguf::parse_gguf_metadata(&mut cursor).expect("parse header");
+    assert!(!header.is_embedding());
+
+    // BERT-family architecture signals embedding even without pooling keys.
+    let bytes = create_mock_gguf_bytes("bert", 12, 4, 64, 8192);
+    let mut cursor = std::io::Cursor::new(bytes);
+    let header = gguf::parse_gguf_metadata(&mut cursor).expect("parse header");
+    assert!(header.is_embedding());
+}
+
+#[test]
+fn test_gguf_resolve_priority_header_over_catalog_over_name() {
+    let mut entry = sample_text_entry_for_gguf();
+
+    // 4. Default text.
+    let plain = create_mock_gguf_bytes("llama", 12, 4, 64, 8192);
+    let mut cursor = std::io::Cursor::new(plain);
+    let header = gguf::parse_gguf_metadata(&mut cursor).unwrap();
+    assert_eq!(
+        gguf::resolve_output_type(&header, &entry),
+        domain::OutputType::Text
+    );
+
+    // 3. Name heuristic.
+    entry.id = "nomic-embed-text-v1".to_string();
+    let plain = create_mock_gguf_bytes("llama", 12, 4, 64, 8192);
+    let mut cursor = std::io::Cursor::new(plain);
+    let header = gguf::parse_gguf_metadata(&mut cursor).unwrap();
+    assert_eq!(
+        gguf::resolve_output_type(&header, &entry),
+        domain::OutputType::Embedding
+    );
+
+    // 2. Catalog override wins even with a plain name.
+    entry.id = "plain-model".to_string();
+    entry.output_type = domain::OutputType::Embedding;
+    let plain = create_mock_gguf_bytes("llama", 12, 4, 64, 8192);
+    let mut cursor = std::io::Cursor::new(plain);
+    let header = gguf::parse_gguf_metadata(&mut cursor).unwrap();
+    assert_eq!(
+        gguf::resolve_output_type(&header, &entry),
+        domain::OutputType::Embedding
+    );
+
+    // 1. GGUF header wins even when catalog + name say text.
+    entry.output_type = domain::OutputType::Text;
+    let embed_bytes =
+        create_mock_gguf_bytes_with_pooling("llama", 12, 4, 64, 8192, Some("cls"), None);
+    let mut cursor = std::io::Cursor::new(embed_bytes);
+    let header = gguf::parse_gguf_metadata(&mut cursor).unwrap();
+    assert_eq!(
+        gguf::resolve_output_type(&header, &entry),
+        domain::OutputType::Embedding
+    );
+}
+
+#[test]
+fn test_gguf_verify_relaxes_kv_checks_for_embeddings_only() {
+    // Embedding entry with degenerate KV fields + mismatched header passes.
+    let mut embed_entry = sample_text_entry_for_gguf();
+    embed_entry.id = "nomic-embed-text-v1".to_string();
+    embed_entry.n_kv_heads = 0;
+    embed_entry.head_dim = 0;
+    let bytes = create_mock_gguf_bytes_with_pooling("bert", 12, 4, 64, 8192, Some("mean"), None);
+    let mut cursor = std::io::Cursor::new(bytes);
+    let header = gguf::parse_gguf_metadata(&mut cursor).unwrap();
+    assert!(header.is_embedding());
+    assert!(gguf::verify_gguf_against_catalog(&header, &embed_entry).is_ok());
+
+    // Same mismatch on a text model still fails (no weakening for text).
+    let mut text_entry = sample_text_entry_for_gguf();
+    text_entry.n_kv_heads = 32;
+    let plain = create_mock_gguf_bytes("llama", 12, 4, 64, 8192);
+    let mut cursor = std::io::Cursor::new(plain);
+    let header = gguf::parse_gguf_metadata(&mut cursor).unwrap();
+    assert!(gguf::verify_gguf_against_catalog(&header, &text_entry).is_err());
 }
 
 #[tokio::test]
@@ -414,6 +611,7 @@ async fn test_sharded_download_preserves_split_filenames() {
                 sha256: sha2,
             },
         ]),
+        output_type: Default::default(),
     };
 
     let seen_totals = Arc::new(std::sync::Mutex::new(Vec::new()));

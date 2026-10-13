@@ -6,6 +6,8 @@
 //!   CRITICAL: Uses GQA n_kv_heads (e.g., 8 for Llama 3.1 8B), never total n_head (32).
 //! - Activations Margin = ceil(0.05 * weights)
 //! - Runtime Overhead Floor = 700 MB (734,003,200 bytes)
+//! - Embedding models (`output_type == Embedding`): KV cache = 0, since
+//!   single-pass encoding needs no autoregressive KV cache.
 
 use domain::{CatalogEntry, FitResult, HardwareProfile, ServeConfig};
 
@@ -20,7 +22,14 @@ pub const RUNTIME_OVERHEAD_FLOOR_BYTES: u64 = 700 * 1024 * 1024;
 pub const ACTIVATIONS_MARGIN: f64 = 0.05;
 
 /// Calculate the KV cache size in bytes for a given context size and serving config.
+///
+/// Embedding models perform single-pass encoding with no autoregressive
+/// generation, so they need no KV cache: returns 0 when the entry resolves
+/// to `OutputType::Embedding`.
 pub fn calculate_kv_cache_bytes(entry: &CatalogEntry, ctx: u32, cfg: &ServeConfig) -> u64 {
+    if entry.is_embedding() {
+        return 0;
+    }
     let effective_ctx = ctx.min(entry.context_train) as u64;
     let kv_elem_bytes = cfg.kv_type.bytes_per_element();
     let slots = cfg.n_parallel.max(1) as u64;
@@ -95,6 +104,9 @@ pub fn calculate_max_context_that_fits(
 }
 
 /// Calculate the dynamic usable context and determine whether context is constrained by available memory.
+///
+/// Embedding models need no KV cache, so the full native context always fits
+/// (provided weights + overhead fit at all).
 pub fn calculate_usable_context(
     entry: &CatalogEntry,
     profile: &HardwareProfile,
@@ -107,6 +119,10 @@ pub fn calculate_usable_context(
 
     if base_overhead > host_budget {
         return (0, true);
+    }
+
+    if entry.is_embedding() {
+        return (entry.context_train, false);
     }
 
     let leftover_bytes = host_budget.saturating_sub(base_overhead);

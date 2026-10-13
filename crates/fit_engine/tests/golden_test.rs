@@ -22,6 +22,7 @@ fn sample_llama31_8b_entry() -> CatalogEntry {
         tags: vec!["llama".to_string()],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     }
 }
 
@@ -138,6 +139,7 @@ fn test_golden_moe_mixtral_active_params_speed() {
         tags: vec!["moe".to_string()],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let profile_128gb = HardwareProfile {
@@ -285,6 +287,7 @@ fn test_llama_3_1_70b_q2_k_on_16gb_ram_fails() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let cfg = ServeConfig::default();
@@ -316,6 +319,7 @@ fn test_gemma_2_9b_head_dim_deviation() {
         tags: vec![],
         benchmarks: None,
         shards: None,
+        output_type: Default::default(),
     };
 
     let cfg = ServeConfig {
@@ -373,4 +377,80 @@ fn test_roofline_speed_throughput() {
         speed_cpu < 10.0,
         "CPU only speed should be much lower than GPU"
     );
+}
+
+fn sample_embedding_entry() -> CatalogEntry {
+    let mut entry = sample_llama31_8b_entry();
+    entry.id = "nomic-embed-text-v1-q4_k_m".to_string();
+    entry
+}
+
+fn sample_explicit_embedding_entry() -> CatalogEntry {
+    CatalogEntry {
+        id: "bge-m3-embedding-q4_k_m".to_string(),
+        repo_id: "org/bge-m3-gguf".to_string(),
+        filename: "bge-m3-Q4_K_M.gguf".to_string(),
+        family: "bge".to_string(),
+        params_billions: 0.57,
+        active_params_b: None,
+        n_layers: 24,
+        n_kv_heads: 0, // degenerate KV fields are legal for embeddings
+        head_dim: 0,
+        context_train: 8192,
+        quant: "Q4_K_M".to_string(),
+        file_size_bytes: 350_000_000,
+        sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            .to_string(),
+        gated: false,
+        quality_tier: 3,
+        tags: vec!["embedding".to_string()],
+        benchmarks: None,
+        shards: None,
+        output_type: domain::OutputType::Embedding,
+    }
+}
+
+#[test]
+fn test_embedding_kv_cache_is_zero() {
+    let heuristic = sample_embedding_entry();
+    assert!(heuristic.is_embedding());
+    let explicit = sample_explicit_embedding_entry();
+    assert!(explicit.is_embedding());
+
+    let cfg = ServeConfig::default();
+    assert_eq!(calculate_kv_cache_bytes(&heuristic, 4096, &cfg), 0);
+    assert_eq!(calculate_kv_cache_bytes(&explicit, 8192, &cfg), 0);
+
+    // Text path is unaffected (golden value).
+    let text = sample_llama31_8b_entry();
+    assert_eq!(calculate_kv_cache_bytes(&text, 4096, &cfg), 536870912);
+}
+
+#[test]
+fn test_embedding_total_memory_excludes_kv() {
+    let entry = sample_embedding_entry();
+    let cfg = ServeConfig::default();
+    let (weights, kv, total) = estimate_total_memory_bytes(&entry, 4096, &cfg);
+    assert_eq!(weights, 4920727040);
+    assert_eq!(kv, 0);
+    let expected_activations = ((4920727040u64 as f64) * ACTIVATIONS_MARGIN).ceil() as u64;
+    assert_eq!(total, weights + expected_activations + RUNTIME_OVERHEAD_FLOOR_BYTES);
+    // Context-independent for embeddings.
+    let (_, _, total_8k) = estimate_total_memory_bytes(&entry, 8192, &cfg);
+    assert_eq!(total, total_8k);
+}
+
+#[test]
+fn test_embedding_usable_context_is_full_native() {
+    let entry = sample_embedding_entry();
+    let profile = sample_profile_16gb_intel();
+    let cfg = ServeConfig::default();
+    let (usable, constrained) = calculate_usable_context(&entry, &profile, &cfg);
+    assert_eq!(usable, entry.context_train);
+    assert!(!constrained);
+
+    let result = evaluate(&profile, &entry, &cfg);
+    assert_eq!(result.est_kv_bytes, 0);
+    assert_eq!(result.usable_context, entry.context_train);
+    assert!(!result.is_context_constrained);
 }

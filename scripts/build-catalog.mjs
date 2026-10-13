@@ -619,6 +619,14 @@ export const CATALOG = [
   }
 ];
 
+export function detectOutputType(entry) {
+  const explicit = (entry.output_type || '').toLowerCase();
+  if (explicit && explicit !== 'text') return explicit;
+  const hay = [entry.id, entry.filename, entry.repo_id, entry.family, ...((entry.tags) || [])].join(' ').toLowerCase();
+  if (hay.includes('embed')) return 'embedding';
+  return 'text';
+}
+
 export function validateCatalog(catalog) {
   const errors = [];
   const ids = new Set();
@@ -632,7 +640,7 @@ export function validateCatalog(catalog) {
     if (!entry.repo_id || !entry.filename) errors.push(`${pfx}: missing repo_id or filename`);
     if (!entry.params_billions || entry.params_billions <= 0) errors.push(`${pfx}: invalid params_billions`);
     if (!entry.n_layers || entry.n_layers <= 0) errors.push(`${pfx}: invalid n_layers`);
-    if (!entry.n_kv_heads || entry.n_kv_heads <= 0) errors.push(`${pfx}: invalid n_kv_heads`);
+    if ((!entry.n_kv_heads || entry.n_kv_heads <= 0) && detectOutputType(entry) !== 'embedding') errors.push(`${pfx}: invalid n_kv_heads`);
     if (!entry.head_dim || entry.head_dim <= 0) errors.push(`${pfx}: invalid head_dim`);
     if (!entry.context_train || entry.context_train <= 0) errors.push(`${pfx}: invalid context_train`);
     if (!entry.file_size_bytes || entry.file_size_bytes <= 0) errors.push(`${pfx}: invalid file_size_bytes`);
