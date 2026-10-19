@@ -70,6 +70,10 @@ curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install
 curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --format appimage
 ```
 
+> **Minimum systems for the prebuilt installers:** Linux with glibc 2.39+ — Ubuntu 24.04+, Debian 13+, Fedora 40+, RHEL/Rocky/Alma 10+, openSUSE Leap 16+ or Tumbleweed — and macOS 15+ (Sequoia). The installer stops with a clear error on older systems; use the source build (below) there.
+
+> **Linux `.rpm` note (releases ≤ v0.2.3):** the RPM declares `Requires: libayatana-appindicator`, a package name no distribution provides, so `dnf`/`zypper` reject it. Use `--format appimage` above (or the `.deb` on Debian/Ubuntu) until the next release; the installer prints manual workarounds if it hits this.
+
 > **Windows:** grab the `.exe` / `.msi` from [Releases](https://github.com/yoel3imari/llm-advisor/releases) directly.
 
 ### Option B: Download a Release Manually

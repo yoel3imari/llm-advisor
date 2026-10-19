@@ -80,3 +80,28 @@ This document records architectural conventions, project lessons learned, and gu
   * Upstream `llama.cpp` releases contain implementation shared libraries for unrelated CLI tools (`libllama-bench-impl.so`, `libllama-cli-impl.so`, `libllama-perplexity-impl.so`, etc.).
   * `scripts/fetch-sidecar.sh` filters these out during download, preserving only `llama-server` and its dynamic runtime dependencies.
 
+---
+
+## 7. Linux Package Dependency Metadata (deb/rpm)
+
+* **Tauri CLI auto-injects linked runtime deps — do not duplicate them manually**:
+  * When bundling on Linux, `tauri-cli` appends dependencies for the libraries it links (see `src/interface/rust.rs` in the published `tauri-cli` crate):
+    * `deb`: `libwebkit2gtk-4.1-0`, `libgtk-3-0`, plus `libayatana-appindicator3-1` when the `tray-icon` feature is enabled.
+    * `rpm`: the portable soname form `libwebkit2gtk-4.1.so.0()(64bit)`, `libgtk-3.so.0()(64bit)`, `libayatana-appindicator3.so.1()(64bit)` (`()(64bit)` suffix on 64-bit targets).
+* **`bundle.linux.rpm.depends` must contain sonames, never distro package names**:
+  * Fedora-only names (`webkit2gtk4.1`, `gtk3`, `librsvg2`, `openssl`) do not resolve on openSUSE, and openSUSE source-package names such as `libayatana-appindicator` resolve nowhere. On Fedora the latter surfaces as `nothing provides libayatana-appindicator needed by llm-advisor` and `dnf` refuses the whole transaction.
+  * Use `libfoo.so.N()(64bit)` (with the 64-bit suffix — all release targets are 64-bit). Fedora mapping examples: `libayatana-appindicator3.so.1()(64bit)` → `libayatana-appindicator-gtk3`, `libcrypto.so.3()(64bit)` → `openssl-libs`.
+  * v0.2.3 shipped the broken `libayatana-appindicator` requires; `install.sh` detects that metadata on failure and prints AppImage / force-install remedies until users upgrade.
+* **`bundle.linux.deb.depends`** keeps Debian/Ubuntu binary package names (auto-injected duplicates are harmless).
+
+---
+
+## 8. Minimum System Version Floors
+
+* **Linux floor = release build host**: `release.yml` builds on `ubuntu-24.04`, so the binaries require **glibc >= 2.39** (verified with `objdump -T`: the app binary imports `GLIBC_2.39`; the pinned llama.cpp sidecar only needs 2.34, so the app governs).
+  * Measure per release: `objdump -T target/release/llm-advisor | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sort -Vu | tail -1`.
+  * `install.sh` enforces it via `MIN_GLIBC`; `release.yml` fails the release when the built app or sidecar libs require a newer glibc than `install.sh` advertises (guards silent runner-image bumps). musl systems (Alpine) are refused by the installer.
+  * Supported minimums: Ubuntu 24.04+, Debian 13+ (glibc 2.41), Fedora 40+ (2.39), RHEL/Rocky/Alma 10+ (2.39; EPEL for the tray dependency), openSUSE Leap 16+ (2.40)/Tumbleweed.
+* **macOS floor = 15.0**, declared in `src-tauri/tauri.conf.json` (`bundle.macOS.minimumSystemVersion`) and dictated by the upstream llama.cpp prebuilt (`minos 15.0`, Accelerate ILP64 symbols — see section 1). `install.sh` enforces the same value via `MIN_MACOS`; `release.yml` verifies both stay in sync.
+* Bumping the runner image or the sidecar pin can raise these floors — update `MIN_GLIBC`/`MIN_MACOS` in `install.sh`, the README note, and this section in the same commit.
+

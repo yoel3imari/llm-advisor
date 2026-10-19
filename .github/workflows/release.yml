@@ -100,3 +100,50 @@ jobs:
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           retryAttempts: 3
           args: ${{ matrix.args }}
+
+      - name: Verify glibc floor matches installer requirement
+        if: matrix.platform == 'ubuntu-24.04'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(target/release/llm-advisor src-tauri/binaries/llama-server src-tauri/binaries/*.so)
+          declared="$(grep -oE '^MIN_GLIBC="[0-9]+\.[0-9]+"' install.sh | cut -d'"' -f2)"
+          if [ -z "${declared}" ]; then
+            echo "::warning::MIN_GLIBC not found in install.sh; skipping glibc floor verification."
+            exit 0
+          fi
+          required=""
+          for f in "${files[@]}"; do
+            [ -e "${f}" ] || continue
+            v="$(objdump -T "${f}" 2>/dev/null | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sed 's/GLIBC_//' | sort -Vu | tail -n1)"
+            [ -n "${v}" ] || continue
+            if [ -z "${required}" ] || [ "$(printf '%s\n%s\n' "${required}" "${v}" | sort -V | tail -n1)" = "${v}" ]; then
+              required="${v}"
+            fi
+          done
+          if [ -z "${required}" ]; then
+            echo "::warning::No binaries found to measure; skipping glibc floor verification."
+            exit 0
+          fi
+          echo "Highest glibc requirement in build: ${required}; installer declares: ${declared}"
+          if [ "$(printf '%s\n%s\n' "${declared}" "${required}" | sort -V | tail -n1)" != "${declared}" ]; then
+            echo "::error::Build requires glibc ${required}, but install.sh advertises ${declared}."
+            echo "Bump MIN_GLIBC (and the README/AGENTS.md floors) or pin the runner image before publishing this release."
+            exit 1
+          fi
+
+      - name: Verify macOS floor matches installer requirement
+        if: startsWith(matrix.platform, 'macos')
+        shell: bash
+        run: |
+          declared="$(grep -oE '^MIN_MACOS="[0-9]+\.[0-9]+"' install.sh | cut -d'"' -f2)"
+          if [ -z "${declared}" ]; then
+            echo "::warning::MIN_MACOS not found in install.sh; skipping check."
+            exit 0
+          fi
+          bundle="$(jq -r '.bundle.macOS.minimumSystemVersion' src-tauri/tauri.conf.json)"
+          echo "install.sh MIN_MACOS=${declared}; bundle minimumSystemVersion=${bundle}"
+          if [ "${bundle}" != "${declared}" ]; then
+            echo "::error::macOS floor mismatch: tauri.conf.json declares ${bundle}, install.sh advertises ${declared}."
+            exit 1
+          fi

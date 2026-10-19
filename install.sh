@@ -18,6 +18,13 @@
 #   --yes             Non-interactive (default; kept for explicitness).
 #   -h, --help        Show this help.
 #
+# Requirements (prebuilt binaries):
+#   Linux:  glibc >= 2.39 — Ubuntu 24.04+, Debian 13+, Fedora 40+,
+#           RHEL/Rocky/Alma 10+, openSUSE Leap 16+/Tumbleweed.
+#   macOS:  15.0+ (Sequoia).
+#   Older systems: build from source —
+#   https://github.com/yoel3imari/llm-advisor#option-c-build-from-source
+#
 # Windows users: this script cannot install natively. Download the .exe/.msi
 # from https://github.com/yoel3imari/llm-advisor/releases instead.
 # ==============================================================================
@@ -27,6 +34,14 @@ REPO="yoel3imari/llm-advisor"
 APP_NAME="LLM Advisor"
 APP_BIN="llm-advisor"
 API_BASE="https://api.github.com/repos/${REPO}"
+
+# Minimum supported system versions for the prebuilt binaries. Keep in sync:
+#   - Linux floor is set by the release build host (ubuntu-24.04 -> glibc 2.39);
+#     see .github/workflows/release.yml (runs-on) and AGENTS.md section 8.
+#   - macOS floor must match bundle.macOS.minimumSystemVersion in
+#     src-tauri/tauri.conf.json (upstream llama.cpp sidecar build floor).
+MIN_GLIBC="2.39"
+MIN_MACOS="15.0"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -47,6 +62,58 @@ log() { echo -e "${CYAN}==>${NC} $*"; }
 ok() { echo -e "${GREEN}✓${NC} $*"; }
 warn() { echo -e "${YELLOW}!${NC} $*" >&2; }
 die() { echo -e "${RED}Error:${NC} $*" >&2; exit 1; }
+
+# True when dotted numeric version $1 >= $2 (pure awk; BSD/macOS portable).
+version_ge() {
+    awk -v a="$1" -v b="$2" 'BEGIN {
+        na = split(a, A, "."); nb = split(b, B, ".")
+        n = (na > nb) ? na : nb
+        for (i = 1; i <= n; i++) {
+            x = (i <= na) ? A[i] + 0 : 0
+            y = (i <= nb) ? B[i] + 0 : 0
+            if (x != y) exit (x > y) ? 0 : 1
+        }
+        exit 0
+    }'
+}
+
+# Enforce the macOS floor (matches bundle.macOS.minimumSystemVersion).
+require_macos_version() {
+    local ver
+    ver="$(sw_vers -productVersion 2>/dev/null || true)"
+    if [ -z "${ver}" ]; then
+        warn "Could not detect the macOS version; ${APP_NAME} requires macOS ${MIN_MACOS}+."
+        return 0
+    fi
+    if version_ge "${ver}" "${MIN_MACOS}"; then
+        ok "macOS ${ver} (minimum supported: ${MIN_MACOS})"
+    else
+        die "macOS ${ver} is not supported. The app and its bundled llama.cpp sidecar require macOS ${MIN_MACOS}+ (Sequoia). Upgrade macOS, or build from source: https://github.com/${REPO}#option-c-build-from-source"
+    fi
+}
+
+# Enforce the glibc floor imposed by the Linux release build host (ubuntu-24.04).
+require_linux_glibc() {
+    local ver
+
+    if ldd --version 2>&1 | head -n 1 | grep -qi 'musl'; then
+        die "musl libc detected (e.g. Alpine). The prebuilt binaries are linked against glibc — build from source instead: https://github.com/${REPO}#option-c-build-from-source"
+    fi
+
+    ver="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $NF}' || true)"
+    if [ -z "${ver}" ]; then
+        ver="$(ldd --version 2>/dev/null | head -n 1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | tail -n 1 || true)"
+    fi
+    if [ -z "${ver}" ]; then
+        warn "Could not detect the glibc version; ${APP_NAME} requires glibc ${MIN_GLIBC}+."
+        return 0
+    fi
+    if version_ge "${ver}" "${MIN_GLIBC}"; then
+        ok "glibc ${ver} (minimum supported: ${MIN_GLIBC})"
+    else
+        die "glibc ${ver} is too old. The prebuilt binaries require glibc ${MIN_GLIBC}+ — Ubuntu 24.04+, Debian 13+, Fedora 40+, RHEL/Rocky/Alma 10+, openSUSE Leap 16+ or Tumbleweed. Upgrade, or build from source: https://github.com/${REPO}#option-c-build-from-source"
+    fi
+}
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -240,14 +307,42 @@ install_linux_rpm() {
     [ -s "${pkg}" ] || die "Downloaded .rpm is empty."
 
     log "Installing package (may prompt for sudo password)..."
+    local rc=0
+    local install_log="${TMP_DIR}/rpm-install.log"
     if command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y "${pkg}"
+        sudo dnf install -y "${pkg}" 2>&1 | tee "${install_log}" || rc=${PIPESTATUS[0]}
     elif command -v zypper >/dev/null 2>&1; then
-        sudo zypper --non-interactive install "${pkg}"
+        sudo zypper --non-interactive install "${pkg}" 2>&1 | tee "${install_log}" || rc=${PIPESTATUS[0]}
     else
-        sudo rpm -Uvh "${pkg}"
+        sudo rpm -Uvh "${pkg}" 2>&1 | tee "${install_log}" || rc=${PIPESTATUS[0]}
     fi
-    ok "Installed via rpm."
+    if [ "${rc}" -eq 0 ]; then
+        ok "Installed via rpm."
+        return 0
+    fi
+
+    # Releases up to v0.2.3 declare Requires: libayatana-appindicator — the
+    # openSUSE *source* package name, which no distribution provides — so
+    # dnf/zypper abort with "nothing provides libayatana-appindicator" even
+    # though the library itself is also required via a portable soname.
+    # The metadata is fixed for the next release; offer remediation paths.
+    if rpm -qpR "${pkg}" 2>/dev/null | grep -qx 'libayatana-appindicator' &&
+        grep -q 'libayatana-appindicator' "${install_log}"; then
+        warn "Known packaging bug in this release: the .rpm requires"
+        warn "'libayatana-appindicator', a package name that does not exist on"
+        warn "Fedora/RHEL/openSUSE. Fixed in the next release."
+        echo ""
+        echo -e "  ${BOLD}Option 1${NC} — install the self-contained build instead:"
+        echo -e "      curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | bash -s -- --format appimage"
+        echo ""
+        echo -e "  ${BOLD}Option 2${NC} — install the runtime library, then force the .rpm:"
+        echo -e "      # Fedora/RHEL:  sudo dnf install -y libayatana-appindicator-gtk3"
+        echo -e "      # openSUSE:     sudo zypper install -y libayatana-appindicator3-1"
+        echo -e "      curl -fSL -o /tmp/llm-advisor.rpm '${url}'"
+        echo -e "      sudo rpm -Uvh --nodeps /tmp/llm-advisor.rpm"
+        die "RPM install failed due to the packaging bug above."
+    fi
+    die "RPM install failed. Check the resolver output above, or browse https://github.com/${REPO}/issues."
 }
 
 install_linux_appimage() {
@@ -273,7 +368,7 @@ Terminal=false
 Categories=Development;
 EOF
     ok "Installed to ${dest_dir}/${APP_BIN}.AppImage"
-    warn "If the AppImage fails to launch, install FUSE: sudo apt install -y libfuse2t64 (Ubuntu 24.04+) or libfuse2 (older)."
+    warn "If the AppImage fails to launch, install FUSE: sudo apt install -y libfuse2t64 (Ubuntu 24.04+), libfuse2 (older), or sudo dnf install -y fuse-libs (Fedora)."
     case ":${PATH}:" in
         *":${dest_dir}:"*) ;;
         *) warn "Add ${dest_dir} to your PATH to launch from terminal." ;;
@@ -283,6 +378,13 @@ EOF
 echo -e "${BOLD}${CYAN}=====================================================${NC}"
 echo -e "${BOLD}${CYAN}  ${APP_NAME} — One-Command Installer (${OS}/${ARCH})${NC}"
 echo -e "${BOLD}${CYAN}=====================================================${NC}"
+
+# Refuse to install on systems the prebuilt binaries cannot run on.
+if [ "${OS}" = "darwin" ]; then
+    require_macos_version
+elif [ "${OS}" = "linux" ]; then
+    require_linux_glibc
+fi
 
 RELEASE_JSON="${TMP_DIR}/release.json"
 fetch_release_json "${RELEASE_JSON}"
