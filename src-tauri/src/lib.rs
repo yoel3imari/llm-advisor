@@ -38,7 +38,7 @@ fn default_catalog_endpoint() -> String {
 }
 
 fn default_theme() -> String {
-    "dark".to_string()
+    "system".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -888,6 +888,20 @@ pub fn run() {
             let (settings_val, settings_path) =
                 load_or_init_settings(&app_data_dir, &library_store);
             let settings = Arc::new(RwLock::new(settings_val.clone()));
+
+            // Apply the persisted theme to the native window immediately so
+            // OS-drawn surfaces match the app before the webview finishes
+            // loading. 'system' is left untouched so the OS preference is used.
+            if let Some(window) = app.get_webview_window("main") {
+                let theme = match settings_val.theme.as_str() {
+                    "light" => Some(tauri::Theme::Light),
+                    "dark" => Some(tauri::Theme::Dark),
+                    _ => None,
+                };
+                if theme.is_some() {
+                    let _ = window.set_theme(theme);
+                }
+            }
 
             let gateway_handle = Arc::new(tokio::sync::Mutex::new(None));
 

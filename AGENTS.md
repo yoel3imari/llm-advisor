@@ -105,3 +105,13 @@ This document records architectural conventions, project lessons learned, and gu
 * **macOS floor = 15.0**, declared in `src-tauri/tauri.conf.json` (`bundle.macOS.minimumSystemVersion`) and dictated by the upstream llama.cpp prebuilt (`minos 15.0`, Accelerate ILP64 symbols — see section 1). `install.sh` enforces the same value via `MIN_MACOS`; `release.yml` verifies both stay in sync.
 * Bumping the runner image or the sidecar pin can raise these floors — update `MIN_GLIBC`/`MIN_MACOS` in `install.sh`, the README note, and this section in the same commit.
 
+---
+
+## 9. Cross-Platform Window Chrome
+
+* **Frameless by design**: `src-tauri/tauri.conf.json` sets `decorations: false` on every OS. `src/components/layout/TitleBar.tsx` is the only title bar; do not reintroduce OS-specific native chrome (the old GTK header-bar CSS override and its `gtk` crate were removed as obsolete).
+* **Drag region**: the title bar uses `data-tauri-drag-region="deep"` (Tauri 2.11+) so the entire bar drags, while buttons/inputs opt out automatically. Double-click toggling comes from Tauri's injected script (`core:window:allow-internal-toggle-maximize`, included in `core:default`).
+* **Window permissions** in `src-tauri/capabilities/default.json` must keep `allow-minimize`, `allow-toggle-maximize`, `allow-close`, `allow-start-dragging`, and `allow-start-resize-dragging`; `allow-is-maximized` also comes from `core:default`.
+* **Resize border**: `decorations: false` removes the native resize frame, so `WindowResizeHandles.tsx` provides invisible 8-direction hit areas backed by `startResizeDragging`. Keep them mounted at the app shell (hidden when maximized); without them edge resizing breaks on Linux/X11.
+* **Trade-off**: macOS loses native traffic lights and system window-menu behaviors (move/align) in exchange for identical chrome across OSes. This is intentional.
+

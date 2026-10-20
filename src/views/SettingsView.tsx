@@ -25,9 +25,10 @@ import {
   ArrowDownToLine,
   Sun,
   Moon,
+  Monitor,
   AlertTriangle,
 } from 'lucide-react';
-import type { AppSettings, ModelRecord, KvType, HardwareProfile, AppUpdateInfo } from '../types/domain';
+import type { AppSettings, ModelRecord, KvType, HardwareProfile, AppUpdateInfo, ThemeMode } from '../types/domain';
 import { getStoredTheme, applyTheme } from '../lib/theme';
 import { listen } from '@tauri-apps/api/event';
 import { isTauriEnvironment } from '../lib/utils';
@@ -139,7 +140,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
     }
   };
 
-  const handleThemeChange = async (newTheme: 'dark' | 'light') => {
+  const handleThemeChange = async (newTheme: ThemeMode) => {
     const updated: AppSettings = { ...settings, theme: newTheme };
     setSettings(updated);
     applyTheme(newTheme);
@@ -411,19 +412,25 @@ export function SettingsView({ onSettingsChanged }: Props) {
               <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center shrink-0">
                 {settings.theme === 'light' ? (
                   <Sun className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                ) : (
+                ) : settings.theme === 'dark' ? (
                   <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                ) : (
+                  <Monitor className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 )}
               </div>
               <div>
                 <h3 className="text-slate-900 dark:text-white text-sm font-bold tracking-tight">Appearance & Theme Mode</h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-                  Toggle interface appearance between crisp daylight mode and dark obsidian contrast
+                  Follow your operating system appearance or force a light or dark interface
                 </p>
               </div>
             </div>
             <span className="text-[11px] font-mono bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-1 rounded-md font-medium uppercase">
-              {settings.theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+              {settings.theme === 'system'
+                ? 'System Mode'
+                : settings.theme === 'light'
+                ? 'Light Mode'
+                : 'Dark Mode'}
             </span>
           </div>
 
@@ -431,7 +438,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
             <div className="space-y-0.5">
               <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">Color Theme</div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Switches the application theme and persists your choice across application restarts.
+                System mode follows your OS appearance, including the window title bar, and persists across restarts.
               </p>
             </div>
 
@@ -444,16 +451,16 @@ export function SettingsView({ onSettingsChanged }: Props) {
               <button
                 type="button"
                 role="radio"
-                aria-checked={settings.theme !== 'light'}
-                onClick={() => handleThemeChange('dark')}
+                aria-checked={settings.theme === 'system'}
+                onClick={() => handleThemeChange('system')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  settings.theme !== 'light'
+                  settings.theme === 'system'
                     ? 'bg-slate-800 text-white shadow-corporate border border-slate-700'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <Moon className="w-3.5 h-3.5" />
-                <span>Dark</span>
+                <Monitor className="w-3.5 h-3.5" />
+                <span>System</span>
               </button>
 
               <button
@@ -469,6 +476,21 @@ export function SettingsView({ onSettingsChanged }: Props) {
               >
                 <Sun className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Light</span>
+              </button>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={settings.theme === 'dark'}
+                onClick={() => handleThemeChange('dark')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  settings.theme === 'dark'
+                    ? 'bg-slate-800 text-white shadow-corporate border border-slate-700'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                <span>Dark</span>
               </button>
             </div>
           </div>

@@ -16,8 +16,10 @@
         });
 
         try {
-          var theme = localStorage.getItem('llm_advisor_theme') || 'light';
-          if (theme === 'dark') {
+          var theme = localStorage.getItem('llm_advisor_theme') || 'system';
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = theme === 'dark' || (theme === 'system' && prefersDark);
+          if (dark) {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');
             document.documentElement.setAttribute('data-theme', 'dark');
@@ -26,6 +28,7 @@
             document.documentElement.classList.add('light');
             document.documentElement.setAttribute('data-theme', 'light');
           }
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
         } catch (e) {}
       })();
     </script>

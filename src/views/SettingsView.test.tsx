@@ -52,6 +52,23 @@ describe('SettingsView UI & Automated Uninstaller', () => {
     });
   });
 
+  it('follows the system theme when System mode is selected', async () => {
+    render(<SettingsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Appearance & Theme Mode')).toBeDefined();
+    });
+
+    const systemButton = screen.getByRole('radio', { name: /system/i });
+    fireEvent.click(systemButton);
+
+    await waitFor(() => {
+      expect(localStorage.getItem('llm_advisor_theme')).toBe('system');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+      expect(document.documentElement.classList.contains('light')).toBe(true);
+    });
+  });
+
   it('renders shadcn Checkbox and toggles background execution setting', async () => {
     render(<SettingsView />);
 

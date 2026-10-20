@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar, type NavTab } from './components/layout/Sidebar';
+import { TitleBar } from './components/layout/TitleBar';
+import { WindowResizeHandles } from './components/layout/WindowResizeHandles';
 import {
   ChatView,
   DashboardView,
@@ -23,6 +25,7 @@ import {
 import type { HardwareProfile, ModelRecord, DownloadTask, ServerState, AppSettings, AppUpdateInfo } from './types/domain';
 import { getStoredTheme, applyTheme } from './lib/theme';
 import { isTauriEnvironment } from './lib/utils';
+import { useWindowMaximized } from './hooks/useWindowMaximized';
 import { UpdateDialog } from './components/ui/UpdateDialog';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
@@ -41,6 +44,7 @@ function MainApp() {
   const [availableUpdate, setAvailableUpdate] = useState<AppUpdateInfo | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const isMaximized = useWindowMaximized();
 
   const { showToast } = useToast();
 
@@ -200,64 +204,70 @@ function MainApp() {
   }, [refreshDynamicState, showToast, handleNavigateToServer]);
 
   return (
-    <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased overflow-hidden font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-white">
-      <Sidebar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        serverState={serverState}
-        activeDownloads={activeDownloads}
-        onCancelDownload={handleCancelDownload}
-      />
+    <div className="flex h-screen w-screen flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased overflow-hidden font-sans ring-1 ring-inset ring-slate-900/5 dark:ring-white/10 selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-white">
+      <TitleBar isMaximized={isMaximized} />
 
-      <main ref={mainRef} className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 left-1/3 w-[420px] h-[420px] bg-violet-500/10 dark:bg-violet-600/15 rounded-full blur-3xl" />
-        </div>
-        <div
-          className={`h-full w-full flex flex-col min-h-0 ${activeTab === 'chat' ? '' : 'hidden'}`}
-          aria-hidden={activeTab !== 'chat'}
-        >
-          <ChatView
-            modelId={
-              serverState.state === 'serving' ? serverState.model_id : null
-            }
-            isActive={activeTab === 'chat'}
-            libraryRecords={libraryRecords}
-          />
-        </div>
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            profile={profile}
-            libraryRecords={libraryRecords}
-            activeDownloads={activeDownloads}
-            onProfileUpdated={setProfile}
-            onModelDownloaded={refreshDynamicState}
-            onNavigateToServer={handleNavigateToServer}
-            error={error}
-          />
-        )}
-        {activeTab === 'library' && (
-          <LibraryView
-            records={libraryRecords}
-            activeDownloads={activeDownloads}
-            onRefreshLibrary={refreshDynamicState}
-            onNavigateToServer={handleNavigateToServer}
-          />
-        )}
-        {activeTab === 'server' && (
-          <ServerView
-            serverState={serverState}
-            libraryRecords={libraryRecords}
-            initialSelectedModelId={targetServerModel}
-            onRefreshState={refreshDynamicState}
-            gatewayPort={settings?.gateway_port ?? 13370}
-          />
-        )}
-        {activeTab === 'settings' && (
-          <SettingsView onSettingsChanged={refreshDynamicState} />
-        )}
-      </main>
+      <div className="flex min-h-0 w-full flex-1 overflow-hidden">
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          serverState={serverState}
+          activeDownloads={activeDownloads}
+          onCancelDownload={handleCancelDownload}
+        />
+
+        <main ref={mainRef} className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-24 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-3xl" />
+            <div className="absolute -bottom-24 left-1/3 w-[420px] h-[420px] bg-violet-500/10 dark:bg-violet-600/15 rounded-full blur-3xl" />
+          </div>
+          <div
+            className={`h-full w-full flex flex-col min-h-0 ${activeTab === 'chat' ? '' : 'hidden'}`}
+            aria-hidden={activeTab !== 'chat'}
+          >
+            <ChatView
+              modelId={
+                serverState.state === 'serving' ? serverState.model_id : null
+              }
+              isActive={activeTab === 'chat'}
+              libraryRecords={libraryRecords}
+            />
+          </div>
+          {activeTab === 'dashboard' && (
+            <DashboardView
+              profile={profile}
+              libraryRecords={libraryRecords}
+              activeDownloads={activeDownloads}
+              onProfileUpdated={setProfile}
+              onModelDownloaded={refreshDynamicState}
+              onNavigateToServer={handleNavigateToServer}
+              error={error}
+            />
+          )}
+          {activeTab === 'library' && (
+            <LibraryView
+              records={libraryRecords}
+              activeDownloads={activeDownloads}
+              onRefreshLibrary={refreshDynamicState}
+              onNavigateToServer={handleNavigateToServer}
+            />
+          )}
+          {activeTab === 'server' && (
+            <ServerView
+              serverState={serverState}
+              libraryRecords={libraryRecords}
+              initialSelectedModelId={targetServerModel}
+              onRefreshState={refreshDynamicState}
+              gatewayPort={settings?.gateway_port ?? 13370}
+            />
+          )}
+          {activeTab === 'settings' && (
+            <SettingsView onSettingsChanged={refreshDynamicState} />
+          )}
+        </main>
+      </div>
+
+      <WindowResizeHandles enabled={!isMaximized} />
 
       <UpdateDialog
         open={showUpdateModal}

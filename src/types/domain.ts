@@ -182,7 +182,7 @@ export interface LibraryReconciliation {
   orphan_files: string[];
 }
 
-export type ThemeMode = 'dark' | 'light';
+export type ThemeMode = 'dark' | 'light' | 'system';
 
 export interface AppSettings {
   hf_token: string;

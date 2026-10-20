@@ -436,7 +436,7 @@ const DEFAULT_MOCK_SETTINGS: AppSettings = {
   run_in_background: true,
   auto_update_catalog: true,
   catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
-  theme: 'dark',
+  theme: 'system',
 };
 
 let mockSavedSettings: AppSettings = { ...DEFAULT_MOCK_SETTINGS };

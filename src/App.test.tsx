@@ -42,7 +42,7 @@ describe('LLM Advisor App UI', () => {
 
   it('renders app shell with navigation sidebar and chat as default view', async () => {
     render(<App />);
-    expect(screen.getByText('LLM Advisor')).toBeDefined();
+    expect(screen.getAllByText('LLM Advisor').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Chat').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Dashboard')).toBeDefined();
     expect(screen.getByText('Library')).toBeDefined();
