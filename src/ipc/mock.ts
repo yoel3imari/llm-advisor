@@ -14,7 +14,7 @@ import type {
   CatalogSyncResult,
   AppUpdateInfo,
 } from '../types/domain';
-import { totalSizeBytes } from '../types/domain';
+import { totalSizeBytes, resolveOutputType, resolveRecordOutputType } from '../types/domain';
 import { generateHeuristicTitle, type ChatMessage } from '../types/chat';
 import { version as appVersion } from '../../package.json';
 
@@ -169,6 +169,25 @@ export const MOCK_CATALOG: CatalogEntry[] = [
     quality_tier: 4,
     tags: ['moe', '8x7b'],
   },
+  {
+    id: 'all-minilm-l6-v2-q8_0',
+    repo_id: 'second-state/All-MiniLM-L6-v2-Embedding-GGUF',
+    filename: 'all-MiniLM-L6-v2-Q8_0.gguf',
+    family: 'minilm',
+    params_billions: 0.0227,
+    n_layers: 6,
+    n_kv_heads: 12,
+    head_dim: 32,
+    context_train: 512,
+    quant: 'Q8_0',
+    file_size_bytes: 25008064,
+    sha256: '263215c3cadd6e16740741a7624ab4cbb6c8e777688bd5331ecfbf5681c2f8ed',
+    gated: false,
+    quality_tier: 3,
+    tags: ['embedding', 'minilm', 'english', '384-dim'],
+    output_type: 'embedding',
+    pooling: 'mean',
+  },
 ];
 
 let mockRecords: ModelRecord[] = [
@@ -178,6 +197,15 @@ let mockRecords: ModelRecord[] = [
     size_bytes: 397737696,
     verified: true,
     added_at: new Date(Date.now() - 86400000).toISOString(),
+    output_type: 'text',
+  },
+  {
+    entry_id: 'all-minilm-l6-v2-q8_0',
+    file_path: '/Users/demo/Library/Application Support/dev.yoel3imari.llm-advisor/models/all-MiniLM-L6-v2-Q8_0.gguf',
+    size_bytes: 25008064,
+    verified: true,
+    added_at: new Date(Date.now() - 43200000).toISOString(),
+    output_type: 'embedding',
   },
 ];
 
@@ -205,17 +233,8 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
   const kvElemBytes = cfg.kv_type === 'q8_0' ? 1 : 2;
   const slots = cfg.n_parallel || 1;
 
-  function mockResolveOutputType(entry: CatalogEntry): string {
-    if (entry.output_type && entry.output_type !== 'text') return entry.output_type;
-    const hay = [entry.id, entry.filename, entry.repo_id, entry.family, ...(entry.tags ?? [])]
-      .join(' ')
-      .toLowerCase();
-    if (hay.includes('embed')) return 'embedding';
-    return 'text';
-  }
-
   return MOCK_CATALOG.map((entry) => {
-    const isEmbedding = mockResolveOutputType(entry) === 'embedding';
+    const isEmbedding = resolveOutputType(entry) === 'embedding';
     const effectiveCtx = Math.min(cfg.context_size, entry.context_train);
     const kv = isEmbedding
       ? 0
@@ -330,6 +349,7 @@ export async function mockStartDownload(entryId: string): Promise<string> {
           size_bytes: totalBytes,
           verified: true,
           added_at: new Date().toISOString(),
+          output_type: resolveOutputType(entry),
         });
       }
     }
@@ -360,6 +380,7 @@ export async function mockListRunningInstances(): Promise<RunningInstanceInfo[]>
         port: mockServerState.port,
         context_size: mockServerState.context_size,
         started_at: mockServerState.started_at,
+        output_type: resolveRecordOutputType({ entry_id: mockServerState.model_id }),
       },
     ];
   }
@@ -367,12 +388,17 @@ export async function mockListRunningInstances(): Promise<RunningInstanceInfo[]>
 }
 
 export async function mockStartServer(modelId: string, cfg: ServeConfig): Promise<number> {
+  const catalogEntry = MOCK_CATALOG.find((e) => e.id === modelId);
+  const outputType = catalogEntry
+    ? resolveOutputType(catalogEntry)
+    : resolveRecordOutputType({ entry_id: modelId });
   const newInst: RunningInstanceInfo = {
     model_id: modelId,
     model_path: `/models/${modelId}.gguf`,
     port: 13370,
     context_size: cfg.context_size || 4096,
     started_at: new Date().toISOString(),
+    output_type: outputType,
   };
 
   const existingInsts =

@@ -38,8 +38,8 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
 import { openExternalUrl } from '../../utils/browser';
 import { DeleteConfirmDialog } from '../ui/DeleteConfirmDialog';
-import type { FitResult, ModelRecord, DownloadTask } from '../../types/domain';
-import { totalSizeBytes, resolveOutputType, outputTypeLabel, resolveFitVerdict } from '../../types/domain';
+import type { FitResult, ModelRecord, DownloadTask, OutputType } from '../../types/domain';
+import { totalSizeBytes, resolveOutputType, outputTypeLabel, resolveFitVerdict, baseFamily } from '../../types/domain';
 
 interface Props {
   results: FitResult[];
@@ -51,9 +51,10 @@ interface Props {
   onNavigateToServer: (modelId: string) => void;
   onDeleteFromLibrary?: (entryId: string) => void;
   searchQuery: string;
-  familyFilter: string;
-  verdictFilter: string;
+  familyFilters: string[];
+  verdictFilters: string[];
   statusFilter: string;
+  outputTypeFilters: OutputType[];
 }
 
 function resolveModelId(entry: FitResult['entry']): string {
@@ -104,9 +105,10 @@ export function ModelsTable({
   onNavigateToServer,
   onDeleteFromLibrary,
   searchQuery,
-  familyFilter,
-  verdictFilter,
+  familyFilters,
+  verdictFilters,
   statusFilter,
+  outputTypeFilters,
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'verdict', desc: true },
@@ -171,26 +173,41 @@ export function ModelsTable({
         if (!matchesName && !matchesFamily && !matchesQuant) return false;
       }
 
-      // Family match
-      if (familyFilter !== 'all' && entry.family.toLowerCase() !== familyFilter.toLowerCase()) {
+      // Family match (OR within the selected families, grouped by base family)
+      if (
+        familyFilters.length > 0 &&
+        !familyFilters.some((family) => baseFamily(entry.family) === family.toLowerCase())
+      ) {
         return false;
       }
 
-      // Verdict match
-      if (verdictFilter !== 'all') {
+      // Verdict match (OR within the selected verdicts)
+      if (verdictFilters.length > 0) {
         const verdict = resolveFitVerdict(res, hostBudget);
-        if (verdictFilter === 'fits' && verdict !== 'fits') return false;
-        if (verdictFilter === 'tight' && verdict !== 'tight') return false;
-        if (verdictFilter === 'nofit' && verdict !== 'nofit') return false;
+        if (!verdictFilters.includes(verdict)) return false;
       }
 
       // Status match
       if (statusFilter === 'downloaded' && !downloaded) return false;
       if (statusFilter === 'available' && downloaded) return false;
 
+      // Output type match (OR within the selected output types)
+      if (outputTypeFilters.length > 0 && !outputTypeFilters.includes(resolveOutputType(entry))) {
+        return false;
+      }
+
       return true;
     });
-  }, [results, searchQuery, familyFilter, verdictFilter, statusFilter, downloadedIds, hostBudget]);
+  }, [
+    results,
+    searchQuery,
+    familyFilters,
+    verdictFilters,
+    statusFilter,
+    outputTypeFilters,
+    downloadedIds,
+    hostBudget,
+  ]);
 
   const columns = useMemo<ColumnDef<FitResult>[]>(
     () => [
@@ -551,6 +568,16 @@ export function ModelsTable({
         ),
         cell: ({ row }) => {
           const res = row.original;
+          if (resolveOutputType(res.entry) === 'embedding') {
+            return (
+              <span
+                className="font-mono text-xs text-slate-400 dark:text-slate-500"
+                title="Embedding models do not generate tokens, so token throughput is not applicable."
+              >
+                —
+              </span>
+            );
+          }
           const layers = res.recommended_gpu_layers;
           const total = res.entry.n_layers;
           const runMode = layers === total && total > 0

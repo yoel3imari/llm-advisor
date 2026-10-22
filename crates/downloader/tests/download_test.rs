@@ -56,6 +56,7 @@ async fn test_happy_path_download_and_verify() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let progress_recorded = Arc::new(AtomicU64::new(0));
@@ -130,6 +131,7 @@ async fn test_resumable_range_download() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let options = DownloadOptions {
@@ -187,6 +189,7 @@ async fn test_checksum_mismatch_deletes_corrupted_file() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let options = DownloadOptions {
@@ -246,6 +249,7 @@ async fn test_gated_model_without_token_error() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let options = DownloadOptions {
@@ -405,6 +409,7 @@ fn test_gguf_header_parsing_and_cross_verification() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     assert!(gguf::verify_gguf_against_catalog(&header, &matching_entry).is_ok());
@@ -435,6 +440,7 @@ fn sample_text_entry_for_gguf() -> CatalogEntry {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     }
 }
 
@@ -612,6 +618,7 @@ async fn test_sharded_download_preserves_split_filenames() {
             },
         ]),
         output_type: Default::default(),
+        pooling: None,
     };
 
     let seen_totals = Arc::new(std::sync::Mutex::new(Vec::new()));

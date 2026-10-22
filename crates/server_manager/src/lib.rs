@@ -1,7 +1,7 @@
 //! Supervised multi-instance llama-server sidecar process manager for LLM Advisor.
 
 use chrono::{DateTime, Utc};
-use domain::{AppError, FitResult, KvType, RunningInstanceInfo, ServeConfig};
+use domain::{AppError, FitResult, KvType, OutputType, RunningInstanceInfo, ServeConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::io::{BufRead, BufReader};
@@ -40,10 +40,55 @@ pub enum ServerState {
     },
 }
 
+/// Runtime characteristics that determine how the sidecar is launched
+/// and which API surface the instance may serve.
+#[derive(Debug, Clone, Default)]
+pub struct ModelRuntime {
+    pub output_type: OutputType,
+    pub pooling: Option<String>,
+}
+
+/// Requested gateway capability.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ModelCapability {
+    #[default]
+    Chat,
+    Embeddings,
+}
+
+impl ModelCapability {
+    /// True when an instance with this output type can serve the capability.
+    /// Every non-embedding model is treated as chat-capable.
+    pub fn matches(self, output_type: OutputType) -> bool {
+        match self {
+            ModelCapability::Chat => !output_type.is_embedding(),
+            ModelCapability::Embeddings => output_type.is_embedding(),
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            ModelCapability::Chat => "chat",
+            ModelCapability::Embeddings => "embedding",
+        }
+    }
+}
+
+/// Routing failure with enough context for the gateway to render an OpenAI-style error.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RouteError {
+    NoModelServing,
+    NoMatchingModel { capability: ModelCapability },
+    ModelNotFound { requested: String, available: Vec<String> },
+    WrongCapability { model_id: String, actual: OutputType },
+}
+
 /// A running sidecar process record.
 struct RunningProcess {
     model_id: String,
     model_path: PathBuf,
+    output_type: OutputType,
     port: u16,
     context_size: u32,
     started_at: DateTime<Utc>,
@@ -96,6 +141,7 @@ impl ServerManager {
                     port: p.port,
                     context_size: p.context_size,
                     started_at: p.started_at,
+                    output_type: p.output_type,
                 })
                 .collect();
 
@@ -133,56 +179,122 @@ impl ServerManager {
             .map(|p| p.port)
     }
 
-    /// Intelligently look up the internal port for a requested model name.
-    /// Handles exact match, case-insensitive match, partial substring match, and fallback.
-    pub fn get_port_for_model(&self, requested_model: Option<&str>) -> Option<u16> {
+    /// Resolve the internal port for a requested model name and capability.
+    ///
+    /// Resolution order: exact match, case-insensitive exact match, substring
+    /// match, then the legacy single-instance fallback scoped to the requested
+    /// capability. Explicitly naming a model of the wrong capability yields
+    /// `WrongCapability` so the gateway can return an actionable 400.
+    pub fn route_model(
+        &self,
+        requested_model: Option<&str>,
+        capability: ModelCapability,
+    ) -> Result<u16, RouteError> {
         let instances = self.instances.lock().unwrap();
         if instances.is_empty() {
-            return None;
+            return Err(RouteError::NoModelServing);
         }
 
         let model_name = requested_model.map(|s| s.trim()).filter(|s| !s.is_empty());
         match model_name {
             None | Some("default") | Some("active") => {
-                // Return primary model
+                // Prefer the primary instance when it can serve the capability;
+                // otherwise fall back to any compatible instance.
                 let primary_id = self.primary_model_id.read().unwrap().clone();
-                primary_id
+                let primary = primary_id
                     .as_ref()
                     .and_then(|id| instances.get(id))
-                    .or_else(|| instances.values().next())
+                    .or_else(|| instances.values().next());
+                if let Some(p) = primary {
+                    if capability.matches(p.output_type) {
+                        return Ok(p.port);
+                    }
+                }
+                instances
+                    .values()
+                    .find(|p| capability.matches(p.output_type))
                     .map(|p| p.port)
+                    .ok_or(RouteError::NoMatchingModel { capability })
             }
             Some(req) => {
-                // 1. Exact match
+                // 1. Exact match.
                 if let Some(p) = instances.get(req) {
-                    return Some(p.port);
+                    return Self::check_capability(p, capability);
                 }
 
-                // 2. Case-insensitive exact match
+                // 2. Case-insensitive exact match.
                 if let Some(p) = instances
                     .values()
                     .find(|p| p.model_id.eq_ignore_ascii_case(req))
                 {
-                    return Some(p.port);
+                    return Self::check_capability(p, capability);
                 }
 
-                // 3. Substring match (e.g. "smollm2" matches "smollm2-135m-instruct-q8_0")
+                // 3. Substring match (e.g. "smollm2" matches "smollm2-135m-instruct-q8_0").
+                // Prefer an instance that can serve the requested capability.
                 let req_lower = req.to_lowercase();
-                if let Some(p) = instances.values().find(|p| {
-                    p.model_id.to_lowercase().contains(&req_lower)
-                        || req_lower.contains(&p.model_id.to_lowercase())
-                }) {
-                    return Some(p.port);
+                let substring_matches: Vec<&RunningProcess> = instances
+                    .values()
+                    .filter(|p| {
+                        p.model_id.to_lowercase().contains(&req_lower)
+                            || req_lower.contains(&p.model_id.to_lowercase())
+                    })
+                    .collect();
+                if let Some(p) = substring_matches
+                    .iter()
+                    .find(|p| capability.matches(p.output_type))
+                {
+                    return Ok(p.port);
+                }
+                if let Some(p) = substring_matches.first() {
+                    return Err(RouteError::WrongCapability {
+                        model_id: p.model_id.clone(),
+                        actual: p.output_type,
+                    });
                 }
 
-                // 4. If exactly ONE instance is running, route generic client requests (like "gpt-4" or "qwen") to it
-                if instances.len() == 1 {
-                    return instances.values().next().map(|p| p.port);
+                // 4. If exactly ONE instance of the requested capability is
+                // running, route generic client requests (like "gpt-4") to it.
+                let mut matching = instances
+                    .values()
+                    .filter(|p| capability.matches(p.output_type));
+                if let (Some(only), None) = (matching.next(), matching.next()) {
+                    return Ok(only.port);
                 }
 
-                None
+                if !instances
+                    .values()
+                    .any(|p| capability.matches(p.output_type))
+                {
+                    return Err(RouteError::NoMatchingModel { capability });
+                }
+
+                Err(RouteError::ModelNotFound {
+                    requested: req.to_string(),
+                    available: instances.keys().cloned().collect(),
+                })
             }
         }
+    }
+
+    fn check_capability(
+        process: &RunningProcess,
+        capability: ModelCapability,
+    ) -> Result<u16, RouteError> {
+        if capability.matches(process.output_type) {
+            Ok(process.port)
+        } else {
+            Err(RouteError::WrongCapability {
+                model_id: process.model_id.clone(),
+                actual: process.output_type,
+            })
+        }
+    }
+
+    /// Backward-compatible chat-capability wrapper around [`Self::route_model`].
+    pub fn get_port_for_model(&self, requested_model: Option<&str>) -> Option<u16> {
+        self.route_model(requested_model, ModelCapability::Chat)
+            .ok()
     }
 
     /// Get currently loaded primary model id if serving or starting.
@@ -209,6 +321,7 @@ impl ServerManager {
                 port: p.port,
                 context_size: p.context_size,
                 started_at: p.started_at,
+                output_type: p.output_type,
             })
             .collect()
     }
@@ -259,6 +372,7 @@ impl ServerManager {
         model_path: PathBuf,
         cfg: ServeConfig,
         fit: Option<FitResult>,
+        runtime: ModelRuntime,
     ) -> Result<u16, AppError> {
         // If this model is already running, set it as primary and return its existing port
         {
@@ -303,15 +417,27 @@ impl ServerManager {
             .arg("-np")
             .arg(slots.to_string());
 
-        match cfg.kv_type {
-            KvType::Q4_0 => {
-                cmd.arg("-ctk").arg("q4_0").arg("-ctv").arg("q4_0");
+        if runtime.output_type.is_embedding() {
+            cmd.arg("--embeddings");
+            if let Some(pooling) = runtime
+                .pooling
+                .as_deref()
+                .map(str::trim)
+                .filter(|p| !p.is_empty())
+            {
+                cmd.arg("--pooling").arg(pooling);
             }
-            KvType::Q8_0 => {
-                cmd.arg("-ctk").arg("q8_0").arg("-ctv").arg("q8_0");
-            }
-            KvType::F16 => {
-                cmd.arg("-ctk").arg("f16").arg("-ctv").arg("f16");
+        } else {
+            match cfg.kv_type {
+                KvType::Q4_0 => {
+                    cmd.arg("-ctk").arg("q4_0").arg("-ctv").arg("q4_0");
+                }
+                KvType::Q8_0 => {
+                    cmd.arg("-ctk").arg("q8_0").arg("-ctv").arg("q8_0");
+                }
+                KvType::F16 => {
+                    cmd.arg("-ctk").arg("f16").arg("-ctv").arg("f16");
+                }
             }
         }
 
@@ -597,6 +723,7 @@ impl ServerManager {
         let process = RunningProcess {
             model_id: model_id.clone(),
             model_path: model_path.clone(),
+            output_type: runtime.output_type,
             port,
             context_size: ctx,
             started_at: Utc::now(),

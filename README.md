@@ -47,6 +47,7 @@ No trial and error. You know before you download whether a model fits.
 * **Small and fast:** Native Rust backend, ThinLTO-optimized — roughly a 13 MB core binary and a ~30 MB installer. No bundled Chromium.
 * **Downloads you can trust:** Resumable multi-stream downloads straight from HuggingFace Hub, with SHA-256 verification and a check of the actual GGUF header (`n_layers`, `n_kv_heads`, `head_dim`) so a bad file never slips through.
 * **Works with the tools you already use:** A zero-buffering OpenAI gateway fixed at `http://127.0.0.1:13370/v1`. Point Cursor, Continue, Cline, Aider, the OpenAI Python/TS SDKs, or plain `curl` at it and it just works.
+* **Embeddings too:** Run sentence-embedding models side by side with chat models and call an OpenAI-compatible `POST /v1/embeddings`. Requests are routed by the `model` field, and chat/embedding capabilities never cross.
 * **It manages the server for you:** Spawns and watches the `llama-server` sidecar, waits for it to become healthy, isolates its port, and cleans everything up when you quit.
 * **Cross-platform:** Tuned for macOS (Metal / Accelerate), Linux (AVX2 / Zen4 kernels), and Windows.
 
@@ -179,7 +180,21 @@ curl -N http://127.0.0.1:13370/v1/chat/completions \
   }'
 ```
 
-### 4. Health Check
+### 4. Embeddings
+
+Embedding models (for example `all-minilm-l6-v2-q8_0`, `bge-m3-q8_0`, or `qwen3-embedding-0.6b-q8_0`) are launched from the Server view like any other model. The sidecar starts with `--embeddings` and the catalog's pooling strategy, and the gateway exposes:
+
+```bash
+curl http://127.0.0.1:13370/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{"model": "all-minilm-l6-v2-q8_0", "input": "Hello world"}'
+```
+
+The response is the standard OpenAI embeddings envelope (`data[].embedding`). Text and embedding models can run at the same time; route by the `model` field. Sending a chat request to an embedding model (or an embeddings request to a text model) returns a `400 invalid_request_error` explaining which endpoint to use.
+
+> **Context limits:** Embedding models use their native training context. `nomic-embed-text-v2-moe-q8_0` is limited to **512 tokens**, so keep input chunks short. The app clamps the sidecar context to the model's native maximum automatically.
+
+### 5. Health Check
 
 ```bash
 curl http://127.0.0.1:13370/healthz

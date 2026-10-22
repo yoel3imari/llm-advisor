@@ -147,10 +147,35 @@ fn test_running_instance_info_serde() {
         port: 18080,
         context_size: 4096,
         started_at: Utc::now(),
+        output_type: OutputType::Text,
     };
     let json = serde_json::to_string(&inst).unwrap();
     let decoded: RunningInstanceInfo = serde_json::from_str(&json).unwrap();
     assert_eq!(inst, decoded);
+
+    // Legacy payloads without output_type default to Text.
+    let legacy = r#"{"model_id":"legacy","model_path":"/models/x.gguf","port":18081,"context_size":2048,"started_at":"2024-01-01T00:00:00Z"}"#;
+    let decoded: RunningInstanceInfo = serde_json::from_str(legacy).unwrap();
+    assert_eq!(decoded.output_type, OutputType::Text);
+}
+
+#[test]
+fn test_pooling_serde_roundtrip_and_default() {
+    let legacy: CatalogEntry =
+        serde_json::from_str(include_str!("fixtures/catalog_entry.json")).unwrap();
+    assert_eq!(legacy.pooling, None);
+
+    let mut entry = legacy.clone();
+    entry.output_type = OutputType::Embedding;
+    entry.pooling = Some("mean".to_string());
+    let json = serde_json::to_string(&entry).unwrap();
+    assert!(json.contains("\"pooling\":\"mean\""));
+    let decoded: CatalogEntry = serde_json::from_str(&json).unwrap();
+    assert_eq!(decoded.pooling.as_deref(), Some("mean"));
+
+    entry.pooling = None;
+    let json = serde_json::to_string(&entry).unwrap();
+    assert!(!json.contains("pooling"));
 }
 
 #[test]

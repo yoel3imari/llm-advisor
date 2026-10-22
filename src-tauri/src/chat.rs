@@ -219,7 +219,11 @@ async fn proxy_stream(
         }
         Err(e) => {
             // eprintln!("[DEBUG Rust proxy_stream-ERROR] reqwest send failed: {}", e);
-            let code = if e.is_connect() { "NO_MODEL" } else { "STREAM_ERROR" };
+            let code = if e.is_connect() {
+                "NO_MODEL"
+            } else {
+                "STREAM_ERROR"
+            };
             let _ = channel.send(ChatEvent::Error {
                 code: code.to_string(),
                 message: e.to_string(),
@@ -338,10 +342,7 @@ pub async fn chat_stream(
 }
 
 #[tauri::command]
-pub async fn chat_cancel(
-    session_id: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+pub async fn chat_cancel(session_id: String, state: State<'_, AppState>) -> Result<(), String> {
     state.chat_sessions.cancel(&session_id);
     Ok(())
 }
@@ -380,7 +381,9 @@ pub fn clean_llm_title(raw: &str) -> String {
         .trim();
 
     // Strip trailing punctuation
-    cleaned = cleaned.trim_end_matches(|c| matches!(c, '.' | ':' | '!' | '?' | ';' | ',')).trim();
+    cleaned = cleaned
+        .trim_end_matches(|c| matches!(c, '.' | ':' | '!' | '?' | ';' | ','))
+        .trim();
 
     // Collapse multiple internal spaces
     let words: Vec<&str> = cleaned.split_whitespace().collect();
@@ -408,7 +411,9 @@ pub fn clean_llm_title(raw: &str) -> String {
 }
 
 pub fn extract_heuristic_title(messages: &[ChatMessage]) -> String {
-    let first_user = messages.iter().find(|m| m.role.eq_ignore_ascii_case("user"));
+    let first_user = messages
+        .iter()
+        .find(|m| m.role.eq_ignore_ascii_case("user"));
     let content = match first_user {
         Some(m) if !m.content.trim().is_empty() => m.content.trim(),
         _ => return "New Chat".to_string(),
@@ -525,13 +530,27 @@ pub async fn chat_generate_title(
 
     let heuristic = extract_heuristic_title(&messages);
 
-    // Resolve target model: explicit model -> active model -> running instance
-    let target_model = if let Some(m) = model.filter(|s| !s.trim().is_empty()) {
-        Some(m)
-    } else if let Some(m) = state.server_manager.get_active_model_id() {
-        Some(m)
-    } else {
-        state.server_manager.get_running_model_ids().into_iter().next()
+    // Resolve a text-capable target: explicit text model -> primary text
+    // instance -> any running text instance. Embedding instances must never
+    // receive a chat completion request.
+    let instances = state.server_manager.list_instances();
+    let is_text_model = |id: &str| {
+        instances
+            .iter()
+            .any(|i| i.model_id == id && !i.output_type.is_embedding())
+    };
+    let fallback_text = instances
+        .iter()
+        .find(|i| !i.output_type.is_embedding())
+        .map(|i| i.model_id.clone());
+
+    let target_model = match model.filter(|s| !s.trim().is_empty()) {
+        Some(m) if is_text_model(&m) => Some(m),
+        _ => state
+            .server_manager
+            .get_active_model_id()
+            .filter(|m| is_text_model(m))
+            .or(fallback_text),
     };
 
     let target_model = match target_model {
@@ -661,7 +680,10 @@ mod tests {
 
     #[test]
     fn parses_done_marker() {
-        assert!(matches!(parse_sse_line("data: [DONE]"), Some(ChatEvent::Done)));
+        assert!(matches!(
+            parse_sse_line("data: [DONE]"),
+            Some(ChatEvent::Done)
+        ));
     }
 
     #[test]
@@ -778,13 +800,9 @@ mod tests {
             role: "user".to_string(),
             content: "How do I fix ```rust fn main() {}``` compiler error?".to_string(),
         }];
-        assert_eq!(
-            extract_heuristic_title(&code_msgs),
-            "Compiler error"
-        );
+        assert_eq!(extract_heuristic_title(&code_msgs), "Compiler error");
 
         let empty_msgs: Vec<ChatMessage> = vec![];
         assert_eq!(extract_heuristic_title(&empty_msgs), "New Chat");
     }
 }
-

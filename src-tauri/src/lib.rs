@@ -9,7 +9,7 @@ use gateway::start_gateway;
 use hw_probe::{disk_free_for_path, get_or_detect_profile, refresh_profile};
 use library::{LibraryReconciliation, LibraryStore};
 use serde::{Deserialize, Serialize};
-use server_manager::{ServerManager, ServerState};
+use server_manager::{ModelRuntime, ServerManager, ServerState};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
@@ -90,7 +90,6 @@ pub struct UninstallResult {
     pub success: bool,
 }
 
-
 pub struct AppState {
     pub server_manager: Arc<ServerManager>,
     pub library_store: Arc<LibraryStore>,
@@ -142,9 +141,7 @@ async fn get_hardware_profile(state: State<'_, AppState>) -> Result<HardwareProf
 }
 
 #[tauri::command]
-async fn refresh_hardware_profile(
-    state: State<'_, AppState>,
-) -> Result<HardwareProfile, String> {
+async fn refresh_hardware_profile(state: State<'_, AppState>) -> Result<HardwareProfile, String> {
     let mut profile = refresh_profile().map_err(|e| e.to_string())?;
     profile.disk_free_bytes = disk_free_for_path(state.library_store.models_dir());
     Ok(profile)
@@ -206,8 +203,8 @@ async fn purge_all_models(state: State<'_, AppState>) -> Result<u64, String> {
     state.library_store.purge_all().map_err(|e| e.to_string())
 }
 
-async fn restart_gateway_internal(
-    app: &tauri::AppHandle,
+async fn restart_gateway_internal<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
     server_manager: Arc<ServerManager>,
     gateway_handle: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
     new_port: u16,
@@ -231,8 +228,8 @@ async fn restart_gateway_internal(
 }
 
 #[tauri::command]
-async fn factory_reset(
-    app: tauri::AppHandle,
+async fn factory_reset<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
     state: State<'_, AppState>,
 ) -> Result<bool, String> {
     // 1. Stop server
@@ -280,8 +277,8 @@ async fn factory_reset(
 }
 
 #[tauri::command]
-async fn clean_uninstall(
-    app: tauri::AppHandle,
+async fn clean_uninstall<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
     state: State<'_, AppState>,
     options: Option<CleanUninstallOptions>,
 ) -> Result<UninstallResult, String> {
@@ -349,11 +346,7 @@ async fn clean_uninstall(
         }
     }
 
-    let app_data_dir = state
-        .library_store
-        .base_dir()
-        .to_string_lossy()
-        .to_string();
+    let app_data_dir = state.library_store.base_dir().to_string_lossy().to_string();
 
     Ok(UninstallResult {
         reclaimed_bytes,
@@ -368,11 +361,14 @@ async fn clean_uninstall(
 #[tauri::command]
 async fn prune_orphans(state: State<'_, AppState>, orphans: Vec<String>) -> Result<u64, String> {
     let paths: Vec<PathBuf> = orphans.into_iter().map(PathBuf::from).collect();
-    state.library_store.prune_orphans(&paths).map_err(|e| e.to_string())
+    state
+        .library_store
+        .prune_orphans(&paths)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn reconcile_library(state: State<'_, AppState>, ) -> Result<LibraryReconciliation, String> {
+async fn reconcile_library(state: State<'_, AppState>) -> Result<LibraryReconciliation, String> {
     state.library_store.reconcile().map_err(|e| e.to_string())
 }
 
@@ -542,7 +538,7 @@ async fn get_server_state(state: State<'_, AppState>) -> Result<ServerState, Str
 async fn start_server(
     state: State<'_, AppState>,
     model_id: String,
-    cfg: ServeConfig,
+    mut cfg: ServeConfig,
 ) -> Result<u16, String> {
     let record = state
         .library_store
@@ -554,11 +550,29 @@ async fn start_server(
     let catalog = load_active_catalog(Some(&state.app_data_dir)).map_err(|e| e.to_string())?;
     let entry = catalog.into_iter().find(|e| e.id == model_id);
 
+    let output_type = entry
+        .as_ref()
+        .map(|e| e.resolved_output_type())
+        .unwrap_or_else(|| record.resolved_output_type());
+    let pooling = entry.as_ref().and_then(|e| e.pooling.clone());
+
+    // Embedding models have no KV cache, and `-c` is the max input length:
+    // never exceed the model's native training context.
+    if output_type.is_embedding() {
+        if let Some(e) = entry.as_ref() {
+            cfg.context_size = cfg.context_size.min(e.context_train).max(256);
+        }
+    }
+
     let fit = entry.map(|e| fit_engine::evaluate(&profile, &e, &cfg));
+    let runtime = ModelRuntime {
+        output_type,
+        pooling,
+    };
 
     state
         .server_manager
-        .start_server(model_id, record.file_path, cfg, fit)
+        .start_server(model_id, record.file_path, cfg, fit, runtime)
         .await
         .map_err(|e| e.to_string())
 }
@@ -615,8 +629,8 @@ async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String>
 }
 
 #[tauri::command]
-async fn save_settings(
-    app: tauri::AppHandle,
+async fn save_settings<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
     state: State<'_, AppState>,
     settings: AppSettings,
 ) -> Result<(), String> {
@@ -1070,4 +1084,302 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn create_test_state(dir: &Path) -> AppState {
+        let app_data_dir = dir.to_path_buf();
+        let library_store = Arc::new(LibraryStore::new(app_data_dir.clone()).unwrap());
+        let server_manager = Arc::new(ServerManager::new(dir.join("dummy-llama-server")));
+        let (settings, settings_path) = load_or_init_settings(&app_data_dir, &library_store);
+        AppState {
+            server_manager,
+            library_store,
+            settings: Arc::new(RwLock::new(settings)),
+            settings_path,
+            app_data_dir,
+            active_downloads: Arc::new(Mutex::new(HashMap::new())),
+            chat_sessions: Arc::new(chat::ChatSessionManager::new()),
+            gateway_handle: Arc::new(tokio::sync::Mutex::new(None)),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_load_and_persist_settings() {
+        let dir = tempdir().unwrap();
+        let app_data = dir.path();
+        let lib_store = LibraryStore::new(app_data.to_path_buf()).unwrap();
+
+        let (mut initial, path) = load_or_init_settings(app_data, &lib_store);
+        assert_eq!(initial.gateway_port, 13370);
+        assert_eq!(initial.theme, "system");
+        assert!(path.exists());
+
+        initial.theme = "dark".to_string();
+        initial.hf_token = "hf_secret_123".to_string();
+        save_settings_to_file(&path, &initial).unwrap();
+
+        let (reloaded, _) = load_or_init_settings(app_data, &lib_store);
+        assert_eq!(reloaded.theme, "dark");
+        assert_eq!(reloaded.hf_token, "hf_secret_123");
+    }
+
+    #[tokio::test]
+    async fn test_download_cancellation_and_active_list() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let token = CancellationToken::new();
+        let task = DownloadTask {
+            entry_id: "test-model".to_string(),
+            state: DownloadState::Downloading {
+                bytes_done: 50,
+                total_bytes: 100,
+            },
+            bytes_done: 50,
+            bytes_total: 100,
+            etag: "etag".to_string(),
+            error: None,
+        };
+
+        state
+            .active_downloads
+            .lock()
+            .unwrap()
+            .insert("test-model".to_string(), (task, token.clone()));
+
+        let active = get_active_downloads(state.clone()).await.unwrap();
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].entry_id, "test-model");
+
+        let cancelled = cancel_download(state.clone(), "test-model".to_string())
+            .await
+            .unwrap();
+        assert!(cancelled);
+        assert!(token.is_cancelled());
+
+        let cancelled_again = cancel_download(state.clone(), "test-model".to_string())
+            .await
+            .unwrap();
+        assert!(!cancelled_again);
+
+        let empty = get_active_downloads(state).await.unwrap();
+        assert!(empty.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_purge_all_models_orchestration() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+
+        let fake_model = state_val.library_store.models_dir().join("test.gguf");
+        std::fs::write(&fake_model, b"weights").unwrap();
+        state_val
+            .library_store
+            .add_verified(ModelRecord {
+                entry_id: "test-model".to_string(),
+                file_path: fake_model.clone(),
+                size_bytes: 7,
+                verified: true,
+                added_at: chrono::Utc::now(),
+                output_type: domain::OutputType::Text,
+            })
+            .unwrap();
+
+        let token = CancellationToken::new();
+        let task = DownloadTask {
+            entry_id: "downloading-model".to_string(),
+            state: DownloadState::Downloading {
+                bytes_done: 10,
+                total_bytes: 100,
+            },
+            bytes_done: 10,
+            bytes_total: 100,
+            etag: "etag".to_string(),
+            error: None,
+        };
+        state_val
+            .active_downloads
+            .lock()
+            .unwrap()
+            .insert("downloading-model".to_string(), (task, token.clone()));
+
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let reclaimed = purge_all_models(state.clone()).await.unwrap();
+        assert_eq!(reclaimed, 7);
+        assert!(!fake_model.exists());
+        assert!(token.is_cancelled());
+        assert!(state.active_downloads.lock().unwrap().is_empty());
+        assert!(state.library_store.list().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_clean_uninstall_purges_cache_models_and_configs() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+
+        // Create cache folder
+        let cat_cache = state_val.app_data_dir.join("catalog");
+        std::fs::create_dir_all(&cat_cache).unwrap();
+        std::fs::write(cat_cache.join("catalog.json"), b"cached catalog").unwrap();
+
+        // Create model
+        let fake_model = state_val.library_store.models_dir().join("test.gguf");
+        std::fs::write(&fake_model, b"weights").unwrap();
+        state_val
+            .library_store
+            .add_verified(ModelRecord {
+                entry_id: "test-model".to_string(),
+                file_path: fake_model.clone(),
+                size_bytes: 7,
+                verified: true,
+                added_at: chrono::Utc::now(),
+                output_type: domain::OutputType::Text,
+            })
+            .unwrap();
+
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let opts = CleanUninstallOptions {
+            delete_models: Some(true),
+            clear_configs: Some(true),
+            clear_cache: Some(true),
+        };
+
+        let result = clean_uninstall(app.handle().clone(), state.clone(), Some(opts))
+            .await
+            .unwrap();
+        assert!(result.success);
+        assert_eq!(result.models_deleted, 1);
+        assert_eq!(result.reclaimed_bytes, 7);
+        assert!(result.configs_cleared);
+        assert!(result.cache_purged);
+        assert!(!cat_cache.exists());
+        assert!(!fake_model.exists());
+    }
+
+    #[tokio::test]
+    async fn test_prune_orphans_command() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+        let orphan_file = state_val.library_store.models_dir().join("orphan.gguf");
+        std::fs::write(&orphan_file, b"orphan weights").unwrap();
+
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let reclaimed = prune_orphans(state, vec![orphan_file.to_string_lossy().to_string()])
+            .await
+            .unwrap();
+        assert!(reclaimed > 0);
+        assert!(!orphan_file.exists());
+    }
+
+    #[tokio::test]
+    async fn test_factory_reset_resets_settings_and_purges() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+
+        // Set non-default settings
+        {
+            let mut s = state_val.settings.write().unwrap();
+            s.theme = "dark".to_string();
+            s.hf_token = "custom_token".to_string();
+        }
+
+        // Add a model
+        let fake_model = state_val.library_store.models_dir().join("test.gguf");
+        std::fs::write(&fake_model, b"weights").unwrap();
+        state_val
+            .library_store
+            .add_verified(ModelRecord {
+                entry_id: "model-to-reset".to_string(),
+                file_path: fake_model.clone(),
+                size_bytes: 7,
+                verified: true,
+                added_at: chrono::Utc::now(),
+                output_type: domain::OutputType::Text,
+            })
+            .unwrap();
+
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let ok = factory_reset(app.handle().clone(), state.clone())
+            .await
+            .unwrap();
+        assert!(ok);
+        assert!(!fake_model.exists());
+        assert!(state.library_store.list().unwrap().is_empty());
+
+        let current_settings = state.settings.read().unwrap().clone();
+        assert_eq!(current_settings.theme, "system");
+        assert_eq!(current_settings.hf_token, "");
+    }
+
+    #[tokio::test]
+    async fn test_delete_library_model_command() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+
+        let fake_model = state_val.library_store.models_dir().join("delete-me.gguf");
+        std::fs::write(&fake_model, b"weights").unwrap();
+        state_val
+            .library_store
+            .add_verified(ModelRecord {
+                entry_id: "delete-me".to_string(),
+                file_path: fake_model.clone(),
+                size_bytes: 7,
+                verified: true,
+                added_at: chrono::Utc::now(),
+                output_type: domain::OutputType::Text,
+            })
+            .unwrap();
+
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let deleted = delete_library_model(state.clone(), "delete-me".to_string())
+            .await
+            .unwrap();
+        assert!(deleted);
+        assert!(!fake_model.exists());
+        assert!(state.library_store.get("delete-me").unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_save_and_get_settings_commands() {
+        let dir = tempdir().unwrap();
+        let state_val = create_test_state(dir.path());
+        let app = tauri::test::mock_app();
+        app.manage(state_val);
+        let state = app.state::<AppState>();
+
+        let mut settings = get_settings(state.clone()).await.unwrap();
+        settings.theme = "light".to_string();
+        settings.hf_token = "my-new-token".to_string();
+
+        save_settings(app.handle().clone(), state.clone(), settings.clone())
+            .await
+            .unwrap();
+
+        let retrieved = get_settings(state).await.unwrap();
+        assert_eq!(retrieved.theme, "light");
+        assert_eq!(retrieved.hf_token, "my-new-token");
+    }
 }

@@ -6,7 +6,7 @@ use gateway::start_gateway;
 use hw_probe::get_or_detect_profile;
 use library::LibraryStore;
 use serde_json::{json, Value};
-use server_manager::ServerManager;
+use server_manager::{ModelRuntime, ServerManager};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tempfile::tempdir;
@@ -111,12 +111,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let server_mgr = Arc::new(ServerManager::new(sidecar_path));
+    let runtime = ModelRuntime {
+        output_type: target_entry.resolved_output_type(),
+        pooling: target_entry.pooling.clone(),
+    };
     let internal_port = server_mgr
         .start_server(
             target_entry.id.clone(),
             downloaded_path,
             serve_cfg.clone(),
             Some(fit),
+            runtime,
         )
         .await?;
 

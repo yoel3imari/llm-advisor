@@ -156,6 +156,16 @@ pub fn is_embedding_pooling_str(value: &str) -> bool {
     )
 }
 
+/// Explicit pooling strategies accepted by `--pooling` in llama-server.
+pub const ALLOWED_POOLING_STRATEGIES: [&str; 4] = ["mean", "cls", "last", "rank"];
+
+/// True when `value` is an allowed explicit pooling strategy.
+pub fn is_valid_pooling_strategy(value: &str) -> bool {
+    ALLOWED_POOLING_STRATEGIES
+        .iter()
+        .any(|allowed| value.eq_ignore_ascii_case(allowed))
+}
+
 /// Architecture-level embedding signal for GGUF `general.architecture`.
 /// Conservative: BERT-family architectures are embedding-only in practice.
 pub fn is_embedding_architecture(arch: &str) -> bool {
@@ -234,6 +244,10 @@ pub struct CatalogEntry {
     /// as catalog overrides during detection.
     #[serde(default)]
     pub output_type: OutputType,
+    /// Pooling strategy for embedding models: mean | cls | last | rank.
+    /// When absent, llama-server uses the GGUF's declared default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pooling: Option<String>,
 }
 
 impl CatalogEntry {
@@ -408,6 +422,9 @@ pub struct RunningInstanceInfo {
     pub port: u16,
     pub context_size: u32,
     pub started_at: DateTime<Utc>,
+    /// Served capability of this instance (text vs embedding).
+    #[serde(default)]
+    pub output_type: OutputType,
 }
 
 /// App-wide typed error taxonomy with user-presentable messages.

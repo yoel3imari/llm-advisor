@@ -23,6 +23,7 @@ fn sample_llama31_8b_entry() -> CatalogEntry {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     }
 }
 
@@ -140,6 +141,7 @@ fn test_golden_moe_mixtral_active_params_speed() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let profile_128gb = HardwareProfile {
@@ -217,6 +219,7 @@ fn test_sharded_model_uses_total_size_not_first_shard() {
             },
         ]),
         output_type: Default::default(),
+        pooling: None,
     };
     let profile = sample_profile_16gb_intel();
     let cfg = ServeConfig {
@@ -360,6 +363,7 @@ fn test_llama_3_1_70b_q2_k_on_16gb_ram_fails() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let cfg = ServeConfig::default();
@@ -392,6 +396,7 @@ fn test_gemma_2_9b_head_dim_deviation() {
         benchmarks: None,
         shards: None,
         output_type: Default::default(),
+        pooling: None,
     };
 
     let cfg = ServeConfig {
@@ -479,6 +484,7 @@ fn sample_explicit_embedding_entry() -> CatalogEntry {
         benchmarks: None,
         shards: None,
         output_type: domain::OutputType::Embedding,
+        pooling: Some("mean".to_string()),
     }
 }
 

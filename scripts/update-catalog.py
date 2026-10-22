@@ -103,6 +103,19 @@ BASE_MODEL_MAP = {
     "unsloth/Mistral-Large-3-675B-Instruct-2512-GGUF": "mistralai/Mistral-Large-3-675B-Instruct-2512",
     "bartowski/stepfun-ai_Step-3.5-Flash-GGUF": "stepfun-ai/Step-3.5-Flash",
     "unsloth/Ling-1T-GGUF": "inclusionAI/Ling-1T",
+    # Embedding model GGUF repos -> upstream base model configs.
+    "second-state/All-MiniLM-L6-v2-Embedding-GGUF": "sentence-transformers/all-MiniLM-L6-v2",
+    "ggml-org/bge-small-en-v1.5-Q8_0-GGUF": "BAAI/bge-small-en-v1.5",
+    "nomic-ai/nomic-embed-text-v1.5-GGUF": "nomic-ai/nomic-embed-text-v1.5",
+    "ggml-org/jina-embeddings-v2-base-en-Q8_0-GGUF": "jinaai/jina-embeddings-v2-base-en",
+    "ggml-org/embeddinggemma-300M-GGUF": "google/embeddinggemma-300M",
+    "CompendiumLabs/bge-large-en-v1.5-gguf": "BAAI/bge-large-en-v1.5",
+    "ChristianAzinn/mxbai-embed-large-v1-gguf": "mixedbread-ai/mxbai-embed-large-v1",
+    "nomic-ai/nomic-embed-text-v2-moe-GGUF": "nomic-ai/nomic-embed-text-v2-moe",
+    "ggml-org/bge-m3-Q8_0-GGUF": "BAAI/bge-m3",
+    "Qwen/Qwen3-Embedding-0.6B-GGUF": "Qwen/Qwen3-Embedding-0.6B",
+    "Qwen/Qwen3-Embedding-4B-GGUF": "Qwen/Qwen3-Embedding-4B",
+    "Qwen/Qwen3-Embedding-8B-GGUF": "Qwen/Qwen3-Embedding-8B",
 }
 
 
@@ -350,6 +363,13 @@ def validate_entry(entry):
     sha = entry.get("sha256", "")
     if not sha or len(sha) != 64 or not re.match(r"^[0-9a-fA-F]{64}$", sha):
         errors.append(f"{pfx}: invalid sha256 ({sha})")
+
+    pooling = entry.get("pooling")
+    if pooling is not None:
+        if pooling not in ("mean", "cls", "last", "rank"):
+            errors.append(f"{pfx}: invalid pooling '{pooling}'")
+        if detect_output_type(entry) != "embedding":
+            errors.append(f"{pfx}: pooling set on a non-embedding model")
 
     shards = entry.get("shards")
     if shards is not None:

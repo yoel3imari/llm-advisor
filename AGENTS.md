@@ -107,7 +107,19 @@ This document records architectural conventions, project lessons learned, and gu
 
 ---
 
-## 9. Cross-Platform Window Chrome
+## 9. Embedding Model Serving
+
+* **Catalog contract**: embedding entries must set `output_type: "embedding"` and an explicit `pooling` (`mean`, `cls`, `last`, or `rank`). `catalog::parse_catalog_json` rejects invalid pooling values and pooling on non-embedding entries; `scripts/update-catalog.py` and `scripts/build-catalog.mjs` enforce the same rules.
+* **Sidecar flags**: embedding instances launch with `--embeddings`, plus `--pooling <value>` when the catalog declares one. They must **not** receive `-ctk`/`-ctv` (there is no KV cache). Text instances keep the existing KV flags.
+* **Context clamp**: `-c` for an embedding model is the maximum input length, so `src-tauri/src/lib.rs` clamps it to `entry.context_train` with a floor of 256 tokens (e.g. MiniLM stays at 512).
+* **Capability-aware routing**: `ServerManager::route_model(requested, ModelCapability)` is the single routing entry point. Chat (`/v1/chat/completions`, `/v1/completions`) and embeddings (`/v1/embeddings`) must never cross capabilities. Explicitly naming the wrong type returns `WrongCapability` → HTTP 400 `invalid_request_error`; an empty capability pool returns `NoMatchingModel` → HTTP 503.
+* **Runtime metadata**: `RunningProcess`/`RunningInstanceInfo`, `GET /v1/models`, and `ServerState::Serving.instances` expose `output_type` so the UI can badge instances and the gateway can keep capabilities separate.
+* **Fit math**: the fit engine still returns zero KV bytes for embedding models. BERT-family GGUFs often omit `head_count_kv`/`key_length`; the downloader skips those header checks rather than failing verification.
+* **Nomic v2 MoE**: `nomic-embed-text-v2-moe-q8_0` has a real 512-token context limit and is documented as such in the README.
+
+---
+
+## 10. Cross-Platform Window Chrome
 
 * **Frameless by design**: `src-tauri/tauri.conf.json` sets `decorations: false` on every OS. `src/components/layout/TitleBar.tsx` is the only title bar; do not reintroduce OS-specific native chrome (the old GTK header-bar CSS override and its `gtk` crate were removed as obsolete).
 * **Drag region**: the title bar uses `data-tauri-drag-region="deep"` (Tauri 2.11+) so the entire bar drags, while buttons/inputs opt out automatically. Double-click toggling comes from Tauri's injected script (`core:window:allow-internal-toggle-maximize`, included in `core:default`).

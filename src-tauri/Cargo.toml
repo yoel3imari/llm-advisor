@@ -35,3 +35,6 @@ tauri-plugin-notification = "2.4"
 tauri-plugin-updater = "2"
 tauri-plugin-single-instance = "2"
 
+[dev-dependencies]
+tauri = { version = "2.2", features = ["test"] }
+tempfile.workspace = true

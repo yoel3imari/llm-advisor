@@ -7,10 +7,10 @@ use axum::http::{Method, Request, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use domain::AppError;
+use domain::{AppError, OutputType};
 use futures_util::StreamExt;
 use serde_json::json;
-use server_manager::{ServerManager, ServerState};
+use server_manager::{ModelCapability, RouteError, ServerManager, ServerState};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -39,6 +39,7 @@ pub async fn start_gateway(
         .route("/v1/models", get(models_handler))
         .route("/v1/chat/completions", post(proxy_chat_completions))
         .route("/v1/completions", post(proxy_completions))
+        .route("/v1/embeddings", post(proxy_embeddings))
         .fallback(not_found_handler)
         .layer(cors)
         .with_state(state);
@@ -101,7 +102,8 @@ async fn models_handler(State(state): State<Arc<GatewayState>>) -> impl IntoResp
                 "created": inst.started_at.timestamp(),
                 "owned_by": "llm-advisor",
                 "port": inst.port,
-                "context_size": inst.context_size
+                "context_size": inst.context_size,
+                "output_type": inst.output_type.as_str()
             })
         })
         .collect();
@@ -147,6 +149,80 @@ fn model_not_found_404(requested: &str, available: &[String]) -> Response<Body> 
         .unwrap()
 }
 
+/// No instance of the requested capability 503 response.
+fn no_matching_model_503(capability: ModelCapability) -> Response<Body> {
+    let message = match capability {
+        ModelCapability::Chat => {
+            "No chat-capable model is currently being served. Start a text model from the app."
+        }
+        ModelCapability::Embeddings => {
+            "No embedding model is currently being served. Start an embedding model from the app."
+        }
+    };
+    let body_json = json!({
+        "error": {
+            "message": message,
+            "type": "server_not_running",
+            "code": 503
+        }
+    });
+    Response::builder()
+        .status(StatusCode::SERVICE_UNAVAILABLE)
+        .header("Content-Type", "application/json")
+        .body(Body::from(serde_json::to_vec(&body_json).unwrap()))
+        .unwrap()
+}
+
+/// Wrong output type for the requested endpoint 400 response.
+fn wrong_capability_400(
+    model_id: &str,
+    actual: OutputType,
+    requested: ModelCapability,
+) -> Response<Body> {
+    let hint = match requested {
+        ModelCapability::Chat => {
+            format!(
+                "Model '{}' is an embedding model and cannot serve /v1/chat/completions. Use POST /v1/embeddings instead.",
+                model_id
+            )
+        }
+        ModelCapability::Embeddings => {
+            format!(
+                "Model '{}' is not an embedding model (output type: {}). Use POST /v1/chat/completions instead.",
+                model_id,
+                actual.as_str()
+            )
+        }
+    };
+    let body_json = json!({
+        "error": {
+            "message": hint,
+            "type": "invalid_request_error",
+            "code": 400
+        }
+    });
+    Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .header("Content-Type", "application/json")
+        .body(Body::from(serde_json::to_vec(&body_json).unwrap()))
+        .unwrap()
+}
+
+/// Translate a routing failure into the matching OpenAI-style error envelope.
+fn route_error_response(err: RouteError, capability: ModelCapability) -> Response<Body> {
+    match err {
+        RouteError::NoModelServing => server_not_serving_503(),
+        RouteError::NoMatchingModel { capability } => no_matching_model_503(capability),
+        RouteError::ModelNotFound {
+            requested,
+            available,
+        } => model_not_found_404(&requested, &available),
+        RouteError::WrongCapability { model_id, actual } => {
+            wrong_capability_400(&model_id, actual, capability)
+        }
+    }
+}
+
 /// Fallback 404 handler.
 async fn not_found_handler() -> impl IntoResponse {
     (
@@ -166,8 +242,14 @@ async fn proxy_chat_completions(
     State(state): State<Arc<GatewayState>>,
     req: Request<Body>,
 ) -> Response<Body> {
-    // eprintln!("[DEBUG Gateway] proxy_chat_completions entered");
-    proxy_to_sidecar(state, req, "/v1/chat/completions").await
+    proxy_to_sidecar(
+        state,
+        req,
+        "/v1/chat/completions",
+        ModelCapability::Chat,
+        16 * 1024 * 1024,
+    )
+    .await
 }
 
 /// POST /v1/completions
@@ -175,30 +257,45 @@ async fn proxy_completions(
     State(state): State<Arc<GatewayState>>,
     req: Request<Body>,
 ) -> Response<Body> {
-    // eprintln!("[DEBUG Gateway] proxy_completions entered");
-    proxy_to_sidecar(state, req, "/v1/completions").await
+    proxy_to_sidecar(
+        state,
+        req,
+        "/v1/completions",
+        ModelCapability::Chat,
+        16 * 1024 * 1024,
+    )
+    .await
 }
 
-/// Internal relay helper with streaming body forwarding and model routing.
+/// POST /v1/embeddings
+async fn proxy_embeddings(
+    State(state): State<Arc<GatewayState>>,
+    req: Request<Body>,
+) -> Response<Body> {
+    proxy_to_sidecar(
+        state,
+        req,
+        "/v1/embeddings",
+        ModelCapability::Embeddings,
+        64 * 1024 * 1024,
+    )
+    .await
+}
+
+/// Internal relay helper with streaming body forwarding, capability-aware routing and model selection.
 async fn proxy_to_sidecar(
     state: Arc<GatewayState>,
     req: Request<Body>,
     target_path: &str,
+    capability: ModelCapability,
+    body_limit: usize,
 ) -> Response<Body> {
-    let running_models = state.server_manager.get_running_model_ids();
-    // eprintln!("[DEBUG Gateway] running models: {:?}", running_models);
-    if running_models.is_empty() {
-        // eprintln!("[DEBUG Gateway] No running models, returning 503");
-        return server_not_serving_503();
-    }
-
     let (parts, body) = req.into_parts();
 
-    // Buffer incoming request body (up to 16MB) to inspect requested model
-    let body_bytes = match to_bytes(body, 16 * 1024 * 1024).await {
+    // Buffer incoming request body to inspect the requested model.
+    let body_bytes = match to_bytes(body, body_limit).await {
         Ok(b) => b,
         Err(e) => {
-            // eprintln!("[DEBUG Gateway-ERROR] Failed to read request body: {}", e);
             let err_json = json!({
                 "error": {
                     "message": format!("Failed to read request body: {}", e),
@@ -224,18 +321,13 @@ async fn proxy_to_sidecar(
 
     let target_port = match state
         .server_manager
-        .get_port_for_model(requested_model.as_deref())
+        .route_model(requested_model.as_deref(), capability)
     {
-        Some(p) => p,
-        None => {
-            let req_name = requested_model.as_deref().unwrap_or("unknown");
-            // eprintln!("[DEBUG Gateway-ERROR] Model not found in pool: '{}'", req_name);
-            return model_not_found_404(req_name, &running_models);
-        }
+        Ok(p) => p,
+        Err(err) => return route_error_response(err, capability),
     };
 
     let target_uri = format!("http://127.0.0.1:{}{}", target_port, target_path);
-    // eprintln!("[DEBUG Gateway] Routing to sidecar: {}", target_uri);
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
@@ -257,7 +349,6 @@ async fn proxy_to_sidecar(
         Ok(upstream_resp) => {
             let status = StatusCode::from_u16(upstream_resp.status().as_u16())
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-            // eprintln!("[DEBUG Gateway] Upstream sidecar responded with status: {}", status);
 
             let mut builder = Response::builder().status(status);
             for (k, v) in upstream_resp.headers() {
@@ -277,7 +368,6 @@ async fn proxy_to_sidecar(
             })
         }
         Err(e) => {
-            // eprintln!("[DEBUG Gateway-ERROR] Upstream request failed: {}", e);
             let err_json = json!({
                 "error": {
                     "message": format!("Upstream inference server error: {}", e),

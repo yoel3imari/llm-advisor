@@ -10,8 +10,18 @@ const mockLibraryRecords: ModelRecord[] = [
     size_bytes: 4920727040,
     added_at: '2026-08-30T12:00:00Z',
     verified: true,
+    output_type: 'text',
   },
 ];
+
+const mockEmbeddingRecord: ModelRecord = {
+  entry_id: 'all-minilm-l6-v2-q8_0',
+  file_path: '/models/all-MiniLM-L6-v2-Q8_0.gguf',
+  size_bytes: 25008064,
+  added_at: '2026-08-30T12:00:00Z',
+  verified: true,
+  output_type: 'embedding',
+};
 
 describe('ServerView UI & Error Handling', () => {
   it('renders server control panel and controls', async () => {
@@ -168,5 +178,77 @@ describe('ServerView UI & Error Handling', () => {
     expect(writeTextMock).toHaveBeenCalledWith(
       expect.stringContaining('http://127.0.0.1:13385/v1/chat/completions')
     );
+  });
+
+  it('shows embedding affordances and an embeddings curl snippet for an embedding selection', async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    render(
+      <ServerView
+        serverState={{ state: 'stopped' }}
+        libraryRecords={[mockLibraryRecords[0], mockEmbeddingRecord]}
+        initialSelectedModelId={mockEmbeddingRecord.entry_id}
+        onRefreshState={() => {}}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Embedding')).toBeDefined();
+    });
+
+    // Embeddings have no KV cache, so the quant controls must not render.
+    expect(screen.queryByText('KV Quant')).toBeNull();
+
+    const copyCurlBtn = screen.getByTitle('Copy curl snippet');
+    fireEvent.click(copyCurlBtn);
+    expect(writeTextMock).toHaveBeenCalledWith(
+      expect.stringContaining('/v1/embeddings')
+    );
+    expect(writeTextMock).toHaveBeenCalledWith(expect.stringContaining('"input"'));
+    expect(writeTextMock).not.toHaveBeenCalledWith(
+      expect.stringContaining('/v1/chat/completions')
+    );
+  });
+
+  it('badges running embedding instances in the pool strip', async () => {
+    const serverState: ServerState = {
+      state: 'serving',
+      model_id: mockEmbeddingRecord.entry_id,
+      model_path: mockEmbeddingRecord.file_path,
+      port: 18081,
+      context_size: 512,
+      started_at: '2026-08-31T12:00:00Z',
+      instances: [
+        {
+          model_id: mockEmbeddingRecord.entry_id,
+          model_path: mockEmbeddingRecord.file_path,
+          port: 18081,
+          context_size: 512,
+          started_at: '2026-08-31T12:00:00Z',
+          output_type: 'embedding',
+        },
+      ],
+    };
+
+    render(
+      <ServerView
+        serverState={serverState}
+        libraryRecords={[mockLibraryRecords[0], mockEmbeddingRecord]}
+        initialSelectedModelId={mockEmbeddingRecord.entry_id}
+        onRefreshState={() => {}}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Running Model Instances \(1\)/i)).toBeDefined();
+    });
+
+    // One badge on the launcher, one on the running instance card.
+    expect(screen.getAllByText('Embedding')).toHaveLength(2);
   });
 });

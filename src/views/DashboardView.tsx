@@ -9,7 +9,15 @@ import {
   Sliders,
   ChevronDown,
 } from 'lucide-react';
-import type { FitResult, HardwareProfile, ModelRecord, ServeConfig, DownloadTask } from '../types/domain';
+import type {
+  FitResult,
+  HardwareProfile,
+  ModelRecord,
+  ServeConfig,
+  DownloadTask,
+  OutputType,
+} from '../types/domain';
+import { baseFamily, outputTypeLabel } from '../types/domain';
 import {
   refreshHardwareProfile,
   recommendModels,
@@ -26,6 +34,8 @@ import {
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSearchInput,
@@ -36,6 +46,18 @@ import { Slider } from '../components/ui/Slider';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+const OUTPUT_TYPE_FILTERS: OutputType[] = ['text', 'embedding', 'image', 'audio', 'multimodal'];
+
+const VERDICT_FILTERS: { value: string; label: string }[] = [
+  { value: 'fits', label: 'Fits Only' },
+  { value: 'tight', label: 'Tight Fit' },
+  { value: 'nofit', label: 'No Fit' },
+];
+
+function toggleValue<T>(values: T[], value: T): T[] {
+  return values.includes(value) ? values.filter((v) => v !== value) : [...values, value];
 }
 
 interface Props {
@@ -76,9 +98,10 @@ export function DashboardView({
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
-  const [familyFilter, setFamilyFilter] = useState('all');
-  const [verdictFilter, setVerdictFilter] = useState('all');
+  const [familyFilters, setFamilyFilters] = useState<string[]>([]);
+  const [verdictFilters, setVerdictFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [outputTypeFilters, setOutputTypeFilters] = useState<OutputType[]>([]);
   const [familySearch, setFamilySearch] = useState('');
 
   // Fetch recommendations whenever serve config changes
@@ -196,9 +219,9 @@ export function DashboardView({
     }
   }, [onModelDownloaded]);
 
-  // Available families in current results for dropdown
+  // Base families in current results (llama-3.1 + llama3.3 -> llama) for dropdown
   const uniqueFamilies = useMemo(
-    () => Array.from(new Set(results.map((r) => r.entry.family))).sort(),
+    () => Array.from(new Set(results.map((r) => baseFamily(r.entry.family)))).sort(),
     [results]
   );
 
@@ -395,71 +418,112 @@ export function DashboardView({
 
           {/* Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Family Filter Dropdown */}
+            {/* Family Filter Dropdown (multi-select) */}
             <DropdownMenu onOpenChange={(open) => { if (!open) setFamilySearch(''); }}>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]">
+                <button
+                  aria-label="Filter by family"
+                  className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]"
+                >
                   <span className="truncate">
-                    {familyFilter === 'all'
+                    {familyFilters.length === 0
                       ? 'All Families'
-                      : familyFilter.charAt(0).toUpperCase() + familyFilter.slice(1)}
+                      : familyFilters.length === 1
+                      ? familyFilters[0].charAt(0).toUpperCase() + familyFilters[0].slice(1)
+                      : `${familyFilters.length} Families`}
                   </span>
                   <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[185px] max-h-72 shadow-corporate">
-                <DropdownMenuLabel>Filter Family ({uniqueFamilies.length})</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-[200px] max-h-72 shadow-corporate">
+                <DropdownMenuLabel>Filter Families ({uniqueFamilies.length})</DropdownMenuLabel>
                 <DropdownMenuSearchInput
                   value={familySearch}
                   onChange={(e) => setFamilySearch(e.target.value)}
                   placeholder="Search families..."
                 />
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={familyFilter} onValueChange={setFamilyFilter}>
-                  {!familySearch && (
-                    <DropdownMenuRadioItem value="all">All Families</DropdownMenuRadioItem>
-                  )}
-                  {filteredFamilies.map((fam) => (
-                    <DropdownMenuRadioItem
-                      key={fam}
-                      value={fam.toLowerCase()}
-                      className="capitalize"
+                {familyFilters.length > 0 && (
+                  <>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setFamilyFilters([]);
+                      }}
+                      className="justify-between text-slate-500 dark:text-slate-400"
                     >
-                      {fam}
-                    </DropdownMenuRadioItem>
-                  ))}
-                  {filteredFamilies.length === 0 && (
-                    <DropdownMenuEmpty>No families match &quot;{familySearch}&quot;</DropdownMenuEmpty>
-                  )}
-                </DropdownMenuRadioGroup>
+                      <span>Clear selection</span>
+                      <span className="font-mono text-[10px]">{familyFilters.length} selected</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {filteredFamilies.map((fam) => (
+                  <DropdownMenuCheckboxItem
+                    key={fam}
+                    checked={familyFilters.includes(fam)}
+                    onCheckedChange={() =>
+                      setFamilyFilters((prev) => toggleValue(prev, fam))
+                    }
+                    onSelect={(e) => e.preventDefault()}
+                    className="capitalize"
+                  >
+                    {fam}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                {filteredFamilies.length === 0 && (
+                  <DropdownMenuEmpty>No families match &quot;{familySearch}&quot;</DropdownMenuEmpty>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Verdict Filter Dropdown */}
+            {/* Verdict Filter Dropdown (multi-select) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]">
+                <button
+                  aria-label="Filter by fit verdict"
+                  className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]"
+                >
                   <span className="truncate">
-                    {verdictFilter === 'all'
+                    {verdictFilters.length === 0
                       ? 'All Verdicts'
-                      : verdictFilter === 'fits'
-                      ? 'Fits Only'
-                      : verdictFilter === 'tight'
-                      ? 'Tight Fit'
-                      : 'No Fit'}
+                      : verdictFilters.length === 1
+                      ? VERDICT_FILTERS.find((v) => v.value === verdictFilters[0])?.label ?? 'Verdict'
+                      : `${verdictFilters.length} Verdicts`}
                   </span>
                   <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px] max-h-60 shadow-corporate">
+              <DropdownMenuContent align="start" className="w-[175px] max-h-60 shadow-corporate">
                 <DropdownMenuLabel>Filter Verdict</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={verdictFilter} onValueChange={setVerdictFilter}>
-                  <DropdownMenuRadioItem value="all">All Verdicts</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="fits">Fits Only</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="tight">Tight Fit</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="nofit">No Fit</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
+                {verdictFilters.length > 0 && (
+                  <>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setVerdictFilters([]);
+                      }}
+                      className="justify-between text-slate-500 dark:text-slate-400"
+                    >
+                      <span>Clear selection</span>
+                      <span className="font-mono text-[10px]">{verdictFilters.length} selected</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {VERDICT_FILTERS.map((verdict) => (
+                  <DropdownMenuCheckboxItem
+                    key={verdict.value}
+                    checked={verdictFilters.includes(verdict.value)}
+                    onCheckedChange={() =>
+                      setVerdictFilters((prev) => toggleValue(prev, verdict.value))
+                    }
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {verdict.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -489,6 +553,56 @@ export function DashboardView({
                     Available to Download
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Output Type Filter Dropdown (multi-select) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  aria-label="Filter by output type"
+                  className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px]"
+                >
+                  <span className="truncate">
+                    {outputTypeFilters.length === 0
+                      ? 'All Output Types'
+                      : outputTypeFilters.length === 1
+                      ? `${outputTypeLabel(outputTypeFilters[0])} Output`
+                      : `${outputTypeFilters.length} Output Types`}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[190px] max-h-60 shadow-corporate">
+                <DropdownMenuLabel>Filter Output Type</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {outputTypeFilters.length > 0 && (
+                  <>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setOutputTypeFilters([]);
+                      }}
+                      className="justify-between text-slate-500 dark:text-slate-400"
+                    >
+                      <span>Clear selection</span>
+                      <span className="font-mono text-[10px]">{outputTypeFilters.length} selected</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {OUTPUT_TYPE_FILTERS.map((type) => (
+                  <DropdownMenuCheckboxItem
+                    key={type}
+                    checked={outputTypeFilters.includes(type)}
+                    onCheckedChange={() =>
+                      setOutputTypeFilters((prev) => toggleValue(prev, type))
+                    }
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {outputTypeLabel(type)}
+                  </DropdownMenuCheckboxItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -624,9 +738,10 @@ export function DashboardView({
           onNavigateToServer={onNavigateToServer}
           onDeleteFromLibrary={handleDeleteFromLibrary}
           searchQuery={searchQuery}
-          familyFilter={familyFilter}
-          verdictFilter={verdictFilter}
+          familyFilters={familyFilters}
+          verdictFilters={verdictFilters}
           statusFilter={statusFilter}
+          outputTypeFilters={outputTypeFilters}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-use domain::ServeConfig;
+use domain::{OutputType, ServeConfig};
 use server_manager::*;
 use std::fs::File;
 use std::io::Write;
@@ -68,7 +68,13 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
     // 1. Start server
     let cfg = ServeConfig::default();
     let port = manager
-        .start_server("test-model".to_string(), fake_model_path.clone(), cfg, None)
+        .start_server(
+            "test-model".to_string(),
+            fake_model_path.clone(),
+            cfg,
+            None,
+            ModelRuntime::default(),
+        )
         .await
         .expect("start_server should succeed");
 
@@ -158,6 +164,7 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
             model1_path,
             ServeConfig::default(),
             None,
+            ModelRuntime::default(),
         )
         .await
         .expect("start model 1");
@@ -169,6 +176,7 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
             model2_path,
             ServeConfig::default(),
             None,
+            ModelRuntime::default(),
         )
         .await
         .expect("start model 2");
@@ -191,6 +199,176 @@ with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
     manager.stop_all().await.expect("stop all");
     assert_eq!(manager.list_instances().len(), 0);
     assert_eq!(manager.get_state(), ServerState::Stopped);
+}
+
+#[tokio::test]
+async fn test_embedding_sidecar_flags_and_capability_routing() {
+    let dir = tempdir().unwrap();
+
+    let fake_server_path = dir.path().join("fake-embedding-server.py");
+    let script_content = r#"#!/usr/bin/env python3
+import sys, http.server, socketserver, argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", type=str)
+parser.add_argument("--port", type=int, default=18080)
+parser.add_argument("--host", type=str, default="127.0.0.1")
+parser.add_argument("-c", type=int)
+parser.add_argument("-np", type=int)
+parser.add_argument("-ctk", type=str)
+parser.add_argument("-ctv", type=str)
+parser.add_argument("-ngl", type=int)
+parser.add_argument("--embeddings", action="store_true")
+parser.add_argument("--pooling", type=str)
+
+args, _ = parser.parse_known_args()
+
+# Record the runtime argv next to the model file so the test can assert flags.
+if args.m:
+    with open(args.m + ".argv", "w") as f:
+        f.write(" ".join(sys.argv[1:]))
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+with socketserver.TCPServer((args.host, args.port), Handler) as httpd:
+    httpd.serve_forever()
+"#;
+
+    {
+        let mut fake_server = File::create(&fake_server_path).unwrap();
+        fake_server.write_all(script_content.as_bytes()).unwrap();
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(&fake_server_path).unwrap().permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&fake_server_path, perms).unwrap();
+    }
+
+    let text_path = dir.path().join("text-model.gguf");
+    let embed_path = dir.path().join("embed-model.gguf");
+    std::fs::write(&text_path, b"TEXT").unwrap();
+    std::fs::write(&embed_path, b"EMBED").unwrap();
+
+    let manager = ServerManager::new(fake_server_path);
+
+    let text_port = manager
+        .start_server(
+            "text-model".to_string(),
+            text_path.clone(),
+            ServeConfig::default(),
+            None,
+            ModelRuntime::default(),
+        )
+        .await
+        .expect("start text model");
+
+    // Chat-only pool: an embeddings request has no compatible instance.
+    assert_eq!(
+        manager.route_model(None, ModelCapability::Embeddings),
+        Err(RouteError::NoMatchingModel {
+            capability: ModelCapability::Embeddings
+        })
+    );
+
+    let embed_port = manager
+        .start_server(
+            "embed-model".to_string(),
+            embed_path.clone(),
+            ServeConfig {
+                context_size: 512,
+                ..ServeConfig::default()
+            },
+            None,
+            ModelRuntime {
+                output_type: OutputType::Embedding,
+                pooling: Some("mean".to_string()),
+            },
+        )
+        .await
+        .expect("start embedding model");
+
+    let text_argv = std::fs::read_to_string(text_path.with_extension("gguf.argv")).unwrap();
+    assert!(text_argv.contains("-ctk"));
+    assert!(text_argv.contains("-ctv"));
+    assert!(!text_argv.contains("--embeddings"));
+
+    let embed_argv = std::fs::read_to_string(embed_path.with_extension("gguf.argv")).unwrap();
+    assert!(embed_argv.contains("--embeddings"));
+    assert!(embed_argv.contains("--pooling mean"));
+    assert!(!embed_argv.contains("-ctk"));
+    assert!(!embed_argv.contains("-ctv"));
+
+    // Instances expose their served capability.
+    let instances = manager.list_instances();
+    assert_eq!(
+        instances
+            .iter()
+            .find(|i| i.model_id == "embed-model")
+            .unwrap()
+            .output_type,
+        OutputType::Embedding
+    );
+    assert_eq!(
+        instances
+            .iter()
+            .find(|i| i.model_id == "text-model")
+            .unwrap()
+            .output_type,
+        OutputType::Text
+    );
+
+    // Capability-aware routing.
+    assert_eq!(
+        manager.route_model(Some("embed-model"), ModelCapability::Embeddings),
+        Ok(embed_port)
+    );
+    assert_eq!(
+        manager.route_model(Some("text-model"), ModelCapability::Chat),
+        Ok(text_port)
+    );
+    assert!(matches!(
+        manager.route_model(Some("embed-model"), ModelCapability::Chat),
+        Err(RouteError::WrongCapability {
+            actual: OutputType::Embedding,
+            ..
+        })
+    ));
+    assert!(matches!(
+        manager.route_model(Some("text-model"), ModelCapability::Embeddings),
+        Err(RouteError::WrongCapability {
+            actual: OutputType::Text,
+            ..
+        })
+    ));
+    // Generic requests get routed within the requested capability only.
+    assert_eq!(
+        manager.route_model(None, ModelCapability::Embeddings),
+        Ok(embed_port)
+    );
+    assert_eq!(manager.route_model(None, ModelCapability::Chat), Ok(text_port));
+
+    manager.stop_all().await.expect("stop all");
+
+    // No instances at all.
+    assert_eq!(
+        manager.route_model(Some("any"), ModelCapability::Chat),
+        Err(RouteError::NoModelServing)
+    );
 }
 
 #[test]

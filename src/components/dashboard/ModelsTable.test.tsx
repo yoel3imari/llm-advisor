@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ModelsTable } from './ModelsTable';
 import { TooltipProvider } from '../ui/Tooltip';
-import type { FitResult, ModelRecord } from '../../types/domain';
+import type { FitResult, ModelRecord, OutputType } from '../../types/domain';
 
 const mockFitResults: FitResult[] = [
   {
@@ -67,7 +67,7 @@ describe('ModelsTable Verdict Filter', () => {
     est_total_bytes: hostBudget * 0.95,
   };
 
-  function renderTable(verdictFilter: string, results: FitResult[]) {
+  function renderTable(verdictFilters: string[], results: FitResult[]) {
     render(
       <TooltipProvider>
         <ModelsTable
@@ -78,16 +78,17 @@ describe('ModelsTable Verdict Filter', () => {
           onDownload={vi.fn()}
           onNavigateToServer={vi.fn()}
           searchQuery=""
-          familyFilter="all"
-          verdictFilter={verdictFilter}
+          familyFilters={[]}
+          verdictFilters={verdictFilters}
           statusFilter="all"
+          outputTypeFilters={[]}
         />
       </TooltipProvider>
     );
   }
 
   it('shows only strict fits when Fits Only is selected', () => {
-    renderTable('fits', [mockFitResults[0], tightResult]);
+    renderTable(['fits'], [mockFitResults[0], tightResult]);
 
     expect(screen.getByText('llama-3.1-8b-instruct')).toBeDefined();
     expect(screen.queryByText('llama-3.1-8b-tight')).toBeNull();
@@ -95,11 +96,179 @@ describe('ModelsTable Verdict Filter', () => {
   });
 
   it('shows only tight fits when Tight Fit is selected', () => {
-    renderTable('tight', [mockFitResults[0], tightResult]);
+    renderTable(['tight'], [mockFitResults[0], tightResult]);
 
     expect(screen.queryByText('llama-3.1-8b-instruct')).toBeNull();
     expect(screen.getByText('llama-3.1-8b-tight')).toBeDefined();
     expect(screen.getByText('Tight Fit')).toBeDefined();
+  });
+
+  it('shows the union when multiple verdicts are selected', () => {
+    renderTable(['fits', 'tight'], [mockFitResults[0], tightResult]);
+
+    expect(screen.getByText('llama-3.1-8b-instruct')).toBeDefined();
+    expect(screen.getByText('llama-3.1-8b-tight')).toBeDefined();
+  });
+});
+
+describe('ModelsTable Family Filter', () => {
+  const hostBudget = 16 * 1024 * 1024 * 1024;
+
+  const llama31: FitResult = {
+    ...mockFitResults[0],
+    entry: { ...mockFitResults[0].entry, id: 'llama-3.1-8b', family: 'llama-3.1' },
+  };
+  const llama32: FitResult = {
+    ...mockFitResults[0],
+    entry: { ...mockFitResults[0].entry, id: 'llama-3.2-3b', family: 'llama-3.2' },
+  };
+  const qwen: FitResult = {
+    ...mockFitResults[0],
+    entry: { ...mockFitResults[0].entry, id: 'qwen2.5-7b', family: 'qwen2.5' },
+  };
+
+  function renderTable(familyFilters: string[]) {
+    render(
+      <TooltipProvider>
+        <ModelsTable
+          results={[llama31, llama32, qwen]}
+          hostBudget={hostBudget}
+          libraryRecords={[]}
+          downloadingId={null}
+          onDownload={vi.fn()}
+          onNavigateToServer={vi.fn()}
+          searchQuery=""
+          familyFilters={familyFilters}
+          verdictFilters={[]}
+          statusFilter="all"
+          outputTypeFilters={[]}
+        />
+      </TooltipProvider>
+    );
+  }
+
+  it('groups llama-3.1 and llama-3.2 under the llama family', () => {
+    renderTable(['llama']);
+
+    expect(screen.getByText('llama-3.1-8b')).toBeDefined();
+    expect(screen.getByText('llama-3.2-3b')).toBeDefined();
+    expect(screen.queryByText('qwen2.5-7b')).toBeNull();
+  });
+
+  it('filters versioned qwen entries under qwen', () => {
+    renderTable(['qwen']);
+
+    expect(screen.getByText('qwen2.5-7b')).toBeDefined();
+    expect(screen.queryByText('llama-3.1-8b')).toBeNull();
+    expect(screen.queryByText('llama-3.2-3b')).toBeNull();
+  });
+
+  it('shows the union when multiple families are selected', () => {
+    renderTable(['llama', 'qwen']);
+
+    expect(screen.getByText('llama-3.1-8b')).toBeDefined();
+    expect(screen.getByText('llama-3.2-3b')).toBeDefined();
+    expect(screen.getByText('qwen2.5-7b')).toBeDefined();
+  });
+});
+
+describe('ModelsTable Output Type Filter', () => {
+  const hostBudget = 16 * 1024 * 1024 * 1024;
+
+  const embeddingResult: FitResult = {
+    ...mockFitResults[0],
+    entry: {
+      ...mockFitResults[0].entry,
+      id: 'nomic-embed-text-v1',
+      family: 'nomic',
+      filename: 'nomic-embed-text-v1-Q4_K_M.gguf',
+      output_type: 'embedding',
+    },
+  };
+
+  const imageResult: FitResult = {
+    ...mockFitResults[0],
+    entry: {
+      ...mockFitResults[0].entry,
+      id: 'flux.1-schnell',
+      family: 'flux',
+      filename: 'flux1-schnell-Q4_K_M.gguf',
+      output_type: 'image',
+    },
+  };
+
+  const allResults = [mockFitResults[0], embeddingResult, imageResult];
+
+  function renderTable(outputTypeFilters: OutputType[]) {
+    render(
+      <TooltipProvider>
+        <ModelsTable
+          results={allResults}
+          hostBudget={hostBudget}
+          libraryRecords={[]}
+          downloadingId={null}
+          onDownload={vi.fn()}
+          onNavigateToServer={vi.fn()}
+          searchQuery=""
+          familyFilters={[]}
+          verdictFilters={[]}
+          statusFilter="all"
+          outputTypeFilters={outputTypeFilters}
+        />
+      </TooltipProvider>
+    );
+  }
+
+  it('shows text models only when the text output type is selected', () => {
+    renderTable(['text']);
+
+    expect(screen.getByText('llama-3.1-8b-instruct')).toBeDefined();
+    expect(screen.queryByText('nomic-embed-text-v1')).toBeNull();
+    expect(screen.queryByText('flux.1-schnell')).toBeNull();
+  });
+
+  it('shows embedding models only when the embedding output type is selected', () => {
+    renderTable(['embedding']);
+
+    expect(screen.queryByText('llama-3.1-8b-instruct')).toBeNull();
+    expect(screen.getByText('nomic-embed-text-v1')).toBeDefined();
+    expect(screen.queryByText('flux.1-schnell')).toBeNull();
+  });
+
+  it('shows image models only when the image output type is selected', () => {
+    renderTable(['image']);
+
+    expect(screen.queryByText('llama-3.1-8b-instruct')).toBeNull();
+    expect(screen.queryByText('nomic-embed-text-v1')).toBeNull();
+    expect(screen.getByText('flux.1-schnell')).toBeDefined();
+  });
+
+  it('shows the union when multiple output types are selected', () => {
+    renderTable(['embedding', 'image']);
+
+    expect(screen.queryByText('llama-3.1-8b-instruct')).toBeNull();
+    expect(screen.getByText('nomic-embed-text-v1')).toBeDefined();
+    expect(screen.getByText('flux.1-schnell')).toBeDefined();
+  });
+
+  it('shows every output type when no output type is selected', () => {
+    renderTable([]);
+
+    expect(screen.getByText('llama-3.1-8b-instruct')).toBeDefined();
+    expect(screen.getByText('nomic-embed-text-v1')).toBeDefined();
+    expect(screen.getByText('flux.1-schnell')).toBeDefined();
+  });
+
+  it('renders an em dash for embedding speed instead of token throughput', () => {
+    renderTable([]);
+
+    const embeddingRow = screen.getByText('nomic-embed-text-v1').closest('tr');
+    expect(embeddingRow).not.toBeNull();
+    expect(within(embeddingRow as HTMLElement).getByText('—')).toBeDefined();
+
+    const textRow = screen.getByText('llama-3.1-8b-instruct').closest('tr');
+    expect(textRow).not.toBeNull();
+    expect(within(textRow as HTMLElement).getByText('42.5')).toBeDefined();
   });
 });
 
@@ -115,9 +284,10 @@ describe('ModelsTable Light Mode Text & Badge Colors', () => {
           onDownload={vi.fn()}
           onNavigateToServer={vi.fn()}
           searchQuery=""
-          familyFilter="all"
-          verdictFilter="all"
+          familyFilters={[]}
+          verdictFilters={[]}
           statusFilter="all"
+          outputTypeFilters={[]}
         />
       </TooltipProvider>
     );
@@ -147,9 +317,10 @@ describe('ModelsTable Light Mode Text & Badge Colors', () => {
           onDownload={vi.fn()}
           onNavigateToServer={vi.fn()}
           searchQuery=""
-          familyFilter="all"
-          verdictFilter="all"
+          familyFilters={[]}
+          verdictFilters={[]}
           statusFilter="all"
+          outputTypeFilters={[]}
         />
       </TooltipProvider>
     );

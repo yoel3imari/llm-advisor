@@ -217,4 +217,32 @@ describe('ChatView Component', () => {
       expect(screen.getByText('Dynamic GQA Architecture')).toBeDefined();
     });
   });
+
+  it('filters embedding models out of chat selection', async () => {
+    const records: ModelRecord[] = [
+      {
+        entry_id: 'all-minilm-l6-v2-q8_0',
+        file_path: '/models/all-minilm.gguf',
+        size_bytes: 25008064,
+        verified: true,
+        added_at: '2026-01-01T00:00:00Z',
+        output_type: 'embedding',
+      },
+      {
+        entry_id: 'llama-3-8b',
+        file_path: '/models/llama-3-8b.gguf',
+        size_bytes: 4000000000,
+        verified: true,
+        added_at: '2026-01-01T00:00:00Z',
+        output_type: 'text',
+      },
+    ];
+
+    render(<ChatView modelId={null} libraryRecords={records} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('llama-3-8b').length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText('all-minilm-l6-v2-q8_0')).toBeNull();
+  });
 });

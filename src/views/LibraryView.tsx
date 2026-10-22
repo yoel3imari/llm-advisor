@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FolderDown, Trash2, CheckCircle, RefreshCw, AlertCircle, PlayCircle, XCircle, Copy } from 'lucide-react';
 import type { ModelRecord, DownloadTask, LibraryReconciliation } from '../types/domain';
+import { resolveRecordOutputType } from '../types/domain';
 import { deleteLibraryModel, reconcileLibrary, cancelDownload } from '../ipc/commands';
 import { DeleteConfirmDialog } from '../components/ui/DeleteConfirmDialog';
 import { useToast } from '../components/ui/Toast';
@@ -236,7 +237,16 @@ export function LibraryView({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   {records.map((rec) => (
                     <tr key={rec.entry_id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="p-3.5 font-bold text-slate-900 dark:text-white font-mono">{rec.entry_id}</td>
+                      <td className="p-3.5 font-bold text-slate-900 dark:text-white font-mono">
+                        <span className="inline-flex items-center gap-2">
+                          {rec.entry_id}
+                          {resolveRecordOutputType(rec) === 'embedding' && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800">
+                              Embedding
+                            </span>
+                          )}
+                        </span>
+                      </td>
                       <td className="p-3.5 font-mono tabular-nums text-slate-800 dark:text-slate-200 font-medium">{gb(rec.size_bytes)} GB</td>
                       <td className="p-3.5">
                         <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-semibold">

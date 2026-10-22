@@ -13,6 +13,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { AppSettings, ModelRecord, ServerState, ServeConfig, KvType, RunningInstanceInfo } from '../types/domain';
+import { resolveRecordOutputType } from '../types/domain';
 import { startServer, stopServer, stopInstance, getServerLogs, clearServerLogs, getSettings } from '../ipc/commands';
 import { LogViewer } from '../components/common/LogViewer';
 import { listen } from '@tauri-apps/api/event';
@@ -134,9 +135,15 @@ export function ServerView({
               port: serverState.port,
               context_size: serverState.context_size,
               started_at: serverState.started_at,
+              output_type: resolveRecordOutputType({ entry_id: serverState.model_id }),
             },
           ]
       : [];
+
+  const selectedRecord = libraryRecords.find((r) => r.entry_id === selectedModel);
+  const isEmbeddingSelected = selectedRecord
+    ? resolveRecordOutputType(selectedRecord) === 'embedding'
+    : (selectedModel ?? '').toLowerCase().includes('embed');
 
   const isModelRunning = (modelId: string) => {
     return activeInstances.some((inst) => inst.model_id === modelId);
@@ -197,7 +204,11 @@ export function ServerView({
 
   const activePort = propGatewayPort || internalGatewayPort || 13370;
   const endpointUrl = `http://127.0.0.1:${activePort}/v1`;
-  const curlSnippet = `curl -N http://127.0.0.1:${activePort}/v1/chat/completions \\
+  const curlSnippet = isEmbeddingSelected
+    ? `curl http://127.0.0.1:${activePort}/v1/embeddings \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"${selectedModel || 'default'}","input":"Hello world"}'`
+    : `curl -N http://127.0.0.1:${activePort}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -d '{"model":"${selectedModel || 'default'}","messages":[{"role":"user","content":"Hello!"}],"stream":true}'`;
 
@@ -279,6 +290,11 @@ export function ServerView({
                     <span className="font-bold text-slate-900 dark:text-white text-xs truncate font-mono" title={inst.model_id}>
                       {inst.model_id}
                     </span>
+                    {resolveRecordOutputType({ entry_id: inst.model_id, output_type: inst.output_type }) === 'embedding' && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800 shrink-0">
+                        Embedding
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
                     <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 font-bold">
@@ -307,7 +323,14 @@ export function ServerView({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4 flex-1">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Model to Launch</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <span>Model to Launch</span>
+                {isEmbeddingSelected && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800">
+                    Embedding
+                  </span>
+                )}
+              </label>
               <DropdownMenu onOpenChange={(open) => { if (!open) setModelSearch(''); }}>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -390,38 +413,40 @@ export function ServerView({
               </DropdownMenu>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">KV Quant</label>
-              <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
-                <button
-                  disabled={isStarting}
-                  onClick={() => setKvType('f16')}
-                  className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
-                    kvType === 'f16' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  F16
-                </button>
-                <button
-                  disabled={isStarting}
-                  onClick={() => setKvType('q8_0')}
-                  className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
-                    kvType === 'q8_0' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  Q8_0
-                </button>
-                <button
-                  disabled={isStarting}
-                  onClick={() => setKvType('q4_0')}
-                  className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
-                    kvType === 'q4_0' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  Q4_0
-                </button>
+            {!isEmbeddingSelected && (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">KV Quant</label>
+                <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
+                  <button
+                    disabled={isStarting}
+                    onClick={() => setKvType('f16')}
+                    className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
+                      kvType === 'f16' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    F16
+                  </button>
+                  <button
+                    disabled={isStarting}
+                    onClick={() => setKvType('q8_0')}
+                    className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
+                      kvType === 'q8_0' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    Q8_0
+                  </button>
+                  <button
+                    disabled={isStarting}
+                    onClick={() => setKvType('q4_0')}
+                    className={`px-3 py-1 text-xs rounded-md font-mono transition-all ${
+                      kvType === 'q4_0' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    Q4_0
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

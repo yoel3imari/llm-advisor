@@ -33,7 +33,7 @@ function isDeepEqual<T>(a: T, b: T): boolean {
 }
 
 function MainApp() {
-  const [activeTab, setActiveTab] = useState<NavTab>('chat');
+  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [profile, setProfile] = useState<HardwareProfile | null>(null);
   const [libraryRecords, setLibraryRecords] = useState<ModelRecord[]>([]);
   const [activeDownloads, setActiveDownloads] = useState<DownloadTask[]>([]);

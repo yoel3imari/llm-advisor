@@ -72,6 +72,25 @@ export function resolveOutputType(entry: Pick<CatalogEntry, 'id' | 'filename' | 
   return 'text';
 }
 
+/** Resolve a downloaded library record's output type (stored override wins). */
+export function resolveRecordOutputType(
+  record: Pick<ModelRecord, 'entry_id' | 'output_type'>
+): OutputType {
+  if (record.output_type && record.output_type !== 'text') return record.output_type;
+  return record.entry_id.toLowerCase().includes('embed') ? 'embedding' : 'text';
+}
+
+/**
+ * Collapse a versioned catalog family to its base model family so the
+ * dashboard groups variants together: "llama-3.1" / "llama3.3" / "llama-4"
+ * all become "llama", and "qwen2.5-coder" / "qwen3" become "qwen".
+ */
+export function baseFamily(family: string): string {
+  const normalized = family.trim().toLowerCase();
+  const match = /^[a-z]+/.exec(normalized);
+  return match ? match[0] : normalized;
+}
+
 export interface CatalogEntry {
   id: string;
   repo_id: string;
@@ -93,6 +112,8 @@ export interface CatalogEntry {
   shards?: ModelShard[];
   /** Missing in older payloads -> treat as 'text' (backward compat). */
   output_type?: OutputType | null;
+  /** Explicit llama-server pooling strategy for embedding models. */
+  pooling?: string | null;
 }
 
 export function totalSizeBytes(entry: CatalogEntry): number {
@@ -178,6 +199,8 @@ export interface RunningInstanceInfo {
   port: number;
   context_size: number;
   started_at: string;
+  /** Missing in older payloads -> treat as 'text' (backward compat). */
+  output_type?: OutputType | null;
 }
 
 export type ServerState =

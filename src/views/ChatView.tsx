@@ -36,7 +36,7 @@ import {
 import { loadSessions, saveSessions } from '../lib/chat-store';
 import { checkContextLimit, truncateHistoryForContext } from '../lib/token-estimate';
 import { startServer, chatGenerateTitle } from '../ipc/commands';
-import type { ModelRecord } from '../types/domain';
+import { resolveRecordOutputType, type ModelRecord } from '../types/domain';
 
 export interface ChatViewProps {
   modelId?: string | null;
@@ -90,16 +90,31 @@ export function ChatView({
     }
   }, [propModelId]);
 
-  // Set default model if none selected and models are available in library
+  // Embedding models cannot serve chat; never offer them in this view.
+  const chatRecords = React.useMemo(
+    () => libraryRecords.filter((r) => resolveRecordOutputType(r) !== 'embedding'),
+    [libraryRecords]
+  );
+
+  // Set default model if none selected and text models are available in library
   React.useEffect(() => {
-    if (!activeModelId && libraryRecords && libraryRecords.length > 0) {
+    if (!activeModelId && chatRecords.length > 0) {
       const defaultModel =
-        runningModelId && libraryRecords.some((r) => r.entry_id === runningModelId)
+        runningModelId && chatRecords.some((r) => r.entry_id === runningModelId)
           ? runningModelId
-          : libraryRecords[0].entry_id;
+          : chatRecords[0].entry_id;
       setActiveModelId(defaultModel);
     }
-  }, [activeModelId, libraryRecords, runningModelId]);
+  }, [activeModelId, chatRecords, runningModelId]);
+
+  // If the selected/prop model is an embedding model, switch to a text model.
+  React.useEffect(() => {
+    if (!activeModelId || libraryRecords.length === 0) return;
+    const record = libraryRecords.find((r) => r.entry_id === activeModelId);
+    if (record && resolveRecordOutputType(record) === 'embedding') {
+      setActiveModelId(chatRecords[0]?.entry_id ?? null);
+    }
+  }, [activeModelId, chatRecords, libraryRecords]);
 
   const handleStreamFinish = React.useCallback(
     async (finalMessages: ChatMessage[]) => {
@@ -440,7 +455,7 @@ export function ChatView({
                     isStreaming={isSending}
                     contextSize={params.contextSize}
                     onSelect={handleModelSelect}
-                    models={libraryRecords}
+                    models={chatRecords}
                   />
                 }
               />
@@ -500,7 +515,7 @@ export function ChatView({
                     isStreaming={isSending}
                     contextSize={params.contextSize}
                     onSelect={handleModelSelect}
-                    models={libraryRecords}
+                    models={chatRecords}
                   />
                 }
               />

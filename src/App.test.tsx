@@ -40,7 +40,7 @@ describe('LLM Advisor App UI', () => {
     vi.mocked(installAppUpdate).mockResolvedValue(true);
   });
 
-  it('renders app shell with navigation sidebar and chat as default view', async () => {
+  it('renders app shell with navigation sidebar and dashboard as default view', async () => {
     render(<App />);
     expect(screen.getAllByText('LLM Advisor').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Chat').length).toBeGreaterThanOrEqual(2);
@@ -49,13 +49,15 @@ describe('LLM Advisor App UI', () => {
     expect(screen.getByText('Server Control')).toBeDefined();
     expect(screen.getByText('Settings')).toBeDefined();
 
-    // Chat is the default main view
-    expect(screen.getByText(/Start a conversation/i)).toBeDefined();
-
-    // Dashboard view is still reachable
-    fireEvent.click(screen.getByText('Dashboard'));
+    // Dashboard is the default main view
     await waitFor(() => {
       expect(screen.getByText('Dashboard & Recommendations')).toBeDefined();
+    });
+
+    // Chat view is still reachable
+    fireEvent.click(screen.getAllByRole('button', { name: /chat/i })[0]);
+    await waitFor(() => {
+      expect(screen.getByText(/Start a conversation/i)).toBeDefined();
     });
   });
 
@@ -104,6 +106,9 @@ describe('LLM Advisor App UI', () => {
     });
 
     render(<App />);
+
+    // Open the Chat tab (dashboard is the default view)
+    fireEvent.click(screen.getAllByRole('button', { name: /chat/i })[0]);
 
     // Wait for the serving model to enable the chat input
     const input = (await screen.findByLabelText('Chat input')) as HTMLTextAreaElement;
