@@ -72,6 +72,38 @@ const CONTEXT_PRESETS = [
   { value: 131072, label: '131,072 tokens (Full Llama 3.x)' },
 ];
 
+type SettingsTab = 'general' | 'inference' | 'network' | 'storage' | 'maintenance';
+
+const SETTINGS_TABS: Array<{
+  id: SettingsTab;
+  label: string;
+  icon: typeof SlidersHorizontal;
+}> = [
+  { id: 'general', label: 'General', icon: SlidersHorizontal },
+  { id: 'inference', label: 'Inference', icon: Sparkles },
+  { id: 'network', label: 'Network', icon: Network },
+  { id: 'storage', label: 'Storage', icon: HardDrive },
+  { id: 'maintenance', label: 'Maintenance', icon: ShieldAlert },
+];
+
+/**
+ * Builds the default preference set while preserving environment-specific
+ * values (storage directory and catalog endpoint) that are not reset here.
+ * Downloaded models are never touched by a settings reset.
+ */
+function createDefaultSettings(current: AppSettings): AppSettings {
+  return {
+    ...current,
+    hf_token: '',
+    gateway_port: 13370,
+    default_context_size: 4096,
+    default_kv_type: 'f16',
+    run_in_background: true,
+    auto_update_catalog: true,
+    theme: 'system',
+  };
+}
+
 export function SettingsView({ onSettingsChanged }: Props) {
   const [settings, setSettings] = useState<AppSettings>({
     hf_token: '',
@@ -89,6 +121,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
   const [showToken, setShowToken] = useState(false);
   const [copiedPort, setCopiedPort] = useState(false);
   const [copiedDir, setCopiedDir] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
 
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -246,13 +279,13 @@ export function SettingsView({ onSettingsChanged }: Props) {
   const totalBytes = records.reduce((acc, r) => acc + (r.size_bytes || 0), 0);
   const formatGb = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(2);
 
-  const handleSave = async () => {
+  const persistSettings = async (nextSettings: AppSettings, successMessage: string) => {
     try {
       setSaving(true);
-      await saveSettings(settings);
+      await saveSettings(nextSettings);
       setSaved(true);
       setActionNotice({
-        text: 'Preferences saved successfully.',
+        text: successMessage,
         type: 'success',
       });
       setTimeout(() => {
@@ -269,6 +302,18 @@ export function SettingsView({ onSettingsChanged }: Props) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = () => persistSettings(settings, 'Preferences saved successfully.');
+
+  const handleResetDefaults = () => {
+    const defaults = createDefaultSettings(settings);
+    setSettings(defaults);
+    applyTheme(defaults.theme ?? 'system');
+    void persistSettings(
+      defaults,
+      'Settings reset to defaults. Downloaded models and their files were kept.'
+    );
   };
 
   const handleCopyEndpoint = () => {
@@ -351,7 +396,8 @@ export function SettingsView({ onSettingsChanged }: Props) {
   };
 
   return (
-    <div className="flex-1 min-h-0 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
+    <div className="flex-1 min-h-0 flex flex-col relative z-10">
+      <div className="flex-1 min-h-0 p-6 overflow-y-auto space-y-6 custom-scrollbar">
       {/* Top Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -404,8 +450,44 @@ export function SettingsView({ onSettingsChanged }: Props) {
         </div>
       )}
 
-      <div className="space-y-6 text-sm">
+      {/* Settings Navigation Tabs */}
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm"
+      >
+        {SETTINGS_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`settings-tab-${tab.id}`}
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-corporate-btn'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        role="tabpanel"
+        id={`settings-panel-${activeTab}`}
+        aria-labelledby={`settings-tab-${activeTab}`}
+        className="space-y-6 text-sm"
+      >
         {/* Section: Appearance & Theme Mode */}
+        {activeTab === 'general' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">
@@ -495,8 +577,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Section 1: Background Execution & System Tray */}
+        {activeTab === 'general' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">
@@ -526,8 +610,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             />
           </div>
         </div>
+        )}
 
         {/* Section 2: Inference & Serving Defaults */}
+        {activeTab === 'inference' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-violet-600 dark:text-violet-400 font-semibold">
@@ -602,8 +688,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Section 3: Hugging Face Access Token */}
+        {activeTab === 'inference' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">
@@ -660,8 +748,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Section 4: Gateway & Network Configuration */}
+        {activeTab === 'network' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-cyan-600 dark:text-cyan-400 font-semibold">
@@ -727,8 +817,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Section 5: Model Catalog Synchronization */}
+        {activeTab === 'network' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-sky-600 dark:text-sky-400 font-semibold">
@@ -767,8 +859,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Section 6: Application Updates & Version Lifecycle */}
+        {activeTab === 'maintenance' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-violet-600 dark:text-violet-400 font-semibold">
@@ -846,8 +940,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             )}
           </div>
         </div>
+        )}
 
         {/* Section 7: Model Storage Location & Reclaim */}
+        {activeTab === 'storage' && (
         <div className="corporate-card p-5 space-y-4 shadow-corporate">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -950,8 +1046,10 @@ export function SettingsView({ onSettingsChanged }: Props) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Section 8: Automated Deep Clean & Uninstaller */}
+        {activeTab === 'maintenance' && (
         <div className="bg-gradient-to-br from-rose-50/70 via-white to-slate-50 dark:from-rose-950/20 dark:via-slate-900/60 dark:to-slate-900 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 space-y-4 shadow-corporate">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -980,6 +1078,49 @@ export function SettingsView({ onSettingsChanged }: Props) {
             >
               <Sparkles className="w-4 h-4" />
               <span>Launch Automated Cleaner</span>
+            </button>
+          </div>
+        </div>
+        )}
+      </div>
+      </div>
+
+      {/* Sticky Bottom Action Bar */}
+      <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur px-6 py-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            <span>Reset restores application preferences only. Models on disk are kept.</span>
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetDefaults}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset to Defaults</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="corporate-btn flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-corporate-btn transition-all disabled:opacity-50 hover:-translate-y-0.5 active:translate-y-0"
+            >
+              {saved ? (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>Saved!</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 stroke-[2.5]" />
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                </>
+              )}
             </button>
           </div>
         </div>

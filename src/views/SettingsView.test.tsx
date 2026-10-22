@@ -3,21 +3,31 @@ import { describe, it, expect, vi } from 'vitest';
 import { SettingsView } from './SettingsView';
 
 describe('SettingsView UI & Automated Uninstaller', () => {
-  it('renders all settings sections and controls', async () => {
+  it('renders all settings sections and controls across navigation tabs', async () => {
     render(<SettingsView />);
 
     await waitFor(() => {
       expect(screen.getByText('Application Settings')).toBeDefined();
-      expect(screen.getByText('Appearance & Theme Mode')).toBeDefined();
-      expect(screen.getByText('Background Execution & System Tray')).toBeDefined();
-      expect(screen.getByText('Inference & Serving Defaults')).toBeDefined();
-      expect(screen.getByText('Hugging Face Access Token')).toBeDefined();
-      expect(screen.getByText('OpenAI-Compatible Gateway Network')).toBeDefined();
-      expect(screen.getByText('Model Catalog Synchronization')).toBeDefined();
-      expect(screen.getByText('Application Updates & Version')).toBeDefined();
-      expect(screen.getByText('Models Storage Directory & Reclaim')).toBeDefined();
-      expect(screen.getByText('Automated Application Uninstaller & Cleaner')).toBeDefined();
     });
+
+    // General is the default tab.
+    expect(screen.getByText('Appearance & Theme Mode')).toBeDefined();
+    expect(screen.getByText('Background Execution & System Tray')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Inference/i }));
+    expect(screen.getByText('Inference & Serving Defaults')).toBeDefined();
+    expect(screen.getByText('Hugging Face Access Token')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Network/i }));
+    expect(screen.getByText('OpenAI-Compatible Gateway Network')).toBeDefined();
+    expect(screen.getByText('Model Catalog Synchronization')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Storage/i }));
+    expect(screen.getByText('Models Storage Directory & Reclaim')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Maintenance/i }));
+    expect(screen.getByText('Application Updates & Version')).toBeDefined();
+    expect(screen.getByText('Automated Application Uninstaller & Cleaner')).toBeDefined();
   });
 
   it('switches between dark and light theme modes and persists choice', async () => {
@@ -78,9 +88,10 @@ describe('SettingsView UI & Automated Uninstaller', () => {
       ).toBeDefined();
     });
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes.length).toBeGreaterThanOrEqual(2);
-    const bgCheckbox = checkboxes[0];
+    const bgCheckbox = screen.getByRole('checkbox', {
+      name: /Keep inference server and gateway running/i,
+    });
+    expect(bgCheckbox).toBeDefined();
 
     // Toggle checkbox
     fireEvent.click(bgCheckbox);
@@ -92,6 +103,8 @@ describe('SettingsView UI & Automated Uninstaller', () => {
 
   it('triggers manual catalog update sync', async () => {
     render(<SettingsView />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Network/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Check for Updates Now')).toBeDefined();
@@ -109,6 +122,8 @@ describe('SettingsView UI & Automated Uninstaller', () => {
   it('checks for native application updates', async () => {
     render(<SettingsView />);
 
+    fireEvent.click(screen.getByRole('tab', { name: /Maintenance/i }));
+
     await waitFor(() => {
       expect(screen.getByText('Check for App Updates')).toBeDefined();
     });
@@ -122,6 +137,8 @@ describe('SettingsView UI & Automated Uninstaller', () => {
 
   it('opens automated uninstaller dialog and completes deep clean', async () => {
     render(<SettingsView />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Maintenance/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Launch Automated Cleaner')).toBeDefined();
@@ -164,9 +181,25 @@ describe('SettingsView UI & Automated Uninstaller', () => {
     });
   });
 
+  it('saves preferences from the bottom action bar', async () => {
+    render(<SettingsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Save Changes')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Preferences saved successfully.')).toBeDefined();
+    });
+  });
+
   it('updates gateway port in settings and triggers onSettingsChanged', async () => {
     const onSettingsChanged = vi.fn();
     render(<SettingsView onSettingsChanged={onSettingsChanged} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Network/i }));
 
     await waitFor(() => {
       expect(screen.getByText('OpenAI-Compatible Gateway Network')).toBeDefined();
@@ -185,6 +218,27 @@ describe('SettingsView UI & Automated Uninstaller', () => {
     await waitFor(() => {
       expect(screen.getByText('Preferences saved successfully.')).toBeDefined();
       expect(onSettingsChanged).toHaveBeenCalled();
+    });
+  });
+
+  it('resets preferences to defaults from the bottom action bar', async () => {
+    render(<SettingsView />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Network/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('spinbutton')).toBeDefined();
+    });
+
+    const portInput = screen.getByRole('spinbutton');
+    fireEvent.change(portInput, { target: { value: '13391' } });
+    expect(screen.getByDisplayValue('13391')).toBeDefined();
+
+    fireEvent.click(screen.getByText('Reset to Defaults'));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('13370')).toBeDefined();
+      expect(screen.getByText(/Settings reset to defaults/)).toBeDefined();
     });
   });
 });
