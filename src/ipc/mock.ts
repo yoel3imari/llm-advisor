@@ -14,6 +14,7 @@ import type {
   CatalogSyncResult,
   AppUpdateInfo,
 } from '../types/domain';
+import { totalSizeBytes } from '../types/domain';
 import { generateHeuristicTitle, type ChatMessage } from '../types/chat';
 import { version as appVersion } from '../../package.json';
 
@@ -219,7 +220,7 @@ export async function mockRecommendModels(cfg: ServeConfig): Promise<FitResult[]
     const kv = isEmbedding
       ? 0
       : 2 * entry.n_layers * entry.n_kv_heads * entry.head_dim * effectiveCtx * kvElemBytes * slots;
-    const weights = entry.file_size_bytes;
+    const weights = totalSizeBytes(entry);
     const activations = Math.ceil(weights * 0.05);
     const overhead = 700 * 1024 * 1024;
     const total = weights + kv + activations + overhead;
@@ -297,11 +298,13 @@ export async function mockStartDownload(entryId: string): Promise<string> {
     return entryId;
   }
 
+  const totalBytes = totalSizeBytes(entry);
+
   const task: DownloadTask = {
     entry_id: entryId,
-    state: { status: 'downloading', bytes_done: 0, total_bytes: entry.file_size_bytes },
+    state: { status: 'downloading', bytes_done: 0, total_bytes: totalBytes },
     bytes_done: 0,
-    bytes_total: entry.file_size_bytes,
+    bytes_total: totalBytes,
     etag: entry.sha256,
   };
 
@@ -314,17 +317,17 @@ export async function mockStartDownload(entryId: string): Promise<string> {
       clearInterval(interval);
       return;
     }
-    const step = Math.ceil(entry.file_size_bytes / 5);
-    item.bytes_done = Math.min(entry.file_size_bytes, item.bytes_done + step);
-    item.state = { status: 'downloading', bytes_done: item.bytes_done, total_bytes: entry.file_size_bytes };
-    if (item.bytes_done >= entry.file_size_bytes) {
+    const step = Math.ceil(totalBytes / 5);
+    item.bytes_done = Math.min(totalBytes, item.bytes_done + step);
+    item.state = { status: 'downloading', bytes_done: item.bytes_done, total_bytes: totalBytes };
+    if (item.bytes_done >= totalBytes) {
       clearInterval(interval);
       mockDownloads = mockDownloads.filter((d) => d.entry_id !== entryId);
       if (!mockRecords.some((r) => r.entry_id === entryId)) {
         mockRecords.push({
           entry_id: entryId,
           file_path: `/models/${entryId}.gguf`,
-          size_bytes: entry.file_size_bytes,
+          size_bytes: totalBytes,
           verified: true,
           added_at: new Date().toISOString(),
         });

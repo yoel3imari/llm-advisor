@@ -1,7 +1,7 @@
 //! Mathematical RAM/VRAM memory-fit estimation engine for LLM Advisor.
 //!
 //! Ground-truth formulas:
-//! - Weights = entry.file_size_bytes
+//! - Weights = entry.total_size_bytes() (sums all shards for split models)
 //! - KV Cache = 2 * n_layers * n_kv_heads * head_dim * min(ctx, context_train) * kv_bytes_per_elem * n_parallel
 //!   CRITICAL: Uses GQA n_kv_heads (e.g., 8 for Llama 3.1 8B), never total n_head (32).
 //! - Activations Margin = ceil(0.05 * weights)
@@ -50,7 +50,7 @@ pub fn estimate_total_memory_bytes(
     ctx: u32,
     cfg: &ServeConfig,
 ) -> (u64, u64, u64) {
-    let weights = entry.file_size_bytes;
+    let weights = entry.total_size_bytes();
     let kv = calculate_kv_cache_bytes(entry, ctx, cfg);
     let activations = ((weights as f64) * ACTIVATIONS_MARGIN).ceil() as u64;
     let total = weights + kv + activations + RUNTIME_OVERHEAD_FLOOR_BYTES;
@@ -113,7 +113,7 @@ pub fn calculate_usable_context(
     cfg: &ServeConfig,
 ) -> (u32, bool) {
     let host_budget = calculate_host_budget(profile);
-    let weights = entry.file_size_bytes;
+    let weights = entry.total_size_bytes();
     let activations = ((weights as f64) * ACTIVATIONS_MARGIN).ceil() as u64;
     let base_overhead = weights + activations + RUNTIME_OVERHEAD_FLOOR_BYTES;
 
@@ -186,7 +186,7 @@ pub fn estimate_speed_tps(
     profile: &HardwareProfile,
     recommended_gpu_layers: u32,
 ) -> f32 {
-    let weight_gb = (entry.file_size_bytes as f32) / (1024.0 * 1024.0 * 1024.0);
+    let weight_gb = (entry.total_size_bytes() as f32) / (1024.0 * 1024.0 * 1024.0);
     let active_weight_gb = if let Some(active_b) = entry.active_params_b {
         if entry.params_billions > 0.0 {
             weight_gb * (active_b / entry.params_billions)

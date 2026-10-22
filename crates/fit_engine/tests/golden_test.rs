@@ -1,5 +1,5 @@
 use chrono::Utc;
-use domain::{CatalogEntry, HardwareProfile, KvType, ServeConfig};
+use domain::{CatalogEntry, HardwareProfile, KvType, ModelShard, ServeConfig};
 use fit_engine::*;
 
 fn sample_llama31_8b_entry() -> CatalogEntry {
@@ -171,6 +171,78 @@ fn test_golden_moe_mixtral_active_params_speed() {
         result.speed_tps_estimate > 5.0,
         "MoE speed should reflect active params"
     );
+}
+
+#[test]
+fn test_sharded_model_uses_total_size_not_first_shard() {
+    // Regression test: `file_size_bytes` describes the FIRST shard only.
+    // A 128B Q4 model must be measured by its ~69.8 GiB total, not the 7.5 MB
+    // first shard, otherwise it is reported as fitting on small hosts.
+    let entry = CatalogEntry {
+        id: "mistral-medium-3.5-128b-q4_k_m".to_string(),
+        repo_id: "unsloth/Mistral-Medium-3.5-128B-GGUF".to_string(),
+        filename: "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00001-of-00003.gguf".to_string(),
+        family: "mistral".to_string(),
+        params_billions: 127.7,
+        active_params_b: None,
+        n_layers: 88,
+        n_kv_heads: 8,
+        head_dim: 128,
+        context_train: 262144,
+        quant: "Q4_K_M".to_string(),
+        file_size_bytes: 7_875_456,
+        sha256: "94bf2dd90d80f41b1dfb1f94b569d11fd78fd302a79ae9fdf828f8082d1dfeaa".to_string(),
+        gated: false,
+        quality_tier: 5,
+        tags: vec!["mistral".to_string()],
+        benchmarks: None,
+        shards: Some(vec![
+            ModelShard {
+                filename: "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00001-of-00003.gguf".to_string(),
+                file_size_bytes: 7_875_456,
+                sha256: "94bf2dd90d80f41b1dfb1f94b569d11fd78fd302a79ae9fdf828f8082d1dfeaa"
+                    .to_string(),
+            },
+            ModelShard {
+                filename: "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00002-of-00003.gguf".to_string(),
+                file_size_bytes: 49_927_945_056,
+                sha256: "8396392f4b9eafac69e59355b569b6603f42d103505988e26939db7f5bfecb95"
+                    .to_string(),
+            },
+            ModelShard {
+                filename: "Q4_K_M/Mistral-Medium-3.5-128B-Q4_K_M-00003-of-00003.gguf".to_string(),
+                file_size_bytes: 24_961_318_624,
+                sha256: "3f4ddc0284d522e6f1a020eaa731eaf851d6708a26431773de7bba504227c2e5"
+                    .to_string(),
+            },
+        ]),
+        output_type: Default::default(),
+    };
+    let profile = sample_profile_16gb_intel();
+    let cfg = ServeConfig {
+        context_size: 4096,
+        n_parallel: 1,
+        kv_type: KvType::F16,
+        n_gpu_layers: None,
+    };
+
+    let total_weights = 74_897_139_136u64;
+    assert_eq!(entry.total_size_bytes(), total_weights);
+
+    let (weights, kv, total) = estimate_total_memory_bytes(&entry, 4096, &cfg);
+    assert_eq!(weights, total_weights);
+    assert_eq!(kv, 1_476_395_008);
+    assert_eq!(total, 80_852_394_301);
+
+    let result = evaluate(&profile, &entry, &cfg);
+    assert!(
+        !result.fits,
+        "128B Q4_K_M (~69.8 GiB) cannot fit in a 12 GiB budget"
+    );
+    assert_eq!(result.est_weights_bytes, total_weights);
+    assert_eq!(result.est_total_bytes, 80_852_394_301);
+    assert_eq!(result.usable_context, 0);
+    assert_eq!(result.max_context_that_fits, 512);
 }
 
 #[test]
