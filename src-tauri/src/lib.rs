@@ -6,7 +6,7 @@ use domain::{
 use downloader::{download_model, DownloadOptions};
 use fit_engine::rank_recommendations;
 use gateway::start_gateway;
-use hw_probe::{get_or_detect_profile, refresh_profile};
+use hw_probe::{disk_free_for_path, get_or_detect_profile, refresh_profile};
 use library::{LibraryReconciliation, LibraryStore};
 use serde::{Deserialize, Serialize};
 use server_manager::{ServerManager, ServerState};
@@ -135,13 +135,19 @@ fn save_settings_to_file(path: &std::path::Path, settings: &AppSettings) -> Resu
 }
 
 #[tauri::command]
-async fn get_hardware_profile() -> Result<HardwareProfile, String> {
-    get_or_detect_profile().map_err(|e| e.to_string())
+async fn get_hardware_profile(state: State<'_, AppState>) -> Result<HardwareProfile, String> {
+    let mut profile = get_or_detect_profile().map_err(|e| e.to_string())?;
+    profile.disk_free_bytes = disk_free_for_path(state.library_store.models_dir());
+    Ok(profile)
 }
 
 #[tauri::command]
-async fn refresh_hardware_profile() -> Result<HardwareProfile, String> {
-    refresh_profile().map_err(|e| e.to_string())
+async fn refresh_hardware_profile(
+    state: State<'_, AppState>,
+) -> Result<HardwareProfile, String> {
+    let mut profile = refresh_profile().map_err(|e| e.to_string())?;
+    profile.disk_free_bytes = disk_free_for_path(state.library_store.models_dir());
+    Ok(profile)
 }
 
 #[tauri::command]

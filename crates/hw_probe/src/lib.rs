@@ -3,6 +3,9 @@
 use chrono::Utc;
 use domain::{AppError, HardwareProfile};
 use plist::Value;
+use std::collections::HashSet;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 
@@ -600,12 +603,14 @@ impl SysProvider for LiveSysProvider {
 
     fn disk_free(&self) -> u64 {
         let disks = sysinfo::Disks::new_with_refreshed_list();
-        disks
-            .list()
-            .iter()
-            .filter(|d| !d.is_removable())
-            .map(|d| d.available_space())
-            .sum()
+        aggregate_disk_free(disks.list().iter().map(|d| {
+            (
+                d.name(),
+                d.total_space(),
+                d.available_space(),
+                d.is_removable(),
+            )
+        }))
     }
 
     fn cpu_info(&self) -> (String, String, u32, u32) {
@@ -626,6 +631,87 @@ impl SysProvider for LiveSysProvider {
 
     fn os_version(&self) -> String {
         System::long_os_version().unwrap_or_else(|| "macOS (Apple Intel)".to_string())
+    }
+}
+
+/// Sum the available space of unique local filesystems.
+///
+/// A filesystem can appear several times in the mount table (btrfs subvolumes
+/// mounted at both `/` and `/home`, bind mounts, ...). Counting each entry
+/// would report the same free bytes multiple times, so duplicate
+/// `(device, total_space)` pairs are skipped.
+fn aggregate_disk_free<'a, I>(disks: I) -> u64
+where
+    I: IntoIterator<Item = (&'a std::ffi::OsStr, u64, u64, bool)>,
+{
+    let mut seen: HashSet<(OsString, u64)> = HashSet::new();
+    let mut free = 0u64;
+
+    for (name, total_space, available_space, is_removable) in disks {
+        if is_removable {
+            continue;
+        }
+        if seen.insert((name.to_os_string(), total_space)) {
+            free = free.saturating_add(available_space);
+        }
+    }
+
+    free
+}
+
+/// Available bytes on the filesystem containing `path`.
+///
+/// Unlike [`LiveSysProvider::disk_free`], this does not aggregate across
+/// volumes: it resolves the most specific mount point covering `path`, which
+/// is the volume models will actually be written to.
+pub fn disk_free_for_path(path: &Path) -> u64 {
+    let disks = sysinfo::Disks::new_with_refreshed_list();
+    let mounts = disks
+        .list()
+        .iter()
+        .map(|d| (d.mount_point(), d.available_space()));
+    select_disk_free_for_path(path, mounts).unwrap_or_else(|| LiveSysProvider.disk_free())
+}
+
+/// Pick the available space of the most specific mount point covering `path`.
+fn select_disk_free_for_path<'a, I>(path: &Path, mounts: I) -> Option<u64>
+where
+    I: IntoIterator<Item = (&'a Path, u64)>,
+{
+    let resolved = resolve_existing_path(path);
+
+    mounts
+        .into_iter()
+        .filter_map(|(mount_point, available_space)| {
+            let mount = resolve_existing_path(mount_point);
+            resolved
+                .starts_with(&mount)
+                .then_some((mount.as_os_str().len(), available_space))
+        })
+        .max_by_key(|(mount_len, _)| *mount_len)
+        .map(|(_, available_space)| available_space)
+}
+
+/// Canonicalize `path`, falling back to its longest existing ancestor when the
+/// path itself has not been created yet (e.g. a new models directory).
+fn resolve_existing_path(path: &Path) -> PathBuf {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map(|cwd| cwd.join(path))
+            .unwrap_or_else(|_| path.to_path_buf())
+    };
+
+    let mut candidate = absolute.as_path();
+    loop {
+        if let Ok(canonical) = std::fs::canonicalize(candidate) {
+            return canonical;
+        }
+        match candidate.parent() {
+            Some(parent) => candidate = parent,
+            None => return absolute,
+        }
     }
 }
 
@@ -1196,5 +1282,61 @@ mod tests {
     fn test_format_multi_gpu_name_single_passthrough() {
         let names = vec!["Intel UHD Graphics 630".to_string()];
         assert_eq!(format_multi_gpu_name(&names), "Intel UHD Graphics 630");
+    }
+
+    #[test]
+    fn test_select_disk_free_for_path_prefers_most_specific_mount() {
+        let mounts = vec![
+            (Path::new("/"), 100u64),
+            (Path::new("/home"), 50u64),
+            (Path::new("/home/alice"), 25u64),
+        ];
+
+        assert_eq!(
+            select_disk_free_for_path(Path::new("/home/alice/models"), mounts.clone()),
+            Some(25)
+        );
+        assert_eq!(
+            select_disk_free_for_path(Path::new("/var/lib/models"), mounts),
+            Some(100)
+        );
+    }
+
+    #[test]
+    fn test_select_disk_free_for_path_does_not_sum_duplicate_subvolumes() {
+        // `/` and `/home` are the same btrfs filesystem; the free space must
+        // not be reported twice.
+        let mounts = vec![
+            (Path::new("/"), 198_000u64),
+            (Path::new("/home"), 198_000u64),
+            (Path::new("/boot"), 1_500u64),
+        ];
+
+        assert_eq!(
+            select_disk_free_for_path(Path::new("/home/alice/models"), mounts),
+            Some(198_000)
+        );
+    }
+
+    #[test]
+    fn test_aggregate_disk_free_deduplicates_repeated_mounts() {
+        let disks = vec![
+            (
+                std::ffi::OsStr::new("/dev/nvme0n1p3"),
+                256u64,
+                184u64,
+                false,
+            ),
+            (
+                std::ffi::OsStr::new("/dev/nvme0n1p3"),
+                256u64,
+                184u64,
+                false,
+            ),
+            (std::ffi::OsStr::new("/dev/nvme0n1p2"), 2u64, 1u64, false),
+            (std::ffi::OsStr::new("/dev/sdb1"), 100u64, 50u64, true),
+        ];
+
+        assert_eq!(aggregate_disk_free(disks), 185);
     }
 }
