@@ -127,6 +127,24 @@ export interface FitResult {
   score_quality: number;
 }
 
+export type FitVerdict = 'fits' | 'tight' | 'nofit';
+
+/** A fitting model is "tight" when it uses more than 90% of the host budget. */
+export const TIGHT_FIT_RATIO = 0.9;
+
+/**
+ * Single source of truth for the fit verdict shown by the badge, the verdict
+ * column and the verdict filter. A "fits" result must never be classified as
+ * "tight" in one place and "fits" in another.
+ */
+export function resolveFitVerdict(
+  result: Pick<FitResult, 'fits' | 'est_total_bytes'>,
+  hostBudget: number
+): FitVerdict {
+  if (!result.fits) return 'nofit';
+  return result.est_total_bytes > hostBudget * TIGHT_FIT_RATIO ? 'tight' : 'fits';
+}
+
 export type DownloadState =
   | { status: 'queued' }
   | { status: 'downloading'; bytes_done: number; total_bytes: number }

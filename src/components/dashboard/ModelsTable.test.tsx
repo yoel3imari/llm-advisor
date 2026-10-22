@@ -56,6 +56,53 @@ const mockLibraryRecords: ModelRecord[] = [
   },
 ];
 
+describe('ModelsTable Verdict Filter', () => {
+  const hostBudget = 16 * 1024 * 1024 * 1024;
+  const tightResult: FitResult = {
+    ...mockFitResults[0],
+    entry: {
+      ...mockFitResults[0].entry,
+      id: 'llama-3.1-8b-tight',
+    },
+    est_total_bytes: hostBudget * 0.95,
+  };
+
+  function renderTable(verdictFilter: string, results: FitResult[]) {
+    render(
+      <TooltipProvider>
+        <ModelsTable
+          results={results}
+          hostBudget={hostBudget}
+          libraryRecords={[]}
+          downloadingId={null}
+          onDownload={vi.fn()}
+          onNavigateToServer={vi.fn()}
+          searchQuery=""
+          familyFilter="all"
+          verdictFilter={verdictFilter}
+          statusFilter="all"
+        />
+      </TooltipProvider>
+    );
+  }
+
+  it('shows only strict fits when Fits Only is selected', () => {
+    renderTable('fits', [mockFitResults[0], tightResult]);
+
+    expect(screen.getByText('llama-3.1-8b-instruct')).toBeDefined();
+    expect(screen.queryByText('llama-3.1-8b-tight')).toBeNull();
+    expect(screen.queryByText('Tight Fit')).toBeNull();
+  });
+
+  it('shows only tight fits when Tight Fit is selected', () => {
+    renderTable('tight', [mockFitResults[0], tightResult]);
+
+    expect(screen.queryByText('llama-3.1-8b-instruct')).toBeNull();
+    expect(screen.getByText('llama-3.1-8b-tight')).toBeDefined();
+    expect(screen.getByText('Tight Fit')).toBeDefined();
+  });
+});
+
 describe('ModelsTable Light Mode Text & Badge Colors', () => {
   it('renders table headers with accessible light-mode slate colors instead of hardcoded zinc', () => {
     render(
@@ -84,9 +131,9 @@ describe('ModelsTable Light Mode Text & Badge Colors', () => {
     expect(paramsHeaderBtn.className).toContain('text-slate-700');
     expect(paramsHeaderBtn.className).not.toContain('text-zinc-300');
 
-    const quantHeaderBtn = screen.getByRole('button', { name: /Quant/i });
-    expect(quantHeaderBtn.className).toContain('text-slate-700');
-    expect(quantHeaderBtn.className).not.toContain('text-zinc-300');
+    const verdictHeaderBtn = screen.getByRole('button', { name: /Verdict/i });
+    expect(verdictHeaderBtn.className).toContain('text-slate-700');
+    expect(verdictHeaderBtn.className).not.toContain('text-zinc-300');
   });
 
   it('renders cell texts and badges with high-contrast light-mode classes', () => {
@@ -122,11 +169,6 @@ describe('ModelsTable Light Mode Text & Badge Colors', () => {
     const familyBadge = screen.getByText('llama');
     expect(familyBadge.className).toContain('bg-slate-100');
     expect(familyBadge.className).toContain('text-slate-700');
-
-    // Quant badge should have light slate background in light mode
-    const quantBadge = screen.getByText('Q4_K_M');
-    expect(quantBadge.className).toContain('bg-slate-100');
-    expect(quantBadge.className).toContain('text-slate-700');
 
     // Benchmark chips should use light background with high contrast text
     const sweChip = screen.getByText(/SWE 38.8%/);

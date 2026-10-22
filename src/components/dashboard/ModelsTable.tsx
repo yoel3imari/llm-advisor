@@ -39,7 +39,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/Tooltip';
 import { openExternalUrl } from '../../utils/browser';
 import { DeleteConfirmDialog } from '../ui/DeleteConfirmDialog';
 import type { FitResult, ModelRecord, DownloadTask } from '../../types/domain';
-import { totalSizeBytes, resolveOutputType, outputTypeLabel } from '../../types/domain';
+import { totalSizeBytes, resolveOutputType, outputTypeLabel, resolveFitVerdict } from '../../types/domain';
 
 interface Props {
   results: FitResult[];
@@ -178,10 +178,10 @@ export function ModelsTable({
 
       // Verdict match
       if (verdictFilter !== 'all') {
-        const v = res.fits ? (res.est_total_bytes > hostBudget * 0.9 ? 'tight' : 'fits') : 'nofit';
-        if (verdictFilter === 'fits' && v !== 'fits') return false;
-        if (verdictFilter === 'tight' && v !== 'tight') return false;
-        if (verdictFilter === 'nofit' && v !== 'nofit') return false;
+        const verdict = resolveFitVerdict(res, hostBudget);
+        if (verdictFilter === 'fits' && verdict !== 'fits') return false;
+        if (verdictFilter === 'tight' && verdict !== 'tight') return false;
+        if (verdictFilter === 'nofit' && verdict !== 'nofit') return false;
       }
 
       // Status match
@@ -385,8 +385,9 @@ export function ModelsTable({
       {
         id: 'verdict',
         accessorFn: (row) => {
-          if (!row.fits) return 0;
-          return row.est_total_bytes > hostBudget * 0.9 ? 1 : 2;
+          const verdict = resolveFitVerdict(row, hostBudget);
+          if (verdict === 'nofit') return 0;
+          return verdict === 'tight' ? 1 : 2;
         },
         header: ({ column }) => (
           <SortableHeader
@@ -400,10 +401,7 @@ export function ModelsTable({
           const res = row.original;
           return (
             <div className="flex items-center">
-              <VerdictBadge
-                fits={res.fits}
-                scoreFit={res.score_fit}
-              />
+              <VerdictBadge verdict={resolveFitVerdict(res, hostBudget)} />
             </div>
           );
         },
