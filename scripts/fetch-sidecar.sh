@@ -25,6 +25,32 @@ prune_dangling_links() {
     done
 }
 
+# Run a command with a wall-clock limit. macOS runners do not ship GNU timeout,
+# and an unresponsive `llama-server --version` must never consume the whole job timeout.
+run_with_timeout() {
+    local seconds="$1"
+    shift
+    "$@" &
+    local cmd_pid=$!
+    (
+        sleep "${seconds}"
+        if kill -0 "${cmd_pid}" 2>/dev/null; then
+            kill -TERM "${cmd_pid}" 2>/dev/null || true
+            sleep 2
+            kill -KILL "${cmd_pid}" 2>/dev/null || true
+        fi
+    ) &
+    local watchdog_pid=$!
+    local rc=0
+    wait "${cmd_pid}" || rc=$?
+    kill "${watchdog_pid}" 2>/dev/null || true
+    wait "${watchdog_pid}" 2>/dev/null || true
+    if [ "${rc}" -eq 143 ] || [ "${rc}" -eq 137 ]; then
+        return 124
+    fi
+    return "${rc}"
+}
+
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 
@@ -66,7 +92,7 @@ if [ -f "${BINARIES_DIR}/${TAURI_BIN_NAME}" ] && ( [ -f "${SIDECAR_DIR}/llama-se
     echo "==> Verifying binary execution..."
     TEST_BIN="${SIDECAR_DIR}/llama-server"
     [ -f "${TEST_BIN}.exe" ] && TEST_BIN="${TEST_BIN}.exe"
-    LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${TEST_BIN}" --version || true
+    run_with_timeout 60 env LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" "${TEST_BIN}" --version || true
     exit 0
 fi
 
@@ -105,9 +131,10 @@ cp "${SERVER_BIN}" "${BINARIES_DIR}/${TAURI_BIN_NAME}"
 # Also copy shared libs (libggml, etc.) into binaries dirs
 find "${TMP_DIR}/extracted" \( -type f -o -type l \) \( -name "*.so*" -o -name "*.dylib*" -o -name "*.dll*" -o -name "*.metal*" -o -name "*.metallib*" \) | while read -r lib; do
     fname="$(basename "${lib}")"
-    # Skip non-server CLI tool libraries to keep the bundle lean
+    # Skip non-server CLI tool libraries to keep the bundle lean. Do not skip
+    # libggml-rpc: the macOS x64 llama-server links it as a runtime dependency.
     case "${fname}" in
-        *bench*|*cli*|*completion*|*fit-params*|*perplexity*|*quantize*|*rpc*)
+        *bench*|*cli*|*completion*|*fit-params*|*perplexity*|*quantize*)
             continue
             ;;
     esac
@@ -180,8 +207,8 @@ fi
 
 echo "==> Verifying binary execution..."
 VERIFY_LOG="${TMP_DIR}/verify.log"
-if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${VERIFY_LOG}" 2>&1; then
-    echo "==> Precompiled binary failed verification on this system (e.g. SDK version / symbol mismatch). Loader output:"
+if ! run_with_timeout 60 env LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${VERIFY_LOG}" 2>&1; then
+    echo "==> Precompiled binary failed verification or timed out on this system (e.g. SDK version / symbol mismatch). Loader output:"
     cat "${VERIFY_LOG}" || true
     if command -v cmake &>/dev/null && command -v clang &>/dev/null; then
         echo "==> Compiling native llama-server from source (tag ${PINNED_TAG})..."
@@ -287,8 +314,8 @@ if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_
             done
         fi
         NATIVE_VERIFY_LOG="${TMP_DIR}/native-verify.log"
-        if ! LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${NATIVE_VERIFY_LOG}" 2>&1; then
-            echo "Error: natively compiled llama-server failed verification. Loader output:" >&2
+        if ! run_with_timeout 60 env LD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${LD_LIBRARY_PATH:-}" DYLD_LIBRARY_PATH="${SIDECAR_DIR}:${BINARIES_DIR}:${DYLD_LIBRARY_PATH:-}" "${SIDECAR_DIR}/llama-server" --version >"${NATIVE_VERIFY_LOG}" 2>&1; then
+            echo "Error: natively compiled llama-server failed verification or timed out. Loader output:" >&2
             cat "${NATIVE_VERIFY_LOG}" >&2 || true
             echo "--- loader search for ${SIDECAR_DIR}/llama-server ---" >&2
             if command -v ldd &>/dev/null; then
