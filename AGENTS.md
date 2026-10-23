@@ -79,6 +79,7 @@ This document records architectural conventions, project lessons learned, and gu
 * **Sidecar Auxiliary Library Pruning**:
   * Upstream `llama.cpp` releases contain implementation shared libraries for unrelated CLI tools (`libllama-bench-impl.so`, `libllama-cli-impl.so`, `libllama-perplexity-impl.so`, etc.).
   * `scripts/fetch-sidecar.sh` filters these out during download, preserving only `llama-server` and its dynamic runtime dependencies.
+  * Never filter `libggml-rpc*`: the macOS x64 `llama-server` prebuilt links `@rpath/libggml-rpc.0.dylib`, so dropping it fails every Intel launch with `Library not loaded` and can trigger a multi-hour native-fallback job. Keep the `--version` verification bounded by the script's watchdog as well.
 
 ---
 
