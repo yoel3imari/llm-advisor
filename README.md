@@ -1,20 +1,22 @@
 <div align="center">
 
-<img src="./public/app-icon.png" alt="LLM Advisor Logo" width="96" height="96" />
+<img src="./public/app-icon.png" alt="ModelSift Logo" width="96" height="96" />
 
-# LLM Advisor
+# ModelSift
 
-**Know before you download: will that model actually run on your machine?**
+**The local model advisor.**
+
+Know before you download: will that model actually run on your machine?
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Tauri 2.0](https://img.shields.io/badge/Tauri-2.0-24C8D8?logo=tauri&logoColor=white)](https://tauri.app/)
 [![Rust 2021](https://img.shields.io/badge/Rust-1.80%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](https://github.com/yoel3imari/llm-advisor/releases)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](https://github.com/yoel3imari/modelsift/releases)
 
 <p align="center">
-  <a href="#why-llm-advisor">Why LLM Advisor</a> •
+  <a href="#why-modelsift">Why ModelSift</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#connecting-your-developer-tools">Connect Tools</a> •
@@ -27,7 +29,7 @@
 
 ---
 
-## Why LLM Advisor?
+## Why ModelSift?
 
 Running open-weight LLMs locally sounds simple until you actually try it. We've all been there:
 
@@ -35,7 +37,7 @@ Running open-weight LLMs locally sounds simple until you actually try it. We've 
 * **Heavyweight wrappers:** A lot of existing desktop apps ship 500 MB to 1 GB+ Electron bundles just to launch a local model. That feels wrong for a tool developers keep open all day.
 * **Cryptic CLI flags:** Getting `llama.cpp` tuned right means juggling `-ngl`, `-c`, `-fa`, context sizes, and port bindings — and actually understanding what quantization does to memory.
 
-LLM Advisor exists to take that guesswork out. It's a small, fast desktop app built with **Tauri 2**, **Rust**, and **React 19**. It looks at your actual hardware — Apple Silicon unified memory, an NVIDIA/AMD GPU, or plain CPU RAM — does the real memory math (weights + KV cache + overhead), fetches verified GGUF files for you, and serves the model through a plain **OpenAI-compatible API at `http://127.0.0.1:13370/v1`**.
+ModelSift exists to take that guesswork out. It's a small, fast desktop app built with **Tauri 2**, **Rust**, and **React 19**. It looks at your actual hardware — Apple Silicon unified memory, an NVIDIA/AMD GPU, or plain CPU RAM — does the real memory math (weights + KV cache + overhead), fetches verified GGUF files for you, and serves the model through a plain **OpenAI-compatible API at `http://127.0.0.1:13370/v1`**.
 
 No trial and error. You know before you download whether a model fits.
 
@@ -60,26 +62,26 @@ No trial and error. You know before you download whether a model fits.
 The fastest way — grabs the latest release from GitHub:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/modelsift/main/install.sh | bash
 ```
 
 A few useful variations:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --version v0.1.91
-curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --dry-run
-curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --format appimage
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/modelsift/main/install.sh | bash -s -- --version v0.1.91
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/modelsift/main/install.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/yoel3imari/modelsift/main/install.sh | bash -s -- --format appimage
 ```
 
 > **Minimum systems for the prebuilt installers:** Linux with glibc 2.39+ — Ubuntu 24.04+, Debian 13+, Fedora 40+, RHEL/Rocky/Alma 10+, openSUSE Leap 16+ or Tumbleweed — and macOS 15+ (Sequoia). The installer stops with a clear error on older systems; use the source build (below) there.
 
 > **Linux `.rpm` note (v0.2.3 and earlier):** those RPMs declare `Requires: libayatana-appindicator`, a package name no distribution provides, so `dnf`/`zypper` reject them. Use `--format appimage` above (or the `.deb` on Debian/Ubuntu) for those older releases; v0.2.4+ declares portable sonames instead and installs normally. The installer prints manual workarounds if it hits the old metadata.
 
-> **Windows:** grab the `.exe` / `.msi` from [Releases](https://github.com/yoel3imari/llm-advisor/releases) directly.
+> **Windows:** grab the `.exe` / `.msi` from [Releases](https://github.com/yoel3imari/modelsift/releases) directly.
 
 ### Option B: Download a Release Manually
 
-Head to [Releases](https://github.com/yoel3imari/llm-advisor/releases) and pick your installer:
+Head to [Releases](https://github.com/yoel3imari/modelsift/releases) and pick your installer:
 
 * **macOS:** `.dmg` (Apple Silicon)
 * **Linux:** `.AppImage` (portable) or `.deb` / `.rpm`
@@ -109,8 +111,8 @@ Head to [Releases](https://github.com/yoel3imari/llm-advisor/releases) and pick 
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/yoel3imari/llm-advisor.git
-cd llm-advisor
+git clone https://github.com/yoel3imari/modelsift.git
+cd modelsift
 
 # 2. Install frontend dependencies
 npm install
@@ -133,11 +135,11 @@ npm run tauri build
 
 ## Connecting Your Developer Tools
 
-Once a model is running, LLM Advisor speaks plain OpenAI protocol at **`http://127.0.0.1:13370/v1`**. Anything that talks to OpenAI can talk to it.
+Once a model is running, ModelSift speaks plain OpenAI protocol at **`http://127.0.0.1:13370/v1`**. Anything that talks to OpenAI can talk to it.
 
 ### 1. Coding Agents
 
-Point your assistant at LLM Advisor:
+Point your assistant at ModelSift:
 
 * **Base URL:** `http://127.0.0.1:13370/v1`
 * **API Key:** anything works, e.g. `local` or `not-needed`
@@ -175,7 +177,7 @@ curl -N http://127.0.0.1:13370/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "active-model",
-    "messages": [{"role": "user", "content": "Hello LLM Advisor!"}],
+    "messages": [{"role": "user", "content": "Hello ModelSift!"}],
     "stream": true
   }'
 ```
@@ -208,7 +210,7 @@ curl http://127.0.0.1:13370/healthz
 Under the hood it's a modular Rust workspace with a React 19 frontend:
 
 ```
-llm-advisor/
+modelsift/
 ├── crates/
 │   ├── domain/           # Shared domain types, ServeConfig, FitResult, and error taxonomy
 │   ├── hw_probe/         # Hardware inspection (sysinfo, macOS Metal sysctl, GPU bandwidth tables)
@@ -282,7 +284,7 @@ More detail in the [Contributing Guide](CONTRIBUTING.md).
 
 Found a bug, hit a hardware detection quirk, or have an idea? We'd genuinely like to hear about it.
 
-* **Check first:** have a quick look at [GitHub Issues](https://github.com/yoel3imari/llm-advisor/issues) to avoid duplicates.
+* **Check first:** have a quick look at [GitHub Issues](https://github.com/yoel3imari/modelsift/issues) to avoid duplicates.
 * **Filing a bug report** — it helps a lot if you include:
   1. **OS and architecture:** e.g. macOS 14.5 on M3, Ubuntu 24.04 x86_64, Windows 11.
   2. **Hardware:** total RAM, GPU model, VRAM size.
@@ -298,5 +300,5 @@ Found a bug, hit a hardware detection quirk, or have an idea? We'd genuinely lik
 
 ## License
 
-LLM Advisor is open source under the [GNU General Public License v3.0](LICENSE).
+ModelSift is open source under the [GNU General Public License v3.0](LICENSE).
 Inference sidecars use upstream binaries from [`llama.cpp`](https://github.com/ggml-org/llama.cpp) (MIT License).

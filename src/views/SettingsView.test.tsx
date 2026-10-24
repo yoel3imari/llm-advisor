@@ -131,7 +131,7 @@ describe('SettingsView UI & Automated Uninstaller', () => {
     fireEvent.click(screen.getByText('Check for App Updates'));
 
     await waitFor(() => {
-      expect(screen.getByText(/LLM Advisor is up to date/)).toBeDefined();
+      expect(screen.getByText(/ModelSift is up to date/)).toBeDefined();
     });
   });
 

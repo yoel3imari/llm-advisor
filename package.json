@@ -2,6 +2,7 @@
   "name": "llm-advisor",
   "private": true,
   "version": "0.2.4",
+  "description": "ModelSift — the local model advisor.",
   "type": "module",
   "license": "GPL-3.0-or-later",
   "scripts": {

@@ -1,8 +1,8 @@
-# Contributing to LLM Advisor
+# Contributing to ModelSift
 
-Thank you for your interest in contributing to **LLM Advisor**! 🚀
+Thank you for your interest in contributing to **ModelSift**! 🚀
 
-LLM Advisor is a local-first, privacy-focused open-source project dedicated to providing deterministic hardware recommendations, verified GGUF downloads, and high-performance supervised inference.
+ModelSift is a local-first, privacy-focused open-source project dedicated to providing deterministic hardware recommendations, verified GGUF downloads, and high-performance supervised inference.
 
 Contributions of all types are happily wlecomed:
 * 🐛 **Bug reports & fixes**
@@ -39,8 +39,8 @@ Please help us foster an open, welcoming, and inclusive community:
 
 ### 2. Getting the Code & Installing Dependencies
 ```bash
-git clone https://github.com/yoel3imari/llm-advisor.git
-cd llm-advisor
+git clone https://github.com/yoel3imari/modelsift.git
+cd modelsift
 
 # Install frontend dependencies
 npm install
@@ -117,7 +117,7 @@ Please review [`AGENTS.md`](AGENTS.md) for critical architectural rules:
 ## 🐛 Reporting Issues
 
 If you find a bug or run into unexpected behavior:
-1. Search [Existing Issues](https://github.com/yoel3imari/llm-advisor/issues) to avoid duplicates.
+1. Search [Existing Issues](https://github.com/yoel3imari/modelsift/issues) to avoid duplicates.
 2. When creating a new issue, include:
    * **OS & Version** (e.g. macOS Sonoma 14.5, Ubuntu 24.04, Windows 11)
    * **Hardware Details** (CPU, RAM, GPU model & VRAM)
@@ -125,4 +125,4 @@ If you find a bug or run into unexpected behavior:
    * **Steps to Reproduce**
    * **Relevant Logs** from the Server Logs UI or local data directory (`~/.local/share/dev.yoel3imari.llm-advisor/`).
 
-Thank you for helping make LLM Advisor better! 🌟
+Thank you for helping make ModelSift better! 🌟

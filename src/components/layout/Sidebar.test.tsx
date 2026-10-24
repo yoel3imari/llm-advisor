@@ -36,7 +36,7 @@ describe('Sidebar Component', () => {
     expect(sidebar.getAttribute('data-collapsed')).toBe('false');
     expect(sidebar.className).toContain('w-64');
 
-    expect(screen.getByText('LLM Advisor')).toBeDefined();
+    expect(screen.getByText('ModelSift')).toBeDefined();
     expect(screen.getByText('HARDWARE INFERENCE')).toBeDefined();
     expect(screen.getByText('Chat')).toBeDefined();
     expect(screen.getByText('Dashboard')).toBeDefined();
@@ -59,13 +59,13 @@ describe('Sidebar Component', () => {
     expect(sidebar.className).toContain('w-16');
 
     // Title and text labels should have collapsed styles and be aria-hidden
-    const titleContainer = screen.getByText('LLM Advisor').parentElement;
+    const titleContainer = screen.getByText('ModelSift').parentElement;
     expect(titleContainer?.getAttribute('aria-hidden')).toBe('true');
     expect(titleContainer?.className).toContain('max-w-0');
     expect(titleContainer?.className).toContain('opacity-0');
 
     // Logo image is still present
-    const logoImg = screen.getByAltText('LLM Advisor');
+    const logoImg = screen.getByAltText('ModelSift');
     expect(logoImg).toBeDefined();
     expect(logoImg.getAttribute('src')).toBe('/app-icon.png');
 
@@ -91,7 +91,7 @@ describe('Sidebar Component', () => {
 
     const sidebar = screen.getByTestId('main-sidebar');
     expect(sidebar.getAttribute('data-collapsed')).toBe('false');
-    expect(screen.getByText('LLM Advisor')).toBeDefined();
+    expect(screen.getByText('ModelSift')).toBeDefined();
   });
 
   it('clicking logo in collapsed mode expands the sidebar', () => {
@@ -106,7 +106,7 @@ describe('Sidebar Component', () => {
     fireEvent.click(logoBtn);
 
     expect(screen.getByTestId('main-sidebar').getAttribute('data-collapsed')).toBe('false');
-    expect(screen.getByText('LLM Advisor')).toBeDefined();
+    expect(screen.getByText('ModelSift')).toBeDefined();
   });
 
   it('calls onSelectTab when clicking nav items in collapsed mode', () => {

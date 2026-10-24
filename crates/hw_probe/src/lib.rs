@@ -1,4 +1,4 @@
-//! Hardware probe and GPU/memory inspection module for LLM Advisor.
+//! Hardware probe and GPU/memory inspection module for ModelSift.
 
 use chrono::Utc;
 use domain::{AppError, HardwareProfile};

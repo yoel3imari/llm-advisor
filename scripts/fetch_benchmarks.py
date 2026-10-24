@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Live benchmark scraper and aggregator for LLM Advisor catalog.
+Live benchmark scraper and aggregator for ModelSift catalog.
 Fetches real-world benchmark metrics from:
 - Hugging Face Open LLM Leaderboard (MMLU-Pro, IFEval)
 - LMSYS Chatbot Arena Elo
@@ -35,7 +35,7 @@ def fetch_open_llm_mmlu_pro(base_repo_id, token=None):
         return None
     model_name = base_repo_id.split("/")[-1]
     url = f"https://huggingface.co/api/datasets/open-llm-leaderboard/results?search={urllib.parse.quote(model_name)}"
-    headers = {"User-Agent": "LLM-Advisor-Catalog-Bot/1.0"}
+    headers = {"User-Agent": "ModelSift-Catalog-Bot/1.0"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
         

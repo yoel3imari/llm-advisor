@@ -1,6 +1,6 @@
-# LLM Advisor — Inference Streaming Studio Demo
+# ModelSift — Inference Streaming Studio Demo
 
-A lightweight, ChatGPT-like web interface built with **HTML5, Tailwind CSS, and vanilla JavaScript** designed to test and benchmark Server-Sent Events (SSE) inference token streaming against the LLM Advisor Axum reverse proxy (`http://127.0.0.1:13370`) or any OpenAI-compatible inference server.
+A lightweight, ChatGPT-like web interface built with **HTML5, Tailwind CSS, and vanilla JavaScript** designed to test and benchmark Server-Sent Events (SSE) inference token streaming against the ModelSift Axum reverse proxy (`http://127.0.0.1:13370`) or any OpenAI-compatible inference server.
 
 ---
 

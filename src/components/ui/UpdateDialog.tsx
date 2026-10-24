@@ -108,7 +108,7 @@ export function UpdateDialog({
                   </span>
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  A new version of LLM Advisor is available. Update now to access performance improvements and the latest features.
+                  A new version of ModelSift is available. Update now to access performance improvements and the latest features.
                 </Dialog.Description>
               </div>
             </div>

@@ -1,4 +1,4 @@
-# LLM Advisor — Sidecar Management
+# ModelSift — Sidecar Management
 
 This directory contains the pinned `llama-server` binary utilized by the desktop app for local inference.
 

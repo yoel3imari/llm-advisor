@@ -464,7 +464,7 @@ const DEFAULT_MOCK_SETTINGS: AppSettings = {
   models_dir: '~/Library/Application Support/dev.yoel3imari.llm-advisor/models',
   run_in_background: true,
   auto_update_catalog: true,
-  catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json',
+  catalog_endpoint: 'https://raw.githubusercontent.com/yoel3imari/modelsift/main/crates/catalog/catalog.json',
   theme: 'system',
 };
 

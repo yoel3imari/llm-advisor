@@ -1,0 +1,28 @@
+# ModelSift — Roadmap
+
+Priority follows dependencies: CLI and model import remove setup friction, vision/API completeness make the gateway credible, and every workspace needs the shared runtime/job/artifact layer. Agents, automation, and video are larger bets best tackled after those foundations.
+
+## P0 — Foundations (unblocks everything else)
+
+- [ ] **CLI + headless server** — manage the gateway from a terminal: start/stop/status, load/unload models, logs, port selection, JSON output for scripts. Ship as `modelsift`, keep `llm-advisor` working as a compatibility alias.
+- [ ] **Import models from other tools** — detect and import from Ollama, LM Studio, GPT4All, Hugging Face cache, and llama.cpp directories. Map metadata, verify GGUF headers, dedupe by hash, and prefer linking over copying.
+- [ ] **OpenAI API completeness** — tool/function calling, structured outputs (JSON Schema), vision content parts, embeddings, and clear documentation of the supported surface.
+- [ ] **Vision input in Chat** — image attachments, `mmproj` handling, per-model capability badges, and VRAM-aware fit checks before loading.
+- [ ] **Runtime abstraction + job queue** — one interface for llama.cpp, stable-diffusion.cpp, whisper.cpp, and TTS engines, with progress, cancellation, logs, and artifact storage.
+- [ ] **Workspace primitives** — shared projects, sessions, artifacts, presets, per-workspace storage, and cleanup rules.
+
+## P1 — Next
+
+- [ ] **Notebooks (RAG)** — import PDFs/Markdown/web pages, chunking, embeddings, a local vector index, citations, and notebook-scoped chat.
+- [ ] **Writing workspace** — long-form projects, outline/chapter tree, context budgeting, style memory, and export to Markdown, LaTeX, and PDF.
+- [ ] **TTS/STT workspace** — whisper.cpp transcription, local TTS (Kokoro/Piper), voice presets, timestamps, and audio export.
+- [ ] **Image workspace** — stable-diffusion.cpp with txt2img, img2img, inpainting, LoRA, seeds/presets, gallery, and VRAM fit checks.
+- [ ] **Agents workspace** — tool calling, MCP servers, file/terminal tools, approval gates, and run history. Start with single-agent runs before multi-agent orchestration.
+
+## P2 — Later / evaluate
+
+- [ ] **Automation** — schedules, webhooks, file watchers, and API triggers. Only build the visual n8n-style editor after the agent/tool runtime is stable.
+- [ ] **Video generation** — text-to-video and image-to-video, frame consistency, audio muxing. Revisit after the image pipeline and VRAM forecasting mature.
+- [ ] **Model conversion and quantization** — GGUF conversion, quantization presets, imatrix, and hardware-aware recommendations.
+- [ ] **Remote/headless server mode** — LAN access, authentication, TLS, per-client API keys, and usage limits.
+- [ ] **Benchmarks and evals** — tokens/sec, time-to-first-token, quality smoke tests, and per-machine recommendations.

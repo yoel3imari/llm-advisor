@@ -1,4 +1,4 @@
-//! Mathematical RAM/VRAM memory-fit estimation engine for LLM Advisor.
+//! Mathematical RAM/VRAM memory-fit estimation engine for ModelSift.
 //!
 //! Ground-truth formulas:
 //! - Weights = entry.total_size_bytes() (sums all shards for split models)

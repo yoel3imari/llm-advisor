@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# LLM Advisor — Linux Clean Uninstallation Script
+# ModelSift — Linux Clean Uninstallation Script
 # Completely removes application data, multi-GB GGUF models, and config.
 # ==============================================================================
 
@@ -14,14 +14,15 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 echo -e "${BOLD}${CYAN}=====================================================${NC}"
-echo -e "${BOLD}${CYAN}  LLM Advisor — Linux Clean Uninstaller        ${NC}"
+echo -e "${BOLD}${CYAN}  ModelSift — Linux Clean Uninstaller        ${NC}"
 echo -e "${BOLD}${CYAN}=====================================================${NC}\n"
 
 # 1. Terminate running processes
 echo -e "${YELLOW}[1/3] Checking for running instances...${NC}"
-if pgrep -x "llm-advisor" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
-    echo "Stopping running LLM Advisor and sidecar processes..."
+if pgrep -x "llm-advisor" >/dev/null 2>&1 || pgrep -x "modelsift" >/dev/null 2>&1 || pgrep -f "llama-server" >/dev/null 2>&1; then
+    echo "Stopping running ModelSift and sidecar processes..."
     pkill -x "llm-advisor" >/dev/null 2>&1 || true
+    pkill -x "modelsift" >/dev/null 2>&1 || true
     pkill -f "llama-server" >/dev/null 2>&1 || true
     sleep 1
     echo -e "${GREEN}✓ Processes stopped.${NC}"
@@ -35,7 +36,17 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 DATA_DIR="$XDG_DATA_HOME/dev.yoel3imari.llm-advisor"
 CONFIG_DIR="$XDG_CONFIG_HOME/dev.yoel3imari.llm-advisor"
-DESKTOP_FILE="$XDG_DATA_HOME/applications/llm-advisor.desktop"
+# Desktop entries and AppImages from both the ModelSift and pre-rename builds.
+DESKTOP_FILES=(
+    "$XDG_DATA_HOME/applications/ModelSift.desktop"
+    "$XDG_DATA_HOME/applications/model-sift.desktop"
+    "$XDG_DATA_HOME/applications/modelsift.desktop"
+    "$XDG_DATA_HOME/applications/llm-advisor.desktop"
+)
+APPIMAGE_FILES=(
+    "$HOME/.local/bin/modelsift.AppImage"
+    "$HOME/.local/bin/llm-advisor.AppImage"
+)
 
 RECLAIM_SIZE="0 MB"
 if [ -d "$DATA_DIR" ]; then
@@ -57,7 +68,12 @@ fi
 echo -e "\n${YELLOW}[3/3] Removing files and directories...${NC}"
 rm -rf "$DATA_DIR"
 rm -rf "$CONFIG_DIR"
-rm -f "$DESKTOP_FILE"
+for desktop_file in "${DESKTOP_FILES[@]}"; do
+    rm -f "$desktop_file"
+done
+for appimage in "${APPIMAGE_FILES[@]}"; do
+    rm -f "$appimage"
+done
 echo -e "${GREEN}✓ Removed application data & model storage (${RECLAIM_SIZE} reclaimed).${NC}"
 
 echo -e "\n${BOLD}${GREEN}=====================================================${NC}"

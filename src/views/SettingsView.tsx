@@ -224,7 +224,7 @@ export function SettingsView({ onSettingsChanged }: Props) {
       } else {
         setAppUpdateNotice({
           type: 'info',
-          text: `LLM Advisor is up to date (v${info.current_version}).`,
+          text: `ModelSift is up to date (v${info.current_version}).`,
         });
       }
     } catch (err: unknown) {

@@ -8,7 +8,7 @@ describe('TitleBar', () => {
     render(<TitleBar />);
 
     expect(screen.getByTestId('app-titlebar')).toBeDefined();
-    expect(screen.getByText('LLM Advisor')).toBeDefined();
+    expect(screen.getByText('ModelSift')).toBeDefined();
     expect(screen.getByText('Local Inference')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Minimize window' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Maximize window' })).toBeDefined();

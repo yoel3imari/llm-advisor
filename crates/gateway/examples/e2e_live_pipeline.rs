@@ -14,7 +14,7 @@ use tempfile::tempdir;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("============================================================");
-    println!("  LLM Advisor — END-TO-END AUTOMATED QA PIPELINE");
+    println!("  ModelSift — END-TO-END AUTOMATED QA PIPELINE");
     println!("============================================================");
 
     // Step 1: Detect Hardware

@@ -1,5 +1,5 @@
 /**
- * LLM Advisor — Inference Streaming Studio
+ * ModelSift — Inference Streaming Studio
  * High-performance, zero-buffering OpenAI-compatible SSE streaming chat client.
  */
 
@@ -291,7 +291,7 @@ async function checkGatewayHealth() {
         setConnectionStatus('idle', `Online (${data.state})`);
         showServerBanner(
           'Gateway Online (No Model Serving)',
-          `The Axum gateway is reachable on port 13370, but reports status "<strong>${data.state}</strong>". Start a model instance in LLM Advisor or enable Simulated Stream Mode to test UI streaming.`
+          `The Axum gateway is reachable on port 13370, but reports status "<strong>${data.state}</strong>". Start a model instance in ModelSift or enable Simulated Stream Mode to test UI streaming.`
         );
       }
       await fetchAvailableModels();
@@ -963,7 +963,7 @@ function handleInferenceError(assistantMsgId, err) {
 >
 > **Troubleshooting**:
 > - Verify Axum Gateway is active on \`${AppState.endpoint}\`
-> - Verify at least one model instance is loaded via LLM Advisor or \`llama-server\`
+> - Verify at least one model instance is loaded via ModelSift or \`llama-server\`
 > - You can toggle **Simulated Stream Mode** in the sidebar to test UI streaming immediately.
   `;
   if (msg) {

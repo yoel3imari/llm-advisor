@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Quick launcher script for LLM Advisor Inference Streaming Demo
+# Quick launcher script for ModelSift Inference Streaming Demo
 set -euo pipefail
 
 PORT="${1:-3333}"
 DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "======================================================="
-echo "   LLM Advisor — Inference Streaming Studio Demo"
+echo "   ModelSift — Inference Streaming Studio Demo"
 echo "======================================================="
 echo "Serving directory: ${DEMO_DIR}"
 echo "URL: http://127.0.0.1:${PORT}"

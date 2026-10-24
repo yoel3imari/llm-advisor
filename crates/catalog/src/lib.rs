@@ -8,7 +8,7 @@ pub const BUNDLED_CATALOG_JSON: &str = include_str!("../catalog.json");
 
 /// Default raw CDN endpoint for the upstream model catalog.
 pub const DEFAULT_CATALOG_CDN_URL: &str =
-    "https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/crates/catalog/catalog.json";
+    "https://raw.githubusercontent.com/yoel3imari/modelsift/main/crates/catalog/catalog.json";
 
 /// Sync state metadata persisted alongside the cached catalog.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -122,7 +122,7 @@ pub async fn sync_catalog_from_remote(
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
-        .user_agent("llm-advisor-catalog-sync/1.0")
+        .user_agent("modelsift-catalog-sync/1.0")
         .build()
         .map_err(|e| AppError::DownloadNetwork(format!("Failed to build HTTP client: {}", e)))?;
 

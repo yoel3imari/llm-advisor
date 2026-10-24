@@ -1,4 +1,4 @@
-//! Core domain types and error taxonomy for LLM Advisor.
+//! Core domain types and error taxonomy for ModelSift.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

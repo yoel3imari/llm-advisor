@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 scripts/update-catalog.py
-Automated HuggingFace Hub catalog ingestion and verification tool for llm-advisor.
+Automated HuggingFace Hub catalog ingestion and verification tool for ModelSift.
 
 Features:
 - Sends pre-flight HEAD requests to verify file URLs, Content-Length, and LFS SHA256 ETag.
@@ -126,7 +126,7 @@ def get_ssl_context():
 
 def create_request(url, method="GET", token=None):
     req = urllib.request.Request(url, method=method)
-    req.add_header("User-Agent", "llm-advisor-catalog-builder/1.0")
+    req.add_header("User-Agent", "modelsift-catalog-builder/1.0")
     if token:
         req.add_header("Authorization", f"Bearer {token}")
     return req

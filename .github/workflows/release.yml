@@ -94,8 +94,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: 'LLM Advisor v__VERSION__'
-          releaseBody: 'See attached platform assets for download. Report any issues at https://github.com/yoel3imari/llm-advisor/issues'
+          releaseName: 'ModelSift v__VERSION__'
+          releaseBody: 'See attached platform assets for download. Report any issues at https://github.com/yoel3imari/modelsift/issues'
           releaseDraft: true
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           retryAttempts: 3

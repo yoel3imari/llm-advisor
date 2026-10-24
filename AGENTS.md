@@ -1,4 +1,4 @@
-# LLM Advisor — Development Guidelines & Lessons Learned
+# ModelSift — Development Guidelines & Lessons Learned
 
 This document records architectural conventions, project lessons learned, and guardrails to prevent regressions in future sessions.
 
@@ -74,8 +74,8 @@ This document records architectural conventions, project lessons learned, and gu
 * **Release Profile Optimizations**:
   * Workspace root `Cargo.toml` must declare `[profile.release]` with `lto = "thin"`, `codegen-units = 1`, `panic = "abort"`, and `strip = true`. This cuts the core binary size from 25 MB down to 13 MB.
 * **Tauri Packaging Deduplication**:
-  * In `src-tauri/tauri.conf.json`, `"resources": ["binaries/*"]` already provisions dynamic libraries into the application resource path (`/usr/lib/llm-advisor/`).
-  * Do NOT add `"files": { "/usr/lib/llm-advisor": "binaries" }` in `linux.deb` or `linux.rpm`. Doing so duplicates the 37 MB `.so` tree into a redundant 62 MB nested folder where version symlinks are dereferenced into full duplicate files.
+  * In `src-tauri/tauri.conf.json`, `"resources": ["binaries/*"]` provisions dynamic libraries into the application resource path (`/usr/lib/ModelSift/` for current packages; `/usr/lib/llm-advisor/` remains a runtime fallback for pre-rename installs).
+  * Do NOT add `"files": { "/usr/lib/ModelSift": "binaries" }` in `linux.deb` or `linux.rpm`. Doing so duplicates the 37 MB `.so` tree into a redundant 62 MB nested folder where version symlinks are dereferenced into full duplicate files.
 * **Sidecar Auxiliary Library Pruning**:
   * Upstream `llama.cpp` releases contain implementation shared libraries for unrelated CLI tools (`libllama-bench-impl.so`, `libllama-cli-impl.so`, `libllama-perplexity-impl.so`, etc.).
   * `scripts/fetch-sidecar.sh` filters these out during download, preserving only `llama-server` and its dynamic runtime dependencies.
@@ -127,4 +127,18 @@ This document records architectural conventions, project lessons learned, and gu
 * **Window permissions** in `src-tauri/capabilities/default.json` must keep `allow-minimize`, `allow-toggle-maximize`, `allow-close`, `allow-start-dragging`, and `allow-start-resize-dragging`; `allow-is-maximized` also comes from `core:default`.
 * **Resize border**: `decorations: false` removes the native resize frame, so `WindowResizeHandles.tsx` provides invisible 8-direction hit areas backed by `startResizeDragging`. Keep them mounted at the app shell (hidden when maximized); without them edge resizing breaks on Linux/X11.
 * **Trade-off**: macOS loses native traffic lights and system window-menu behaviors (move/align) in exchange for identical chrome across OSes. This is intentional.
+
+---
+
+## 11. Branding & Identifiers
+
+* **Display brand** is **ModelSift** (one word, capital S), tagline *The local model advisor.* The UI, docs, installer banners, tray menu, release name, and package `productName` use this spelling. Do not reintroduce "LLM Advisor" in user-facing copy.
+* **Deliberately retained technical identifiers** (do not rename without a migration plan):
+  * Tauri `identifier`: `dev.yoel3imari.llm-advisor` — controls the app-data directory, single-instance identity, and updater continuity.
+  * Cargo crate / binary: `llm-advisor`; npm package: `llm-advisor`. Release assets and `install.sh APP_BIN` still use it.
+  * Data directories: `~/.local/share/dev.yoel3imari.llm-advisor/`, `~/Library/Application Support/dev.yoel3imari.llm-advisor/`, `%LOCALAPPDATA%\dev.yoel3imari.llm-advisor\`.
+  * `localStorage` keys: `llm-advisor-sidebar-collapsed`, `llm-advisor.chat.sessions.v1`, `llm_advisor_theme`, and the demo's `llm_advisor_*` keys.
+* **GitHub repository**: renamed to `yoel3imari/modelsift`. GitHub redirects the old `yoel3imari/llm-advisor` slug indefinitely, unless a new repo is created with the old name. Never reuse `llm-advisor` for a different repository; old installers, updater endpoints, catalog sync, and raw install URLs depend on that redirect.
+* **Packaging paths**: `productName` is now `ModelSift`, so Tauri uses `/usr/lib/ModelSift` for Linux resources, `ModelSift.desktop`/`ModelSift.app`, and kebab-cases the deb/rpm package name to `model-sift`; Windows installs under `ModelSift`. Every sidecar lookup and uninstall path keeps the old `llm-advisor` locations as fallbacks so upgrades from 0.2.x keep working. `scripts/post-bundle.sh` and both uninstall scripts must continue to handle both names. The deb declares `replaces`/`conflicts` and the rpm declares `obsoletes` for `llm-advisor` so the package manager replaces the pre-rename package instead of failing on the shared `/usr/bin/llm-advisor` path.
+* **Updater note**: changing `productName` changes the macOS `.app` directory name, the Windows install/registry identity, and the Linux package name. Keep the identifier stable and verify an in-place upgrade from the last `LLM Advisor` release on every target before shipping the rename; users may otherwise end up with both builds installed.
 

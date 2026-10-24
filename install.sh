@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# LLM Advisor — One-Command Installer (macOS & Linux)
+# ModelSift — One-Command Installer (macOS & Linux)
 #
 # Installs the latest prebuilt release from GitHub Releases:
 #
-#   curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/yoel3imari/modelsift/main/install.sh | bash
 #
 # Pinned version:
 #
-#   curl -fsSL https://raw.githubusercontent.com/yoel3imari/llm-advisor/main/install.sh | bash -s -- --version v0.1.91
+#   curl -fsSL https://raw.githubusercontent.com/yoel3imari/modelsift/main/install.sh | bash -s -- --version v0.1.91
 #
 # Options:
 #   --version TAG     Release tag (e.g. v0.1.91 or 0.1.91). Default: latest.
@@ -23,15 +23,15 @@
 #           RHEL/Rocky/Alma 10+, openSUSE Leap 16+/Tumbleweed.
 #   macOS:  15.0+ (Sequoia).
 #   Older systems: build from source —
-#   https://github.com/yoel3imari/llm-advisor#option-c-build-from-source
+#   https://github.com/yoel3imari/modelsift#option-c-build-from-source
 #
 # Windows users: this script cannot install natively. Download the .exe/.msi
-# from https://github.com/yoel3imari/llm-advisor/releases instead.
+# from https://github.com/yoel3imari/modelsift/releases instead.
 # ==============================================================================
 set -euo pipefail
 
-REPO="yoel3imari/llm-advisor"
-APP_NAME="LLM Advisor"
+REPO="yoel3imari/modelsift"
+APP_NAME="ModelSift"
 APP_BIN="llm-advisor"
 API_BASE="https://api.github.com/repos/${REPO}"
 

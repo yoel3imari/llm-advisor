@@ -1,4 +1,4 @@
-//! Supervised multi-instance llama-server sidecar process manager for LLM Advisor.
+//! Supervised multi-instance llama-server sidecar process manager for ModelSift.
 
 use chrono::{DateTime, Utc};
 use domain::{AppError, FitResult, KvType, OutputType, RunningInstanceInfo, ServeConfig};
@@ -496,8 +496,11 @@ impl ServerManager {
                         search_paths.push(contents.join("Frameworks"));
                     }
 
-                    // Linux package layout: /usr/bin -> /usr/lib/llm-advisor
+                    // Linux package layout: /usr/bin -> /usr/lib/ModelSift (with the
+                    // pre-rename /usr/lib/llm-advisor kept as a fallback).
                     if let Some(root) = p.parent() {
+                        search_paths.push(root.join("lib").join("ModelSift"));
+                        search_paths.push(root.join("lib").join("ModelSift").join("binaries"));
                         search_paths.push(root.join("lib").join("llm-advisor"));
                         search_paths.push(root.join("lib").join("llm-advisor").join("binaries"));
                         search_paths.push(root.join("lib"));
@@ -508,17 +511,39 @@ impl ServerManager {
             // Linux AppImage mount runtime
             if let Ok(appdir) = std::env::var("APPDIR") {
                 let appdir_path = std::path::PathBuf::from(appdir);
+                search_paths.push(appdir_path.join("usr").join("lib").join("ModelSift"));
+                search_paths.push(
+                    appdir_path
+                        .join("usr")
+                        .join("lib")
+                        .join("ModelSift")
+                        .join("binaries"),
+                );
                 search_paths.push(appdir_path.join("usr").join("lib").join("llm-advisor"));
-                search_paths.push(appdir_path.join("usr").join("lib").join("llm-advisor").join("binaries"));
+                search_paths.push(
+                    appdir_path
+                        .join("usr")
+                        .join("lib")
+                        .join("llm-advisor")
+                        .join("binaries"),
+                );
                 search_paths.push(appdir_path.join("usr").join("lib"));
                 search_paths.push(appdir_path.join("usr").join("bin"));
             }
 
             // Linux system-wide paths
+            search_paths.push(std::path::PathBuf::from("/usr/lib/ModelSift"));
+            search_paths.push(std::path::PathBuf::from("/usr/lib/ModelSift/binaries"));
             search_paths.push(std::path::PathBuf::from("/usr/lib/llm-advisor"));
             search_paths.push(std::path::PathBuf::from("/usr/lib/llm-advisor/binaries"));
+            search_paths.push(std::path::PathBuf::from("/usr/local/lib/ModelSift"));
+            search_paths.push(std::path::PathBuf::from(
+                "/usr/local/lib/ModelSift/binaries",
+            ));
             search_paths.push(std::path::PathBuf::from("/usr/local/lib/llm-advisor"));
-            search_paths.push(std::path::PathBuf::from("/usr/local/lib/llm-advisor/binaries"));
+            search_paths.push(std::path::PathBuf::from(
+                "/usr/local/lib/llm-advisor/binaries",
+            ));
 
             // macOS Homebrew & system paths
             search_paths.push(std::path::PathBuf::from("/opt/homebrew/lib"));
@@ -528,11 +553,31 @@ impl ServerManager {
             #[cfg(target_os = "windows")]
             {
                 if let Ok(prog_files) = std::env::var("ProgramFiles") {
-                    search_paths.push(std::path::PathBuf::from(&prog_files).join("llm-advisor").join("resources"));
+                    search_paths.push(
+                        std::path::PathBuf::from(&prog_files)
+                            .join("ModelSift")
+                            .join("resources"),
+                    );
+                    search_paths.push(std::path::PathBuf::from(&prog_files).join("ModelSift"));
+                    search_paths.push(
+                        std::path::PathBuf::from(&prog_files)
+                            .join("llm-advisor")
+                            .join("resources"),
+                    );
                     search_paths.push(std::path::PathBuf::from(&prog_files).join("llm-advisor"));
                 }
                 if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
-                    search_paths.push(std::path::PathBuf::from(&local_appdata).join("llm-advisor").join("resources"));
+                    search_paths.push(
+                        std::path::PathBuf::from(&local_appdata)
+                            .join("ModelSift")
+                            .join("resources"),
+                    );
+                    search_paths.push(std::path::PathBuf::from(&local_appdata).join("ModelSift"));
+                    search_paths.push(
+                        std::path::PathBuf::from(&local_appdata)
+                            .join("llm-advisor")
+                            .join("resources"),
+                    );
                     search_paths.push(std::path::PathBuf::from(&local_appdata).join("llm-advisor"));
                 }
             }
@@ -859,10 +904,12 @@ pub fn ensure_sidecar_dependencies(sidecar_path: &std::path::Path) {
                 candidate_source_dirs.push(contents.join("Frameworks"));
             }
             if let Some(root) = exe_dir.parent() {
+                candidate_source_dirs.push(root.join("lib").join("ModelSift"));
                 candidate_source_dirs.push(root.join("lib").join("llm-advisor"));
             }
         }
     }
+    candidate_source_dirs.push(std::path::PathBuf::from("/usr/lib/ModelSift"));
     candidate_source_dirs.push(std::path::PathBuf::from("/usr/lib/llm-advisor"));
 
     let lib_extensions = ["dylib", "so", "dll", "metal", "metallib"];

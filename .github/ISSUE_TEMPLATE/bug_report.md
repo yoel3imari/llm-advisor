@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve LLM Advisor
+about: Create a report to help us improve ModelSift
 title: '[BUG] '
 labels: 'bug'
 assignees: ''
@@ -21,7 +21,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Launch LLM Advisor
+1. Launch ModelSift
 2. Go to '...'
 3. Click on '....'
 4. See error

@@ -72,7 +72,7 @@ export function TitleBar({ isMaximized = false, className }: TitleBarProps) {
           className="h-4 w-4 shrink-0 rounded-[4px] object-contain"
         />
         <span className="truncate text-[11px] font-semibold tracking-tight text-slate-600 dark:text-slate-300">
-          LLM Advisor
+          ModelSift
         </span>
         <span className="hidden items-center gap-1.5 sm:flex">
           <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />

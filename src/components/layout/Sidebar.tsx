@@ -113,8 +113,8 @@ export function Sidebar({
   }, [handleToggle]);
 
   const navItems = [
-    { id: 'chat' as NavTab, label: 'Chat', icon: MessageSquare, badge: null },
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: Cpu, badge: null },
+    { id: 'chat' as NavTab, label: 'Chat', icon: MessageSquare, badge: null },
     {
       id: 'library' as NavTab,
       label: 'Library',
@@ -155,8 +155,8 @@ export function Sidebar({
               type="button"
               onClick={handleToggle}
               data-testid="main-sidebar-logo"
-              aria-label="LLM Advisor (Expand sidebar)"
-              title={isCollapsed ? 'LLM Advisor (Click to expand)' : undefined}
+              aria-label="ModelSift (Expand sidebar)"
+              title={isCollapsed ? 'ModelSift (Click to expand)' : undefined}
               className={cn(
                 'relative w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-50 to-violet-50 dark:from-slate-800 dark:to-slate-850 border border-indigo-100 dark:border-slate-700 shadow-corporate flex items-center justify-center p-1.5 shrink-0 overflow-hidden group transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
                 isCollapsed ? 'hover:ring-2 hover:ring-indigo-500/30 cursor-pointer' : 'cursor-default'
@@ -164,7 +164,7 @@ export function Sidebar({
             >
               <img
                 src="/app-icon.png"
-                alt="LLM Advisor"
+                alt="ModelSift"
                 className="w-full h-full object-contain filter drop-shadow transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/10 via-violet-600/10 to-transparent pointer-events-none" />
@@ -181,7 +181,7 @@ export function Sidebar({
               )}
             >
               <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-none font-sans">
-                LLM Advisor
+                ModelSift
               </h1>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono tracking-tight flex items-center gap-1.5 font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.6)] inline-block animate-pulse shrink-0"></span>

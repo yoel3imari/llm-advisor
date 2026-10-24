@@ -220,7 +220,7 @@ async fn restart_gateway_internal<R: tauri::Runtime>(
     *lock = Some(new_handle);
 
     if let Some(tray) = app.tray_by_id("main-tray") {
-        let _ = tray.set_tooltip(Some(format!("LLM Advisor (:{})", bound_port)));
+        let _ = tray.set_tooltip(Some(format!("ModelSift (:{})", bound_port)));
     }
 
     tracing::info!("Axum gateway successfully switched to port {}", bound_port);
@@ -733,6 +733,8 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
             if let Some(root) = exe_dir.parent() {
+                candidate_paths.push(root.join("lib").join("ModelSift").join(sidecar_name));
+                candidate_paths.push(root.join("lib").join("ModelSift").join("llama-server"));
                 candidate_paths.push(root.join("lib").join("llm-advisor").join(sidecar_name));
                 candidate_paths.push(root.join("lib").join("llm-advisor").join("llama-server"));
             }
@@ -744,6 +746,9 @@ fn resolve_sidecar_path(app: &tauri::App) -> PathBuf {
     }
 
     // 3. System installed locations
+    candidate_paths.push(PathBuf::from("/usr/lib/ModelSift").join(sidecar_name));
+    candidate_paths.push(PathBuf::from("/usr/lib/ModelSift").join("llama-server"));
+    candidate_paths.push(PathBuf::from("/usr/local/lib/ModelSift").join(sidecar_name));
     candidate_paths.push(PathBuf::from("/usr/lib/llm-advisor").join(sidecar_name));
     candidate_paths.push(PathBuf::from("/usr/lib/llm-advisor").join("llama-server"));
     candidate_paths.push(PathBuf::from("/usr/local/lib/llm-advisor").join(sidecar_name));
@@ -943,16 +948,16 @@ pub fn run() {
             });
 
             // Set up System Tray
-            let show_item = MenuItemBuilder::with_id("show", "Show LLM Advisor").build(app)?;
+            let show_item = MenuItemBuilder::with_id("show", "Show ModelSift").build(app)?;
             let stop_item =
                 MenuItemBuilder::with_id("stop_server", "Stop Inference Server").build(app)?;
-            let quit_item = MenuItemBuilder::with_id("quit", "Quit LLM Advisor").build(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "Quit ModelSift").build(app)?;
             let tray_menu = MenuBuilder::new(app)
                 .items(&[&show_item, &stop_item, &quit_item])
                 .build()?;
 
             let tray_builder = TrayIconBuilder::with_id("main-tray")
-                .tooltip(format!("LLM Advisor (:{})", gateway_port))
+                .tooltip(format!("ModelSift (:{})", gateway_port))
                 .menu(&tray_menu)
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| match event.id().as_ref() {

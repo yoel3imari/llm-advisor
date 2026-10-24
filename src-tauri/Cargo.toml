@@ -1,5 +1,6 @@
 [package]
 name = "llm-advisor"
+description = "ModelSift — the local model advisor."
 version.workspace = true
 edition.workspace = true
 

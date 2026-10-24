@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default permissions for LLM Advisor",
+  "description": "Default permissions for ModelSift",
   "windows": ["main"],
   "permissions": [
     "core:default",

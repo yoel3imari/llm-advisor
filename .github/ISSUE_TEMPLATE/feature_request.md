@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea or architectural improvement for LLM Advisor
+about: Suggest an idea or architectural improvement for ModelSift
 title: '[FEAT] '
 labels: 'enhancement'
 assignees: ''

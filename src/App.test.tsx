@@ -22,7 +22,7 @@ vi.mock('./ipc/commands', async (importOriginal) => {
   };
 });
 
-describe('LLM Advisor App UI', () => {
+describe('ModelSift App UI', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.mocked(getServerState).mockReset();
@@ -42,7 +42,7 @@ describe('LLM Advisor App UI', () => {
 
   it('renders app shell with navigation sidebar and dashboard as default view', async () => {
     render(<App />);
-    expect(screen.getAllByText('LLM Advisor').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('ModelSift').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Chat').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Dashboard')).toBeDefined();
     expect(screen.getByText('Library')).toBeDefined();
