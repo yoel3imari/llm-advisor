@@ -96,15 +96,15 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2.5 text-xs text-slate-700 dark:text-slate-200 outline-none transition-colors focus:bg-indigo-50 dark:focus:bg-slate-800 focus:text-indigo-900 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'group relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2.5 text-xs text-slate-700 dark:text-slate-200 outline-none transition-colors focus:bg-indigo-50 dark:focus:bg-slate-800 focus:text-indigo-900 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     checked={checked}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="pointer-events-none absolute left-2 flex h-4 w-4 items-center justify-center rounded-[4px] border border-slate-400 bg-white shadow-sm transition-colors group-data-[state=checked]:border-indigo-600 group-data-[state=checked]:bg-indigo-600 group-data-[state=checked]:shadow-none dark:border-slate-500 dark:bg-slate-950 dark:group-data-[state=checked]:border-indigo-500 dark:group-data-[state=checked]:bg-indigo-500">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+        <Check className="h-3 w-3 stroke-[3] text-white" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -119,12 +119,12 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      'relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2.5 text-xs text-slate-700 dark:text-slate-200 outline-none transition-colors focus:bg-indigo-50 dark:focus:bg-slate-800 focus:text-indigo-900 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'group relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2.5 text-xs text-slate-700 dark:text-slate-200 outline-none transition-colors focus:bg-indigo-50 dark:focus:bg-slate-800 focus:text-indigo-900 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="pointer-events-none absolute left-2 flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 bg-white shadow-sm transition-colors group-data-[state=checked]:border-indigo-600 dark:border-slate-500 dark:bg-slate-950 dark:group-data-[state=checked]:border-indigo-500">
       <DropdownMenuPrimitive.ItemIndicator>
         <Circle className="h-2 w-2 fill-indigo-600 text-indigo-600 dark:fill-indigo-400 dark:text-indigo-400" />
       </DropdownMenuPrimitive.ItemIndicator>

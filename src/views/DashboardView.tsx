@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import {
   Cpu,
   HardDrive,
@@ -43,6 +43,7 @@ import {
 } from '../components/ui/DropdownMenu';
 import { Input } from '../components/ui/Input';
 import { Slider } from '../components/ui/Slider';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/Tooltip';
 
 function isDeepEqual<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -58,6 +59,26 @@ const VERDICT_FILTERS: { value: string; label: string }[] = [
 
 function toggleValue<T>(values: T[], value: T): T[] {
   return values.includes(value) ? values.filter((v) => v !== value) : [...values, value];
+}
+
+/**
+ * Wraps a control in a plain-language tooltip aimed at non-technical users.
+ * Tooltips always open below the control so they cannot be hidden under the
+ * sticky table header or the table's clipping container.
+ */
+function FilterTooltip({ tip, children }: { tip: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent
+        side="bottom"
+        sideOffset={8}
+        className="max-w-[280px] whitespace-normal text-left font-sans font-normal normal-case leading-relaxed tracking-normal"
+      >
+        {tip}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 interface Props {
@@ -261,9 +282,9 @@ export function DashboardView({
   const hostBudget = Math.min(profile.metal_working_set_bytes, profile.total_ram_bytes);
 
   return (
-    <div className="flex-1 min-h-0 p-6 overflow-y-auto space-y-6 custom-scrollbar relative z-10">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 p-6 overflow-y-auto custom-scrollbar relative z-10">
       {/* Top Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4 shrink-0">
         <div className="flex items-center gap-3.5">
           <div>
             <h2 className="text-xl lg:text-2xl font-bold tracking-tight flex items-center gap-2.5">
@@ -289,7 +310,7 @@ export function DashboardView({
       </div>
 
       {/* 1. Asymmetric Bento Telemetry Deck with Dimensional Depth */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 perspective-2000">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 perspective-2000 shrink-0">
         {/* Hero Card: Unified Memory / VRAM Radar (Span 2 cols on lg) */}
         <div className="lg:col-span-2 corporate-card p-5 space-y-3.5 hover:shadow-corporate-hover hover:-translate-y-1 transition-all duration-200">
           <div className="flex items-center justify-between">
@@ -401,40 +422,44 @@ export function DashboardView({
       </div>
 
       {/* 2. Hardware Synthesizer Parameter Console & Filters */}
-      <div className="corporate-panel p-4 space-y-4 shadow-corporate">
+      <div className="corporate-panel p-4 space-y-4 shadow-corporate shrink-0">
         {/* Search & Filter Top Bar */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[220px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Search model, family (Llama, Qwen, DeepSeek), or quant..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
-            />
+            <FilterTooltip tip="Find a model by name, family (like Llama or Qwen), or compression level (quant). Results narrow down as you type.">
+              <Input
+                type="text"
+                placeholder="Search model, family (Llama, Qwen, DeepSeek), or quant..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+              />
+            </FilterTooltip>
           </div>
 
           {/* Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Family Filter Dropdown (multi-select) */}
             <DropdownMenu onOpenChange={(open) => { if (!open) setFamilySearch(''); }}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  aria-label="Filter by family"
-                  className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]"
-                >
-                  <span className="truncate">
-                    {familyFilters.length === 0
-                      ? 'All Families'
-                      : familyFilters.length === 1
-                      ? familyFilters[0].charAt(0).toUpperCase() + familyFilters[0].slice(1)
-                      : `${familyFilters.length} Families`}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
-                </button>
-              </DropdownMenuTrigger>
+              <FilterTooltip tip="Pick one or more model families (the maker or model line, like Llama, Qwen or DeepSeek). Selecting several shows all of them together.">
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Filter by family"
+                    className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]"
+                  >
+                    <span className="truncate">
+                      {familyFilters.length === 0
+                        ? 'All Families'
+                        : familyFilters.length === 1
+                        ? familyFilters[0].charAt(0).toUpperCase() + familyFilters[0].slice(1)
+                        : `${familyFilters.length} Families`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+              </FilterTooltip>
               <DropdownMenuContent align="start" className="w-[200px] max-h-72 shadow-corporate">
                 <DropdownMenuLabel>Filter Families ({uniqueFamilies.length})</DropdownMenuLabel>
                 <DropdownMenuSearchInput
@@ -479,21 +504,23 @@ export function DashboardView({
 
             {/* Verdict Filter Dropdown (multi-select) */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  aria-label="Filter by fit verdict"
-                  className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]"
-                >
-                  <span className="truncate">
-                    {verdictFilters.length === 0
-                      ? 'All Verdicts'
-                      : verdictFilters.length === 1
-                      ? VERDICT_FILTERS.find((v) => v.value === verdictFilters[0])?.label ?? 'Verdict'
-                      : `${verdictFilters.length} Verdicts`}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
-                </button>
-              </DropdownMenuTrigger>
+              <FilterTooltip tip="Shows whether a model should run comfortably on this computer. Fits is safe, Tight Fit uses most of your memory, and No Fit means it is too large.">
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Filter by fit verdict"
+                    className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[125px]"
+                  >
+                    <span className="truncate">
+                      {verdictFilters.length === 0
+                        ? 'All Verdicts'
+                        : verdictFilters.length === 1
+                        ? VERDICT_FILTERS.find((v) => v.value === verdictFilters[0])?.label ?? 'Verdict'
+                        : `${verdictFilters.length} Verdicts`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+              </FilterTooltip>
               <DropdownMenuContent align="start" className="w-[175px] max-h-60 shadow-corporate">
                 <DropdownMenuLabel>Filter Verdict</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -529,18 +556,23 @@ export function DashboardView({
 
             {/* Status Filter Dropdown */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[135px]">
-                  <span className="truncate">
-                    {statusFilter === 'all'
-                      ? 'All Statuses'
-                      : statusFilter === 'downloaded'
-                      ? 'Downloaded (Ready)'
-                      : 'Available to Download'}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
-                </button>
-              </DropdownMenuTrigger>
+              <FilterTooltip tip="Show only models already saved on this computer (Downloaded), only ones you can still download (Available), or everything.">
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Filter by download status"
+                    className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[135px]"
+                  >
+                    <span className="truncate">
+                      {statusFilter === 'all'
+                        ? 'All Statuses'
+                        : statusFilter === 'downloaded'
+                        ? 'Downloaded (Ready)'
+                        : 'Available to Download'}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+              </FilterTooltip>
               <DropdownMenuContent align="start" className="w-[175px] max-h-60 shadow-corporate">
                 <DropdownMenuLabel>Filter Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -558,21 +590,23 @@ export function DashboardView({
 
             {/* Output Type Filter Dropdown (multi-select) */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  aria-label="Filter by output type"
-                  className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px]"
-                >
-                  <span className="truncate">
-                    {outputTypeFilters.length === 0
-                      ? 'All Output Types'
-                      : outputTypeFilters.length === 1
-                      ? `${outputTypeLabel(outputTypeFilters[0])} Output`
-                      : `${outputTypeFilters.length} Output Types`}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
-                </button>
-              </DropdownMenuTrigger>
+              <FilterTooltip tip="What the model produces. Text is for chat and writing, Embedding is for search and similarity, and Image, Audio or Multimodal handle other media.">
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Filter by output type"
+                    className="flex h-8 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px]"
+                  >
+                    <span className="truncate">
+                      {outputTypeFilters.length === 0
+                        ? 'All Output Types'
+                        : outputTypeFilters.length === 1
+                        ? `${outputTypeLabel(outputTypeFilters[0])} Output`
+                        : `${outputTypeFilters.length} Output Types`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-80 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+              </FilterTooltip>
               <DropdownMenuContent align="start" className="w-[190px] max-h-60 shadow-corporate">
                 <DropdownMenuLabel>Filter Output Type</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -631,100 +665,103 @@ export function DashboardView({
         {/* Live Serving & Context Configuration Console */}
         <div className="flex flex-wrap items-center justify-between gap-4 text-xs pt-1">
           {/* Context Stepper Rack */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-mono text-xs font-bold">
-              <Sliders className="w-3.5 h-3.5" />
-              <span>CONTEXT:</span>
+          <FilterTooltip tip="How much text the model can remember at once — its working memory for a conversation. Higher values fit longer chats and documents but need more RAM. 4k is a good default; raise it only while the RAM estimate still fits.">
+            <div className="flex flex-wrap items-center gap-3 cursor-help">
+              <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-mono text-xs font-bold">
+                <Sliders className="w-3.5 h-3.5" />
+                <span>CONTEXT:</span>
+              </div>
+              <span className="font-mono text-indigo-700 dark:text-indigo-300 font-bold tabular-nums w-12 text-sm">{config.context_size}</span>
+              <Slider
+                min={512}
+                max={32768}
+                step={512}
+                value={[config.context_size]}
+                onValueChange={(val) => setConfig({ ...config, context_size: val[0] })}
+                className="w-28 cursor-pointer"
+              />
+              {/* Quick Context Presets */}
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                {[2048, 4096, 8192, 16384, 32768].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setConfig({ ...config, context_size: size })}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all ${
+                      config.context_size === size
+                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {size >= 1024 ? `${size / 1024}k` : size}
+                  </button>
+                ))}
+              </div>
             </div>
-            <span className="font-mono text-indigo-700 dark:text-indigo-300 font-bold tabular-nums w-12 text-sm">{config.context_size}</span>
-            <Slider
-              min={512}
-              max={32768}
-              step={512}
-              value={[config.context_size]}
-              onValueChange={(val) => setConfig({ ...config, context_size: val[0] })}
-              className="w-28 cursor-pointer"
-            />
-            {/* Quick Context Presets */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-              {[2048, 4096, 8192, 16384, 32768].map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setConfig({ ...config, context_size: size })}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all ${
-                    config.context_size === size
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {size >= 1024 ? `${size / 1024}k` : size}
-                </button>
-              ))}
-            </div>
-          </div>
+          </FilterTooltip>
 
           {/* KV Cache Quant & Parallel Slots Rockers */}
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase px-1">KV:</span>
-              <button
-                onClick={() => setConfig({ ...config, kv_type: 'f16' })}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
-                  config.kv_type === 'f16'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
-                }`}
-                title="F16: Baseline memory footprint"
-              >
-                F16
-              </button>
-              <button
-                onClick={() => setConfig({ ...config, kv_type: 'q8_0' })}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
-                  config.kv_type === 'q8_0'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
-                }`}
-                title="Q8_0: -50% KV cache VRAM requirement"
-              >
-                Q8_0
-              </button>
-              <button
-                onClick={() => setConfig({ ...config, kv_type: 'q4_0' })}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
-                  config.kv_type === 'q4_0'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
-                }`}
-                title="Q4_0: -75% KV cache VRAM requirement"
-              >
-                Q4_0
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase px-1">Slots:</span>
-              {[1, 2, 4].map((n) => (
+            <FilterTooltip tip="Compression for the model's short-term memory. F16 keeps full precision, Q8_0 roughly halves memory use, and Q4_0 cuts it to about a quarter — lower settings save RAM with a small quality trade-off.">
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 cursor-help">
+                <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase px-1">KV:</span>
                 <button
-                  key={n}
-                  onClick={() => setConfig({ ...config, n_parallel: n })}
+                  onClick={() => setConfig({ ...config, kv_type: 'f16' })}
                   className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
-                    config.n_parallel === n
+                    config.kv_type === 'f16'
                       ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
                   }`}
                 >
-                  {n}x
+                  F16
                 </button>
-              ))}
-            </div>
+                <button
+                  onClick={() => setConfig({ ...config, kv_type: 'q8_0' })}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
+                    config.kv_type === 'q8_0'
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Q8_0
+                </button>
+                <button
+                  onClick={() => setConfig({ ...config, kv_type: 'q4_0' })}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
+                    config.kv_type === 'q4_0'
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Q4_0
+                </button>
+              </div>
+            </FilterTooltip>
+
+            <FilterTooltip tip="How many conversations the server can handle at the same time. 1x is best for a single app; 2x or 4x lets several apps or people share the model, but each extra slot needs more memory.">
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 cursor-help">
+                <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase px-1">Slots:</span>
+                {[1, 2, 4].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setConfig({ ...config, n_parallel: n })}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all ${
+                      config.n_parallel === n
+                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {n}x
+                  </button>
+                ))}
+              </div>
+            </FilterTooltip>
           </div>
         </div>
       </div>
 
       {/* 3. Models Table */}
       {loadingResults && results.length === 0 ? (
-        <div className="flex items-center justify-center p-12">
+        <div className="flex flex-1 min-h-[220px] items-center justify-center p-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
       ) : (

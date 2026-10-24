@@ -88,7 +88,7 @@ function SortableHeader({ label, tip, isSorted, onToggle, icon }: SortableHeader
           )}
         </button>
       </TooltipTrigger>
-      <TooltipContent className="max-w-[240px] whitespace-normal leading-relaxed">
+      <TooltipContent side="bottom" sideOffset={8} className="max-w-[240px] whitespace-normal leading-relaxed">
         {tip}
       </TooltipContent>
     </Tooltip>
@@ -770,21 +770,21 @@ export function ModelsTable({
   });
 
   return (
-    <div className="space-y-4">
-      <div className="corporate-card overflow-hidden shadow-corporate">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[960px]">
-            <thead>
+    <div className="flex flex-1 min-h-[220px] flex-col gap-4">
+      <div className="corporate-card flex min-h-0 flex-1 flex-col overflow-hidden shadow-corporate">
+        <div className="min-h-0 flex-1 overflow-auto overscroll-contain custom-scrollbar">
+          <table className="w-full text-left border-separate border-spacing-0 min-w-[960px]">
+            <thead className="bg-slate-50 dark:bg-slate-900">
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 text-xs">
+                <tr key={headerGroup.id} className="bg-slate-50 dark:bg-slate-900/90 text-xs">
                   {headerGroup.headers.map((header) => {
                     const isActions = header.id === 'actions';
                     return (
                       <th
                         key={header.id}
-                        className={`px-3.5 py-3 font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider ${
+                        className={`sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3.5 py-3 font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider ${
                           isActions
-                            ? 'sticky right-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-[-4px_0_8px_rgba(0,0,0,0.04)] border-l border-slate-200 dark:border-slate-800 text-right'
+                            ? 'right-0 z-20 shadow-[-4px_0_8px_rgba(0,0,0,0.04)] border-l text-right'
                             : ''
                         }`}
                       >
@@ -797,10 +797,10 @@ export function ModelsTable({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs text-slate-700 dark:text-slate-300">
+            <tbody className="text-xs text-slate-700 dark:text-slate-300">
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
+                  <td colSpan={columns.length} className="border-b border-slate-100 dark:border-slate-800/80 px-4 py-12 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
                     No models matching the selected filters.
                   </td>
                 </tr>
@@ -815,7 +815,7 @@ export function ModelsTable({
                       return (
                         <td
                           key={cell.id}
-                          className={`px-3.5 py-2.5 ${
+                          className={`border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-2.5 ${
                             isActions
                               ? 'sticky right-0 z-10 bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/50 shadow-[-4px_0_8px_rgba(0,0,0,0.04)] border-l border-slate-200/80 dark:border-slate-800 text-right transition-colors'
                               : ''
